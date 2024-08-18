@@ -1,0 +1,10 @@
+{
+    "name": "sarbada/quiz-application",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "MVC\\": "src/"
+        }
+    },
+    "require": {}
+}
