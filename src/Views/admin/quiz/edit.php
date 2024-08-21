@@ -28,8 +28,8 @@ endif;
     <label for="description">Description:</label>
     <textarea name="description" id="description"><?= htmlspecialchars($category['description']) ?></textarea>
 
-    <label for="parent_id"> Category:</label>
-    <select id="parent_id" name="parent_id">
+    <label for="category_id"> Category:</label>
+    <select id="category_id" name="category_id">
     <option value="0" <?= $category['category_id'] == 0 ? 'selected' : '' ?>>None (Top Level)</option>
     <?php foreach ($categories as $cat): ?>
         <?php if ($cat['id'] != $category['id']): ?>

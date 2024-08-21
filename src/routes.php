@@ -2,6 +2,7 @@
 
 use MVC\Controllers\AuthController;
 use MVC\Controllers\CategoryController;
+use MVC\Controllers\QuestionController;
 use MVC\Controllers\QuestionTypeController;
 use MVC\Controllers\QuizController;
 use MVC\Controllers\TeacherController;
@@ -41,4 +42,12 @@ return [
     ['route' => '/admin/quiz/add', 'controller' => QuizController::class, 'action' => 'add', 'method' => 'POST'],
     ['route' => '/admin/quiz/edit/{id}', 'controller' => QuizController::class, 'action' => 'edit', 'method' => 'GET'],
     ['route' => '/admin/quiz/edit/{id}', 'controller' => QuizController::class, 'action' => 'edit', 'method' => 'POST'],
-    ['route' => '/admin/quiz/delete/{id}', 'controller' => QuizController::class, 'action' => 'delete', 'method' => 'GET'],];
+    ['route' => '/admin/quiz/delete/{id}', 'controller' => QuizController::class, 'action' => 'delete', 'method' => 'GET'],
+    
+    ['route' => '/admin/question/list', 'controller' => QuestionController::class, 'action' => 'index', 'method' => 'GET'],
+    ['route' => '/admin/question/add', 'controller' => QuestionController::class, 'action' => 'showAddForm', 'method' => 'GET'],
+    ['route' => '/admin/question/add', 'controller' => QuestionController::class, 'action' => 'add', 'method' => 'POST'],
+    ['route' => '/admin/question/edit/{id}', 'controller' => QuestionController::class, 'action' => 'edit', 'method' => 'GET'],
+    ['route' => '/admin/question/edit/{id}', 'controller' => QuestionController::class, 'action' => 'edit', 'method' => 'POST'],
+    ['route' => '/admin/question/delete/{id}', 'controller' => QuestionController::class, 'action' => 'delete', 'method' => 'GET'],
+];

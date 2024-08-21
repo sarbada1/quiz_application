@@ -34,37 +34,52 @@ VALUES (
 
 SELECT * FROM `categories`;
 
-CREATE TABLE `categories` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(255) NOT NULL,
-    `parent_id` BIGINT NULL
-);
+
 
 CREATE TABLE `question_type` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `type` VARCHAR(255) NOT NULL
 );
 
+CREATE TABLE `categories` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    `parent_id` BIGINT UNSIGNED NULL  -- Ensure UNSIGNED here
+);
+
 CREATE TABLE `quizzes` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `title` VARCHAR(255) NOT NULL,
     `description` TEXT NOT NULL,
-    `category_id` BIGINT NOT NULL,
-    `created_by` TIMESTAMP NOT NULL
+    `category_id` BIGINT UNSIGNED NOT NULL,  -- Ensure UNSIGNED here
+    `user_id` BIGINT UNSIGNED NOT NULL,  -- Ensure UNSIGNED here
+    FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) , -- Foreign Key Constraint
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)  -- Foreign Key Constraint
 );
+
 
 CREATE TABLE `questions` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `quiz_id` BIGINT NOT NULL,
+    `quiz_id` BIGINT UNSIGNED  NULL,
     `question_text` TEXT NOT NULL,
-    `question_type` BIGINT NOT NULL
+    `question_type` BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (`quiz_id`) REFERENCES `quizzes`(`id`) ,
+    FOREIGN KEY (`question_type`) REFERENCES `question_type`(`id`) 
 );
 
-ALTER TABLE `quizzes`
-ADD CONSTRAINT `quizzes_id_foreign` FOREIGN KEY (`id`) REFERENCES `users` (`id`);
+CREATE TABLE `answers`(
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `question_id` BIGINT UNSIGNED NOT NULL,
+    `answer` TEXT NOT NULL,
+    `reason` TEXT NULL,
+    `isCorrect` BOOLEAN NOT NULL,
+    FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) 
+);
+DROP Table quizzes;
+DROP Table answers;
+DROP Table questions;
 
-ALTER TABLE `categories`
-ADD CONSTRAINT `categories_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `categories` (`id`);
+
 
 select c.id, c.name, c.parent_id, IFNULL(pp.name, 'Top Category') as category_name
 from categories c
@@ -74,6 +89,6 @@ SELECT quizzes.*,categories.name
 from quizzes
     join categories on categories.id = quizzes.category_id;
 
-    ALTER TABLE `quizzes`
-ADD COLUMN `user_id` BIGINT UNSIGNED,
-ADD CONSTRAINT `quizzes_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+SELECT questions.*,question_type.`type`,quizzes.title from questions join quizzes on quizzes.id=questions.quiz_id join question_type on question_type.id=questions.question_type
+
+select * from quizzes;

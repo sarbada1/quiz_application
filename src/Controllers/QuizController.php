@@ -41,6 +41,7 @@ class QuizController extends Controller
             $title = $_POST['title'] ?? '';
             $description = $_POST['description'] ?? '';
             $category_id = $_POST['category_id'] ?? '';
+            $user_id = $_SESSION['user_id'] ?? '';
 
             if (empty($title)) {
                 echo "Title is required.";
@@ -50,12 +51,9 @@ class QuizController extends Controller
                 echo "Description is required.";
                 return;
             }
-            if (empty($category_id)) {
-                echo "Category is required.";
-                return;
-            }
+         
 
-            $result = $this->quizModel->createQuiz($title, $description, $category_id);
+            $result = $this->quizModel->createQuiz($title, $description, $category_id,$user_id);
 
             if ($result) {
                 $_SESSION['message'] = "Quiz added successfully!";
@@ -82,6 +80,8 @@ class QuizController extends Controller
             $title = $_POST['title'] ?? '';
             $description = $_POST['description'] ?? '';
             $category_id = $_POST['category_id'] ?? '';
+            $user_id = $_SESSION['user_id'] ?? '';
+
 
             if (empty($title)) {
                 echo "Title is required.";
@@ -91,14 +91,8 @@ class QuizController extends Controller
                 echo "Description is required.";
                 return;
             }
-            if (empty($category_id)) {
-                echo "Category is required.";
-                return;
-            }
 
-         
-
-            $result = $this->quizModel->updateQuiz($id,$title, $description, $category_id);
+            $result = $this->quizModel->updateQuiz($id,$title, $description, $category_id,$user_id);
 
             if ($result) {
                 $_SESSION['message'] = "Quiz edited successfully!";

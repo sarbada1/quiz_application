@@ -30,6 +30,7 @@ class AuthController extends Controller {
                 
                 $_SESSION['username'] = $username;
                 $_SESSION['role'] = $user['usertype_id'];  // Set the role based on usertype_id
+                $_SESSION['user_id'] = $user['id'];  
                 header('Location: /admin'); // Redirect to admin dashboard or another page
                 exit();
             } else {
