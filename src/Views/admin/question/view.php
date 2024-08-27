@@ -28,6 +28,7 @@ endif;
             <th>Question</th>
             <th>Quiz</th>
             <th>Type</th>
+            <th>Answer</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -40,6 +41,10 @@ endif;
                 <td><?= $question['question_text'] ?></td>
                 <td><?= $question['title'] ?></td>
                 <td><?= $question['type'] ?></td>
+                <td>
+                    <button class="success"> <a href="/admin/answer/add/<?= $question['id'] ?>">Add</a></button>
+                    <button class="warning"> <a href="/admin/answer/list/<?= $question['id'] ?>">View</a></button>
+                </td>
                 <td>
                     <button class="primary"> <a href="/admin/question/edit/<?= $question['id'] ?>">Edit</a></button>
                     <button class="danger"> <a href="/admin/question/delete/<?= $question['id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>

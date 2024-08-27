@@ -30,11 +30,29 @@ class CategoryController extends Controller
         $content = $this->render('admin/category/add', ['categories' => $categories]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
+    public function showCategory($slug)
+    {
+        $category = $this->categoryModel->getCategoryBySlug($slug);
+        if (!$category) {
+            // Handle case where category is not found
+            echo "Category not found.";
+            return;
+        }
+    
+        $quizzes = $this->categoryModel->getQuizzesByCategory($category['id']);
+    
+        $content = $this->render('user/categories', [
+            'category' => $category,
+            'quizzes' => $quizzes
+        ]);
+        echo $this->render('user/layout', ['content' => $content]);
+    }
 
     public function add()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $_POST['name'] ?? '';
+            $slug = $_POST['slug'] ?? '';
             $parentId = $_POST['parent_id'] ?? 0;
 
             if (empty($name)) {
@@ -42,7 +60,7 @@ class CategoryController extends Controller
                 return;
             }
 
-            $result = $this->categoryModel->createCategory($name, $parentId);
+            $result = $this->categoryModel->createCategory($name,$slug, $parentId);
 
             if ($result) {
                 $_SESSION['message'] = "Category added successfully!";
@@ -67,10 +85,15 @@ class CategoryController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $_POST['name'] ?? '';
+            $slug = $_POST['slug'] ?? '';
             $parentId = $_POST['parent_id'] ?? 0;
 
             if (empty($name)) {
                 echo "Category name is required.";
+                return;
+            }
+            if (empty($slug)) {
+                echo "Category slug is required.";
                 return;
             }
 
@@ -79,7 +102,7 @@ class CategoryController extends Controller
                 return;
             }
 
-            $result = $this->categoryModel->updateCategory($id, $name, $parentId);
+            $result = $this->categoryModel->updateCategory($id, $name,$slug, $parentId);
 
             if ($result) {
                 $_SESSION['message'] = "Category edited successfully!";

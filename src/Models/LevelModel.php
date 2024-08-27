@@ -6,16 +6,16 @@ use Exception;
 use PDO;
 use PDOException;
 
-class QuestionTypeModel extends BaseModel
+class LevelModel extends BaseModel
 {
     public function __construct(PDO $pdo)
     {
-        parent::__construct($pdo, 'question_type');
+        parent::__construct($pdo, 'level');
     }
 
     public function getAll()
     {
-        return $this->get([], null, null, 'type ASC');
+        return $this->get([], null, null, 'level ASC');
     }
 
     public function getById($id)
@@ -23,27 +23,24 @@ class QuestionTypeModel extends BaseModel
         $result = $this->get([['field' => 'id', 'operator' => '=', 'value' => $id]]);
         return $result[0] ?? null;
     }
-    public function createQuestionType($type, $slug, $time_per_question)
+    public function createLevel($level)
     {
         return $this->insert([
-            'type' => $type,
-            'slug' => $slug,
-            'time_per_question' => $time_per_question,
+            'level' => $level,
+         
         ]);
     }
-    public function updateQuestionType($id, $type, $slug, $time_per_question)
+    public function updateLevel($id,$level)
     {
         return $this->update(
             [
-                'type' => $type,
-                'slug' => $slug,
-                'time_per_question' => $time_per_question,
+                'level' => $level,            
             ],
             [['field' => 'id', 'operator' => '=', 'value' => $id]]
         );
     }
 
-    public function deleteQuestionType($id)
+    public function deleteLevel($id)
     {
         return $this->delete([['field' => 'id', 'operator' => '=', 'value' => $id]]);
     }

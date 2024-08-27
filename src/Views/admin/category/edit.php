@@ -10,7 +10,7 @@
     unset($_SESSION['status']);
 endif;
 ?>
-<form method="POST">
+<form method="POST" class="form-group">
     <h1>Edit Category</h1>
     <div class="row">
         <div class="breadcrumb">
@@ -23,7 +23,10 @@ endif;
         </div>
     </div>
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" value="<?= htmlspecialchars($category['name']) ?>" required>
+    <input type="text" id="title" name="name" value="<?= htmlspecialchars($category['name']) ?>" >
+
+    <label for="slug">Slug:</label>
+    <input type="text" id="slug" name="slug" value="<?= htmlspecialchars($category['slug']) ?>"  readonly>
 
     <label for="parent_id">Parent Category:</label>
     <select id="parent_id" name="parent_id">

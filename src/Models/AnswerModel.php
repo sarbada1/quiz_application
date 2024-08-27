@@ -6,7 +6,7 @@ use Exception;
 use PDO;
 use PDOException;
 
-class QuestionModel extends BaseModel
+class AnswerModel extends BaseModel
 {
     public function __construct(PDO $pdo)
     {
@@ -26,7 +26,11 @@ class QuestionModel extends BaseModel
         }
         return $this->get([], null, null, 'questions.title ASC');
     }
-
+    public function getByQuestionId($id)
+    {
+        return $this->get([['field' => 'question_id', 'operator' => '=', 'value' => $id]]);
+    }
+    
     public function getById($id)
     {
         $result = $this->get([['field' => 'id', 'operator' => '=', 'value' => $id]]);

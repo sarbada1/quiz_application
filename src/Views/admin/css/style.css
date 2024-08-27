@@ -251,20 +251,7 @@ th {
   margin-right: 0;
 }
 
-.breadcrumb .button {
-  margin-left: auto;
-  background-color: #4caf50;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
 
-  display: inline-block;
-  font-size: 16px;
-}
 
 form {
   width: 98%;
@@ -279,7 +266,7 @@ label {
   margin-bottom: 5px;
 }
 
-input {
+/* input {
   width: 100%;
   padding: 10px;
   margin: auto;
@@ -287,7 +274,7 @@ input {
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 16px;
-}
+} */
 select {
   width: 100%; /* Full width */
   padding: 10px; /* Add padding */
@@ -335,6 +322,7 @@ button.success {
 button.danger {
   background-color: red;
 }
+
 button.warning {
   background-color: rgb(251 191 36);
 }
@@ -723,3 +711,5 @@ table th {
 .max-h-full {
     max-height: 100%;
 }
+
+

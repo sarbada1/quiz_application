@@ -10,24 +10,22 @@
     unset($_SESSION['status']);
 endif;
 ?>
-<h1>List Question Type</h1>
+<h1>List Level</h1>
 <div class="row">
     <div class="breadcrumb">
-        <a href="/admin/questiontype/list">Question Type</a>
+        <a href="/admin/level/list">Level</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">List</a>
     </div>
     <div>
-        <button class='success mb-5'><a href='/admin/questiontype/add'>Add Question Type</a></button>
+        <button class='success mb-5'><a href='/admin/level/add'>Add Level</a></button>
     </div>
 </div>
 <table>
     <thead>
         <tr>
             <th>SN</th>
-            <th>Type</th>
-            <th>Slug</th>
-            <th>Time per question(in seconds)</th>
+            <th>Level</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -37,12 +35,10 @@ endif;
         foreach ($teachers as $teacher): ?>
             <tr>
                 <td><?php echo $i++; ?></td>
-                <td><?= $teacher['type'] ?></td>
-                <td><?= $teacher['slug'] ?></td>
-                <td><?= $teacher['time_per_question'] ?></td>
+                <td><?= $teacher['level'] ?></td>
                 <td>
-                    <button class="primary"> <a href="/admin/questiontype/edit/<?= $teacher['id'] ?>">Edit</a></button>
-                    <button class="danger"> <a href="/admin/questiontype/delete/<?= $teacher['id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+                    <button class="primary"> <a href="/admin/level/edit/<?= $teacher['id'] ?>">Edit</a></button>
+                    <button class="danger"> <a href="/admin/level/delete/<?= $teacher['id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
                 </td>
             </tr>
         <?php endforeach; ?>

@@ -18,14 +18,23 @@
         <a href="#" style="margin-left: 7px;cursor:default">Create</a>
     </div>
     <label for="title">Title:</label>
-    <input type="text" id="title" name="title" required>
+    <input type="text" id="title" name="title" >
+    <label for="slug">Slug:</label>
+    <input type="text" id="slug" name="slug" readonly>
     <label for="description">Description:</label>
     <textarea name="description" id="description"></textarea>
     <label for="category_id"> Category:</label>
     <select id="category_id" name="category_id">
-        <option value="0">None (Top Level)</option>
+        <option value="0" selected disabled>None (Top Level)</option>
         <?php foreach ($categories as $category): ?>
             <option value="<?= $category['id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+        <?php endforeach; ?>
+    </select>
+    <label for="difficulty_level"> Level of difficulty:</label>
+    <select id="difficulty_level" name="difficulty_level">
+        <option value="0">--Select Level--</option>
+        <?php foreach ($levels as $level): ?>
+            <option value="<?= $level['id'] ?>"><?= htmlspecialchars($level['level']) ?></option>
         <?php endforeach; ?>
     </select>
     

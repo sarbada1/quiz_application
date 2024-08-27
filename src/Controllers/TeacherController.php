@@ -74,6 +74,13 @@ class TeacherController extends Controller
         $content = $this->render('admin/teacher/viewTeacher', ['teachers' => $teachers]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
+    public function listStudent()
+    {
+        $userModel = new User($this->pdo);
+        $teachers = $userModel->get([['field' => 'usertype_id', 'operator' => '=', 'value' => 3]]);
+        $content = $this->render('admin/student/view', ['teachers' => $teachers]);
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
 
     public function edit($id)
     {

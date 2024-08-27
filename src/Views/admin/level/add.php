@@ -9,19 +9,15 @@
  unset($_SESSION['message']);
  unset($_SESSION['status']);
 endif; ?>
-<form action="/admin/questiontype/add" method="POST" class="form-group">
-<h2>Add Question Type</h2>
+<form action="/admin/level/add" method="POST" class="form-group">
+<h2>Add Level</h2>
 <div class="breadcrumb">
-        <a href="/admin/questiontype/list">Question Type</a>
+        <a href="/admin/level/list">Level</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Create</a>
     </div>
-    <label for="name">Type:</label>
-    <input type="text" id="name" name="type" required>
-    <label for="slug">Slug:</label>
-    <input type="text" id="slug" name="slug" required>
-    <label for="time_per_question">Time per question(in second):</label>
-    <input type="text" id="time_per_question" name="time_per_question" required>
+    <label for="level">Level:</label>
+    <input type="text" id="level" name="level" >
     
     <button class="success mt-5" type="submit">Create</button>
 </form>

@@ -10,7 +10,7 @@
     unset($_SESSION['status']);
     endif; 
     ?>
-<form action="/admin/category/add" method="POST">
+<form action="/admin/category/add" method="POST" class="form-group">
 <h2>Add New Category</h2>
 <div class="breadcrumb">
         <a href="/admin/category/list">Category</a>
@@ -18,7 +18,10 @@
         <a href="#" style="margin-left: 7px;cursor:default">Create</a>
     </div>
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required>
+    <input type="text" id="title" name="name" >
+
+    <label for="slug">Slug:</label>
+    <input type="text" id="slug" name="slug" readonly>
     
     <label for="parent_id">Parent Category:</label>
     <select id="parent_id" name="parent_id">

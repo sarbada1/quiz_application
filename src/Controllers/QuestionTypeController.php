@@ -34,13 +34,15 @@ class QuestionTypeController extends Controller
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $type = $_POST['type'] ?? '';
+            $slug = $_POST['slug'] ?? '';
+            $time_per_question = $_POST['time_per_question'] ?? '';
 
             if (empty($type)) {
                 echo "Type is required.";
                 return;
             }
 
-            $result = $this->questionTypeModel->createQuestionType($type);
+            $result = $this->questionTypeModel->createQuestionType($type,$slug,$time_per_question);
 
             if ($result) {
                 $_SESSION['message'] = "Question Type added successfully!";
@@ -63,7 +65,8 @@ class QuestionTypeController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $type = $_POST['type'] ?? '';
-
+            $slug = $_POST['slug'] ?? '';
+            $time_per_question = $_POST['time_per_question'] ?? '';
             if (empty($type)) {
                 echo "Question Type name is required.";
                 return;
@@ -71,7 +74,7 @@ class QuestionTypeController extends Controller
 
          
 
-            $result = $this->questionTypeModel->updateQuestionType($id, $type);
+            $result = $this->questionTypeModel->updateQuestionType($id,$type,$slug,$time_per_question);
 
             if ($result) {
                 $_SESSION['message'] = "Question Type edited successfully!";

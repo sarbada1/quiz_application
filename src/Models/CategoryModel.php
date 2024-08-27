@@ -24,18 +24,23 @@ class CategoryModel extends BaseModel
         return $result[0] ?? null;
     }
 
-    public function createCategory($name, $parentId)
+    public function createCategory($name,$slug, $parentId)
     {
         return $this->insert([
             'name' => $name,
-            'parent_id' => $parentId
+            'parent_id' => $parentId,
+            'slug' => $slug,
         ]);
     }
 
-    public function updateCategory($id, $name, $parentId)
+    public function updateCategory($id, $name,$slug, $parentId)
     {
         return $this->update(
-            ['name' => $name, 'parent_id' => $parentId],
+            [
+                'name' => $name, 
+                'slug' => $slug, 
+                'parent_id' => $parentId
+        ],
             [['field' => 'id', 'operator' => '=', 'value' => $id]]
         );
     }
@@ -74,5 +79,26 @@ class CategoryModel extends BaseModel
             }
         }
         return $hierarchy;
+    }
+
+    public function getCategoryBySlug($slug)
+    {
+        $result = $this->get([['field' => 'slug', 'operator' => '=', 'value' => $slug]]);
+        return $result[0] ?? null;
+    }
+
+    public function getQuizzesByCategory($categoryId)
+    {
+        $sql = "SELECT q.id, q.title, q.description, q.slug 
+                FROM quizzes q
+                WHERE q.category_id = :category_id";
+    
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['category_id' => $categoryId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Error fetching quizzes by category: " . $e->getMessage());
+        }
     }
 }

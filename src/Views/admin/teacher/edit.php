@@ -2,7 +2,7 @@
 session_start();
 ?>
 
-<form method="POST" action="/admin/teacher/edit/<?= $teacher['id'] ?>">
+<form method="POST" action="/admin/teacher/edit/<?= $teacher['id'] ?>" class="form-group">
     <?php if (isset($_SESSION['message'])): ?>
     <div id="alert" class="alert alert-<?= $_SESSION['status'] ?>" role="alert">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
