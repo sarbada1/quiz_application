@@ -55,3 +55,40 @@ body {
   }
   
 
+  .alert {
+    padding: 15px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+  }
+  
+  .alert-success {
+    color: #4caf50;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+  }
+  
+  .close {
+    float: right;
+    font-size: 21px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+    height: 20px;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    text-shadow: 0 1px 0 #fff;
+    opacity: 0.5;
+    position: relative;
+  }
+  .close span{
+    position: absolute;
+    top: 0;
+  }
+  .close:hover,
+  .close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    opacity: 0.75;
+  }

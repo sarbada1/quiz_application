@@ -204,7 +204,13 @@ th {
   font-weight: 500;
 }
 
+.categoryrow{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
 .form-group input[type="text"],
+.form-group input[type="number"],
 .form-group input[type="email"],
 .form-group input[type="password"],
 .form-group select,
@@ -329,6 +335,9 @@ button.warning {
 button.primary {
   background-color: rgb(8, 174, 245);
 }
+button.info {
+  background-color: rgb(72, 225, 16);
+}
 button.transparent {
   background-color: transparent;
   border: 1px solid black;
@@ -339,6 +348,12 @@ button.mt-5 {
   margin-top: 15px;
 }
 button.mb-5 {
+  margin-bottom: 15px;
+}
+.mt-5{
+  margin-top: 15px;
+}
+.mb-5{
   margin-bottom: 15px;
 }
 .alert {
@@ -713,3 +728,104 @@ table th {
 }
 
 
+.test-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+}
+.timer {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+.question {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+.answers {
+  margin-left: 20px;
+}
+.answer {
+  margin-bottom: 10px;
+}
+.correct {
+  color: #28a745;
+  font-weight: bold;
+}
+.reason {
+  margin-top: 10px;
+  font-style: italic;
+  color: #6c757d;
+}
+
+.reports-container {
+  padding: 20px;
+}
+
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.reports-table th,
+.reports-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.reports-table th {
+  background-color: #f5f5f5;
+}
+
+.reports-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.reports-table select {
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.reports-table button {
+  padding: 5px 10px;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin: auto;
+}
+/* Add this CSS to your stylesheet */
+.status-select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.status-pending {
+  background-color: #ffeeba;
+  color: #856404;
+  border-color: #ffeeba;
+}
+
+.status-reviewed {
+  background-color: #b8daff;
+  color: #004085;
+  border-color: #b8daff;
+}
+
+.status-resolved {
+  background-color: #c3e6cb;
+  color: #155724;
+  border-color: #c3e6cb;
+}

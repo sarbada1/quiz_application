@@ -13,18 +13,50 @@ class QuestionModel extends BaseModel
         parent::__construct($pdo, 'questions');
     }
 
-    public function getAll()
+  
+    public function questionFilter($selectedQuiz)
     {
-        $sql = "SELECT questions.*,question_type.`type`,quizzes.title from questions join quizzes on quizzes.id=questions.quiz_id join question_type on question_type.id=questions.question_type";
+        $sql = "SELECT questions.*, question_type.`type`, quizzes.title 
+                FROM questions 
+                JOIN quizzes ON quizzes.id = questions.quiz_id 
+                JOIN question_type ON question_type.id = questions.question_type ";
+
+        $params = [];
+
+        if (!empty($selectedQuiz)) {
+            $sql .= " WHERE quizzes.id = :quiz";
+            $params[':quiz'] = $selectedQuiz;
+        }
+
+        $sql .= " ORDER BY questions.id ASC";
 
         try {
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute();
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Error fetching category hierarchy: " . $e->getMessage());
+            throw new Exception("Error fetching questions: " . $e->getMessage());
         }
-        return $this->get([], null, null, 'questions.title ASC');
+    }
+    public function getAll()
+    {
+        $sql = "SELECT questions.*, question_type.`type`, quizzes.title 
+                FROM questions 
+                JOIN quizzes ON quizzes.id = questions.quiz_id 
+                JOIN question_type ON question_type.id = questions.question_type";
+
+        $params = [];
+
+
+        $sql .= " ORDER BY questions.id ASC";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Error fetching questions: " . $e->getMessage());
+        }
     }
 
     public function getById($id)

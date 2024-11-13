@@ -13,11 +13,9 @@ use PDO;
 
 class QuestionController extends Controller
 {
-    private $quizModel;
-    private $questiontypeModel;
-    private $categoryModel;
-    private $questionModel;
-
+    public $quizModel;
+    public $questiontypeModel;
+    public $questionModel;
 
     public function __construct(PDO $pdo)
     {
@@ -29,9 +27,15 @@ class QuestionController extends Controller
     public function index()
     {
         $questions = $this->questionModel->getAll();
-        $content = $this->render('admin/question/view', ['questions' => $questions]);
+        $quizzes = $this->quizModel->getAll();
+
+        $content = $this->render('admin/question/view', [
+            'questions' => $questions,
+            'quizzes' => $quizzes,
+        ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
+
 
     public function showAddForm()
     {
@@ -63,7 +67,7 @@ class QuestionController extends Controller
                 echo "Question Type is required.";
                 return;
             }
-         
+
 
             $result = $this->questionModel->createQuestion($question_text, $quiz_id, $question_type);
 
@@ -107,7 +111,7 @@ class QuestionController extends Controller
                 return;
             }
 
-            $result = $this->questionModel->updateQuestion($id,$question_text, $quiz_id, $question_type);
+            $result = $this->questionModel->updateQuestion($id, $question_text, $quiz_id, $question_type);
 
             if ($result) {
                 $_SESSION['message'] = "Question edited successfully!";
@@ -129,7 +133,48 @@ class QuestionController extends Controller
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
+    public function filterQuestion($id)
+    {
+        if($id=='0'){
+            $questions = $this->questionModel->getAll();
+        }
+        else{
 
+            $questions = $this->questionModel->questionFilter($id);
+        }
+        $i = 1; // Initialize $i before the loop
+    if($questions){
+        foreach($questions as $question)
+        {
+            echo '<tr>';
+            echo '<td>'.$i++.'</td>'; // Increment $i inside the loop
+            echo "<td>".$question['question_text']."</td>";
+            echo "<td>".$question['title']."</td>";
+            echo "<td>".$question['type']."</td>";
+            echo '<td>
+                    <button class="success">
+                        <a href="/admin/answer/add/'.$question["id"].'">Add</a>
+                    </button>
+                    <button class="warning">
+                        <a href="/admin/answer/list/'.$question["id"].'">View</a>
+                    </button>
+                  </td>';
+            echo '<td>
+                    <button class="primary">
+                        <a href="/admin/question/edit/'.$question["id"].'">Edit</a>
+                    </button>
+                    <button class="danger">
+                        <a href="/admin/question/delete/'.$question["id"].'" onclick="return confirm(\'Are you sure to delete?\')">Delete</a>
+                    </button>
+                  </td>';
+            echo '</tr>';
+        }
+    }
+    else{
+        echo '<tr><td colspan="6">No data found</td></tr>';
+    }
+    }
+    
     public function delete($id)
     {
         $result = $this->questionModel->deleteQuestion($id);

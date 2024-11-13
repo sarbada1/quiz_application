@@ -1,15 +1,3 @@
-<?php if (isset($_SESSION['message'])): ?>
-    <div id="alert" class="alert alert-<?= $_SESSION['status'] ?>" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        <?= $_SESSION['message'] ?>
-    </div>
-<?php
-    unset($_SESSION['message']);
-    unset($_SESSION['status']);
-endif;
-?>
 <h1>List Question</h1>
 <div class="row">
     <div class="breadcrumb">
@@ -21,7 +9,22 @@ endif;
         <button class='success mb-5'><a href='/admin/question/add'>Add Question</a></button>
     </div>
 </div>
-<table>
+
+<form action="/admin/question/list" method="GET" id="quiz-filter-form">
+    <div class="filter-container">
+        <label for="quiz-filter">Filter by Quiz:</label>
+        <select id="quiz-filter" name="quiz" onchange="filterQuestion(this.value)">
+            <option value="0">All Quizzes</option>
+            <?php foreach ($quizzes as $quiz): ?>
+                <option value="<?= urlencode($quiz['id']) ?>" <?= $selectedQuiz === $quiz['title'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($quiz['title']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+</form>
+
+<table id="questions-table" class="mt-5">
     <thead>
         <tr>
             <th>SN</th>
@@ -32,15 +35,15 @@ endif;
             <th>Action</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="data">
         <?php
         $i = 1;
         foreach ($questions as $question): ?>
             <tr>
                 <td><?php echo $i++; ?></td>
-                <td><?= $question['question_text'] ?></td>
-                <td><?= $question['title'] ?></td>
-                <td><?= $question['type'] ?></td>
+                <td><?= htmlspecialchars($question['question_text']) ?></td>
+                <td><?= htmlspecialchars($question['title']) ?></td>
+                <td><?= htmlspecialchars($question['type']) ?></td>
                 <td>
                     <button class="success"> <a href="/admin/answer/add/<?= $question['id'] ?>">Add</a></button>
                     <button class="warning"> <a href="/admin/answer/list/<?= $question['id'] ?>">View</a></button>
@@ -53,3 +56,26 @@ endif;
         <?php endforeach; ?>
     </tbody>
 </table>
+
+<script>
+function filterQuestion(str) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status == 200) {
+                try {
+                    // console.log(this.responseText);
+                    
+                    document.getElementById("data").innerHTML = this.responseText;
+                } catch (e) {
+                    console.error("Error parsing JSON response:", e);
+                }
+            } else {
+                console.error("Request failed with status:", this.status);
+            }
+        }
+    };
+    xmlhttp.open("GET", "/ajax/filter-questions/" + str, true);
+    xmlhttp.send();
+}
+</script>

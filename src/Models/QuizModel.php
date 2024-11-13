@@ -34,7 +34,27 @@ class QuizModel extends BaseModel
         $result = $this->get([['field' => 'id', 'operator' => '=', 'value' => $id]]);
         return $result[0] ?? null;
     }
-    public function createQuiz($title,$slug, $description, $category_id,$user_id)
+    public function getQuestion($level, $num, $quiz_id)
+    {
+        $sql = "SELECT q.* 
+                FROM questions q 
+                JOIN quizzes qz ON qz.id = q.quiz_id 
+                WHERE qz.difficulty_level = :level 
+                AND q.quiz_id = :quiz_id 
+                LIMIT $num";
+    
+        $stmt = $this->pdo->prepare($sql);
+        
+        $stmt->bindParam(':level', $level, PDO::PARAM_STR);
+        $stmt->bindParam(':quiz_id', $quiz_id, PDO::PARAM_INT);
+        
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return $result;
+    }
+    
+    public function createQuiz($title, $slug, $description, $category_id, $user_id, $difficulty_level)
     {
         return $this->insert([
             'title' => $title,
@@ -42,9 +62,10 @@ class QuizModel extends BaseModel
             'description' => $description,
             'category_id' => $category_id,
             'user_id' => $user_id,
+            'difficulty_level' => $difficulty_level,
         ]);
     }
-    public function updateQuiz($id, $title,$slug, $description, $category_id,$user_id)
+    public function updateQuiz($id, $title, $slug, $description, $category_id, $user_id, $difficulty_level)
     {
         return $this->update(
             [
@@ -53,6 +74,7 @@ class QuizModel extends BaseModel
                 'description' => $description,
                 'category_id' => $category_id,
                 'user_id' => $user_id,
+                'difficulty_level' => $difficulty_level,
             ],
             [['field' => 'id', 'operator' => '=', 'value' => $id]]
         );
@@ -67,7 +89,23 @@ class QuizModel extends BaseModel
         $result = $this->get([['field' => 'slug', 'operator' => '=', 'value' => $slug]]);
         return $result[0] ?? null;
     }
+    public function getQuizQuestionBySlug($slug)
+    {
+        $sql = "SELECT q.*, c.name AS category_name, l.level AS difficulty_name, 
+                       (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) AS question_count
+                FROM quizzes q
+                JOIN categories c ON q.category_id = c.id
+                JOIN level l ON q.difficulty_level = l.id
+                WHERE q.slug = :slug";
 
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['slug' => $slug]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Error fetching quiz by slug: " . $e->getMessage());
+        }
+    }
     public function getQuestionsByQuizId($quizId)
     {
         $sql = "SELECT q.id, q.question_text, qt.type, qt.time_per_question, qt.slug as question_type_slug

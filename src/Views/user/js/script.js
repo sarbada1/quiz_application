@@ -1,55 +1,68 @@
-// Get the modals
-var loginModal = document.getElementById("loginModal");
-var registerModal = document.getElementById("registerModal");
+document.addEventListener('DOMContentLoaded', function() {
+    // Open login modal
+    document.querySelectorAll('#startQuizzingBtn, #startQuizzing, #startQuiz').forEach(function(btn) {
+        btn.onclick = function(event) {
+            event.preventDefault();
+            document.getElementById('loginModal').style.display = 'block';
+        }
+    });
 
-// Get the buttons that open the modals
-var startQuizzingBtn = document.getElementById("startQuizzingBtn");
-var registerNowLink = document.getElementById("registerNowLink");
-
-// Get the <span> elements that close the modals
-var closeButtons = document.getElementsByClassName("close");
-
-// When the user clicks the "Start Quizzing Now" button, open the login modal 
-startQuizzingBtn.onclick = function(event) {
-    event.preventDefault(); // Prevent default link behavior
-    loginModal.style.display = "block";
-}
-
-// When the user clicks the "Register now" link, close the login modal and open the register modal
-registerNowLink.onclick = function(event) {
-    event.preventDefault(); // Prevent default link behavior
-    loginModal.style.display = "none";
-    registerModal.style.display = "block";
-}
-// When the user clicks the "Login now" link, close the register modal and open the login modal
-loginNowLink.onclick = function(event) {
-    event.preventDefault(); // Prevent default link behavior
-    registerModal.style.display = "none";
-    loginModal.style.display = "block";
-}
-
-// When the user clicks on <span> (x), close the current modal
-for (var i = 0; i < closeButtons.length; i++) {
-    closeButtons[i].onclick = function() {
-        this.parentElement.parentElement.style.display = "none";
+    // Open register modal
+    document.getElementById('signUpLink').onclick = function(event) {
+        event.preventDefault();
+        document.getElementById('registerModal').style.display = 'block';
     }
-}
 
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-    if (event.target == loginModal) {
-        loginModal.style.display = "none";
-    } else if (event.target == registerModal) {
-        registerModal.style.display = "none";
+    // Switch between login and register modals
+    document.getElementById('registerNowLink').onclick = function(event) {
+        event.preventDefault();
+        document.getElementById('loginModal').style.display = 'none';
+        document.getElementById('registerModal').style.display = 'block';
     }
-}
-// alert
-const closealertButtons = document.querySelectorAll('.closealert'); // Select all close buttons
 
-closealertButtons.forEach(closealertButton => {
-    closealertButton.addEventListener('click', () => {
-    const successAlert = closealertButton.parentElement; // Get the parent alert element
-    successAlert.style.display = 'none';
-  });
+    document.getElementById('loginNowLink').onclick = function(event) {
+        event.preventDefault();
+        document.getElementById('registerModal').style.display = 'none';
+        document.getElementById('loginModal').style.display = 'block';
+    }
+
+    // Close modals
+    document.querySelectorAll('.close').forEach(function(closeBtn) {
+        closeBtn.onclick = function() {
+            var modalId = this.getAttribute('data-modal');
+            var modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                // Add navigation back if on quiz or test pages
+                if (window.location.pathname.includes('/quiz/') || 
+                    window.location.pathname.includes('/mocktest/')) {
+                    window.history.back();
+                }
+            }
+        }
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+            // Add navigation back if on quiz or test pages
+            if (window.location.pathname.includes('/quiz/') || 
+                window.location.pathname.includes('/mocktest/')) {
+                window.history.back();
+            }
+        }
+    }
+
+    // Error handling for missing elements
+    const handleError = function(id) {
+        console.error(`Element with id ${id} not found`);
+    }
+
+    // Verify required elements exist
+    ['loginModal', 'registerModal', 'signUpLink', 'registerNowLink', 'loginNowLink'].forEach(id => {
+        if (!document.getElementById(id)) {
+            handleError(id);
+        }
+    });
 });
-

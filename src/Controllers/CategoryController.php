@@ -10,7 +10,7 @@ use PDO;
 
 class CategoryController extends Controller
 {
-    private $categoryModel;
+    public $categoryModel;
 
     public function __construct(PDO $pdo)
     {

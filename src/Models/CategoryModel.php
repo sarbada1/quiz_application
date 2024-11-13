@@ -17,6 +17,18 @@ class CategoryModel extends BaseModel
     {
         return $this->get([], null, null, 'name ASC');
     }
+    public function getTopCategories()
+    {
+        $sql = "SELECT * from categories where parent_id=0";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Error fetching category hierarchy: " . $e->getMessage());
+        }
+    }
 
     public function getCategoryById($id)
     {
@@ -24,7 +36,7 @@ class CategoryModel extends BaseModel
         return $result[0] ?? null;
     }
 
-    public function createCategory($name,$slug, $parentId)
+    public function createCategory($name, $slug, $parentId)
     {
         return $this->insert([
             'name' => $name,
@@ -33,14 +45,14 @@ class CategoryModel extends BaseModel
         ]);
     }
 
-    public function updateCategory($id, $name,$slug, $parentId)
+    public function updateCategory($id, $name, $slug, $parentId)
     {
         return $this->update(
             [
-                'name' => $name, 
-                'slug' => $slug, 
+                'name' => $name,
+                'slug' => $slug,
                 'parent_id' => $parentId
-        ],
+            ],
             [['field' => 'id', 'operator' => '=', 'value' => $id]]
         );
     }
@@ -56,7 +68,7 @@ class CategoryModel extends BaseModel
                 FROM categories c 
                 LEFT JOIN categories pp ON c.parent_id = pp.id
                 ORDER BY c.parent_id, c.name";
-    
+
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();
@@ -92,7 +104,7 @@ class CategoryModel extends BaseModel
         $sql = "SELECT q.id, q.title, q.description, q.slug 
                 FROM quizzes q
                 WHERE q.category_id = :category_id";
-    
+
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute(['category_id' => $categoryId]);

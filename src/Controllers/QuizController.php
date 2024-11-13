@@ -5,16 +5,18 @@ namespace MVC\Controllers;
 use MVC\Controller;
 use MVC\Models\CategoryModel;
 use MVC\Models\LevelModel;
+use MVC\Models\ProgramModel;
 use MVC\Models\QuizModel;
 use PDO;
 
-
+session_start();
 
 class QuizController extends Controller
 {
-    private $quizModel;
-    private $levelModel;
-    private $categoryModel;
+    public $quizModel;
+    public $levelModel;
+    public $categoryModel;
+    public $programModel;
 
 
     public function __construct(PDO $pdo)
@@ -22,6 +24,7 @@ class QuizController extends Controller
         $this->quizModel = new QuizModel($pdo);
         $this->levelModel = new LevelModel($pdo);
         $this->categoryModel = new CategoryModel($pdo);
+        $this->programModel = new ProgramModel($pdo);
     }
 
     public function index()
@@ -30,23 +33,68 @@ class QuizController extends Controller
         $content = $this->render('admin/quiz/view', ['quizzes' => $quizzes]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
-    public function showQuiz($slug)
+    public function showQuizDetail($slug)
     {
-        $quiz = $this->quizModel->getQuizBySlug($slug);
+        $quiz = $this->quizModel->getQuizQuestionBySlug($slug);
+        $categories = $this->quizModel->getAll();
+        $programs = $this->programModel->getWithCategory();
+
+
         if (!$quiz) {
-            // Handle case where category is not found
-            echo "Category not found.";
+            header('location:/404.php');
+            echo "Quiz not found";
             return;
         }
-    
-        $questions = $this->quizModel->getQuestionsByQuizId($quiz['id']);
-        $levels = $this->levelModel->getAll();    
-        $content = $this->render('user/quiz', [
-            'questions' => $questions,
-            'levels' => $levels
+
+        $isLoggedIn = isset($_SESSION['user_id']);
+
+        $content = $this->uirender('user/quiz_info', [
+            'quiz' => $quiz,
+            'isLoggedIn' => $isLoggedIn,
+            'quizzes' => $categories,
+            'programs' => $programs,
         ]);
-        echo $this->render('user/layout', ['content' => $content]);
+        echo $this->uirender('user/layout', ['content' => $content]);
     }
+
+    public function startQuiz($slug)
+    {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        $quiz = $this->quizModel->getQuizQuestionBySlug($slug);
+        if (!$quiz) {
+            header('location:/404.php');
+            echo "Quiz not found";
+            return;
+        }
+        $question = $this->quizModel->getQuestionsByQuizId($quiz['id']);
+    
+
+        $content = $this->uirender('user/question', [
+            'questions' => $question
+        ]);
+
+        echo $this->uirender('user/layout', ['content' => $content]);
+
+    }
+    public function showQuiz()
+    {
+        $quiz = $this->quizModel->getAll();
+        $programs = $this->programModel->getWithCategory();
+
+
+        $content = $this->uirender('user/quiz', [
+            'quiz' => $quiz,
+            'quizzes' => $quiz,
+            'programs' => $programs,
+        ]);
+
+        echo $this->uirender('user/layout', ['content' => $content]);
+    }
+
     public function showAddForm()
     {
         $categories = $this->categoryModel->getAllCategories();
@@ -65,6 +113,7 @@ class QuizController extends Controller
             $slug = $_POST['slug'] ?? '';
             $description = $_POST['description'] ?? '';
             $category_id = $_POST['category_id'] ?? '';
+            $difficulty_level = $_POST['difficulty_level'] ?? '';
             $user_id = $_SESSION['user_id'] ?? '';
 
             if (empty($title)) {
@@ -79,9 +128,9 @@ class QuizController extends Controller
                 echo "Description is required.";
                 return;
             }
-         
 
-            $result = $this->quizModel->createQuiz($title, $slug,$description, $category_id,$user_id);
+
+            $result = $this->quizModel->createQuiz($title, $slug, $description, $category_id, $user_id, $difficulty_level);
 
             if ($result) {
                 $_SESSION['message'] = "Quiz added successfully!";
@@ -109,6 +158,7 @@ class QuizController extends Controller
             $slug = $_POST['slug'] ?? '';
             $description = $_POST['description'] ?? '';
             $category_id = $_POST['category_id'] ?? '';
+            $difficulty_level = $_POST['difficulty_level'] ?? '';
             $user_id = $_SESSION['user_id'] ?? '';
 
 
@@ -121,7 +171,7 @@ class QuizController extends Controller
                 return;
             }
 
-            $result = $this->quizModel->updateQuiz($id,$title,$slug, $description, $category_id,$user_id);
+            $result = $this->quizModel->updateQuiz($id, $title, $slug, $description, $category_id, $user_id, $difficulty_level);
 
             if ($result) {
                 $_SESSION['message'] = "Quiz edited successfully!";
@@ -135,14 +185,15 @@ class QuizController extends Controller
                 exit;
             }
         }
+        $levels = $this->levelModel->getAll();
 
         $content = $this->render('admin/quiz/edit', [
             'category' => $category,
             'categories' => $categories,
+            'levels' => $levels,
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
-
     public function delete($id)
     {
         $result = $this->quizModel->deleteQuiz($id);

@@ -4,7 +4,8 @@ namespace MVC\Controllers;
 
 use MVC\Controller;
 use MVC\Models\CategoryModel;
-
+use MVC\Models\ProgramModel;
+use MVC\Models\QuizModel;
 use PDO;
 
 
@@ -12,20 +13,26 @@ use PDO;
 class HomeController extends Controller
 {
 
-    private $categoryModel;
+    public $categoryModel;
+    public $quizModel;
+    public $programModel;
 
 
     public function __construct(PDO $pdo)
     {
   
         $this->categoryModel = new CategoryModel($pdo);
+        $this->quizModel = new QuizModel($pdo);
+        $this->programModel = new ProgramModel($pdo);
     }
 
     public function index()
     {
-        $categories = $this->categoryModel->getAllCategories();
-        $content = $this->render('user/index', ['categories' => $categories]);
-        echo $this->render('user/layout', ['content' => $content]);
+        $categories = $this->quizModel->getAll();
+        $programs = $this->programModel->getWithCategory();
+        $content = $this->uirender('user/index', ['quizzes' => $categories,'programs'=>$programs]);
+       
+        echo $this->uirender('user/layout', ['content' => $content]);
     }
 
 
