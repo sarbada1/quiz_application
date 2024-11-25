@@ -2,6 +2,7 @@
 create DATABASE quiz_system;
 
 use quiz_system;
+
 CREATE TABLE `usertype` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `role` VARCHAR(255) NOT NULL
@@ -26,11 +27,6 @@ CREATE TABLE `user_info` (
     `address` VARCHAR(255) NULL,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
-
-
-
-
-
 
 CREATE TABLE `question_type` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -74,6 +70,7 @@ CREATE TABLE `programmes_mock_test` (
 );
 
 drop table programmes_mock_test_questions;
+
 drop table programmes_mock_test_answers;
 
 CREATE TABLE `programmes_mock_test_questions` (
@@ -96,7 +93,9 @@ CREATE TABLE `programmes_chapter` (
 drop Table programmes;
 
 ALTER TABLE categories add COLUMN slug VARCHAR(255) null;
+
 ALTER TABLE programmes add COLUMN slug VARCHAR(255) null;
+
 ALTER TABLE programmes_mock_test add COLUMN slug VARCHAR(255) null;
 
 CREATE TABLE `quizzes` (
@@ -182,26 +181,26 @@ CREATE TABLE mock_test_attempts (
     correct_answers INT NOT NULL,
     wrong_answers INT NOT NULL,
     unattempted INT NOT NULL,
-    score DECIMAL(5,2) NOT NULL,
+    score DECIMAL(5, 2) NOT NULL,
     time_taken INT NOT NULL, -- in seconds
     completion_status ENUM('completed', 'incomplete') NOT NULL,
     started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
     INDEX idx_user_mock (user_id, mock_test_id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (mock_test_id) REFERENCES programmes_mock_test(id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (mock_test_id) REFERENCES programmes_mock_test (id)
 );
 
 CREATE TABLE mock_test_answers (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    attempt_id INT  NOT NULL,
+    attempt_id INT NOT NULL,
     question_id BIGINT UNSIGNED NOT NULL,
     answer_id BIGINT UNSIGNED NOT NULL,
     is_correct BOOLEAN NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (attempt_id) REFERENCES mock_test_attempts(id),
-    FOREIGN KEY (question_id) REFERENCES questions(id),
-    FOREIGN KEY (answer_id) REFERENCES answers(id)
+    FOREIGN KEY (attempt_id) REFERENCES mock_test_attempts (id),
+    FOREIGN KEY (question_id) REFERENCES questions (id),
+    FOREIGN KEY (answer_id) REFERENCES answers (id)
 );
 
 -- Create reports table
@@ -209,13 +208,22 @@ CREATE TABLE question_reports (
     id INT PRIMARY KEY AUTO_INCREMENT,
     question_id BIGINT UNSIGNED NOT NULL,
     user_id BIGINT UNSIGNED NOT NULL,
-    reason ENUM('no_correct_answer', 'multiple_correct', 'unclear', 'other') NOT NULL,
+    reason ENUM(
+        'no_correct_answer',
+        'multiple_correct',
+        'unclear',
+        'other'
+    ) NOT NULL,
     description TEXT NOT NULL,
-    status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
+    status ENUM(
+        'pending',
+        'reviewed',
+        'resolved'
+    ) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
-    FOREIGN KEY (question_id) REFERENCES questions(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (question_id) REFERENCES questions (id),
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );
 -- Create saved_mock_test_progress table
 CREATE TABLE saved_mock_test_progress (
@@ -227,14 +235,58 @@ CREATE TABLE saved_mock_test_progress (
     remaining_time INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (mock_test_id) REFERENCES programmes_mock_test(id),
-    FOREIGN KEY (question_id) REFERENCES questions(id),
-    FOREIGN KEY (selected_answer_id) REFERENCES answers(id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (mock_test_id) REFERENCES programmes_mock_test (id),
+    FOREIGN KEY (question_id) REFERENCES questions (id),
+    FOREIGN KEY (selected_answer_id) REFERENCES answers (id)
 );
-DROP Table answers;
 
-DROP Table questions;
+-- Drop existing table if exists
+DROP TABLE IF EXISTS quiz_attempts;
+
+-- Create quiz_attempts table with nullable columns
+CREATE TABLE quiz_attempts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    quiz_id BIGINT UNSIGNED NOT NULL,
+    total_questions INT NOT NULL,
+    correct_answers INT DEFAULT 0,
+    wrong_answers INT DEFAULT 0,
+    score DECIMAL(5, 2) DEFAULT 0.00,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (quiz_id) REFERENCES quizzes (id)
+);
+
+CREATE TABLE quiz_answers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    attempt_id INT NOT NULL,
+    question_id BIGINT UNSIGNED NOT NULL,
+    answer_id BIGINT UNSIGNED NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    question_order INT NOT NULL, -- Add this to track question sequence
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (attempt_id) REFERENCES quiz_attempts (id),
+    FOREIGN KEY (question_id) REFERENCES questions (id),
+    FOREIGN KEY (answer_id) REFERENCES answers (id)
+);
+
+CREATE TABLE user_quiz_history (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    quiz_id BIGINT UNSIGNED NOT NULL,
+    attempt_id INT NOT NULL,
+    score DECIMAL(5, 2) NOT NULL,
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (quiz_id) REFERENCES quizzes (id),
+    FOREIGN KEY (attempt_id) REFERENCES quiz_attempts (id)
+);
+
+DROP Table quiz_answers;
+
+DROP Table user_quiz_history;
 
 select c.id, c.name, c.parent_id, IFNULL(pp.name, 'Top Category') as category_name
 from categories c
@@ -297,26 +349,27 @@ FROM
 WHERE
     q.slug = 'general-knowledge-quiz';
 
-    SELECT q.id, q.question_text, qt.type, qt.time_per_question, qt.slug as question_type_slug
-                FROM questions q
-                JOIN question_type qt ON q.question_type = qt.id
-                WHERE q.quiz_id = 1;
+SELECT q.id, q.question_text, qt.type, qt.time_per_question, qt.slug as question_type_slug
+FROM questions q
+    JOIN question_type qt ON q.question_type = qt.id
+WHERE
+    q.quiz_id = 1;
 
-
-
-                SELECT 
-            pmtq.id AS mock_test_question_id,
-            q.id AS question_id,
-            q.question_text,
-            a.id AS answer_id,
-            a.answer,
-            a.isCorrect,
-            a.reason
-        FROM programmes_mock_test_questions pmtq
-        JOIN questions q ON pmtq.qid = q.id
-        JOIN answers a ON q.id = a.question_id
-        WHERE pmtq.programmes_mock_test_id =1
-        ORDER BY pmtq.id, a.id;
+SELECT
+    pmtq.id AS mock_test_question_id,
+    q.id AS question_id,
+    q.question_text,
+    a.id AS answer_id,
+    a.answer,
+    a.isCorrect,
+    a.reason
+FROM
+    programmes_mock_test_questions pmtq
+    JOIN questions q ON pmtq.qid = q.id
+    JOIN answers a ON q.id = a.question_id
+WHERE
+    pmtq.programmes_mock_test_id = 1
+ORDER BY pmtq.id, a.id;
 
          SELECT 
     pmtq.id AS mock_test_question_id,
@@ -331,14 +384,19 @@ JOIN answers a ON q.id = a.question_id
 WHERE pmtq.programmes_mock_test_id = :mockTestId
 GROUP BY pmtq.id, q.id;
 
+select *
+from
+    programmes_mock_test_questions as pmtq
+    left join questions as q on q.id = pmtq.qid
+    left join answers as a on q.id = a.question_id
+where
+    pmtq.programmes_mock_test_id = 1;
 
-select * from programmes_mock_test_questions as pmtq left join questions as q on q.id=pmtq.qid left join answers as a on q.id=a.question_id where pmtq.programmes_mock_test_id=1;
-INSERT INTO `usertype` (`role`) 
-VALUES 
-    ('admin'),
+INSERT INTO
+    `usertype` (`role`)
+VALUES ('admin'),
     ('teacher'),
     ('student');
-
 
 INSERT INTO
     `users` (
@@ -357,111 +415,659 @@ VALUES (
     );
 
 -- insert categories
-INSERT INTO `categories` (`name`, `slug`, `parent_id`) VALUES 
-('Science', 'science', NULL),
-('Mathematics', 'mathematics', NULL),
-('Physics', 'physics', 1),
-('Chemistry', 'chemistry', 1),
-('Biology', 'biology', 1),
-('Algebra', 'algebra', 2),
-('Calculus', 'calculus', 2),
-('Geometry', 'geometry', 2),
-('History', 'history', NULL),
-('World History', 'world-history', 9),
-('Modern History', 'modern-history', 9),
-('Literature', 'literature', NULL),
-('English Literature', 'english-literature', 12),
-('French Literature', 'french-literature', 12),
-('Computer Science', 'computer-science', NULL),
-('Programming', 'programming', 15),
-('Data Science', 'data-science', 15),
-('Artificial Intelligence', 'artificial-intelligence', 15),
-('Arts', 'arts', NULL),
-('Painting', 'painting', 19),
-('Sculpture', 'sculpture', 19),
-('Music', 'music', NULL),
-('Classical Music', 'classical-music', 22),
-('Jazz Music', 'jazz-music', 22);
+INSERT INTO
+    `categories` (`name`, `slug`, `parent_id`)
+VALUES ('Science', 'science', NULL),
+    (
+        'Mathematics',
+        'mathematics',
+        NULL
+    ),
+    ('Physics', 'physics', 1),
+    ('Chemistry', 'chemistry', 1),
+    ('Biology', 'biology', 1),
+    ('Algebra', 'algebra', 2),
+    ('Calculus', 'calculus', 2),
+    ('Geometry', 'geometry', 2),
+    ('History', 'history', NULL),
+    (
+        'World History',
+        'world-history',
+        9
+    ),
+    (
+        'Modern History',
+        'modern-history',
+        9
+    ),
+    (
+        'Literature',
+        'literature',
+        NULL
+    ),
+    (
+        'English Literature',
+        'english-literature',
+        12
+    ),
+    (
+        'French Literature',
+        'french-literature',
+        12
+    ),
+    (
+        'Computer Science',
+        'computer-science',
+        NULL
+    ),
+    (
+        'Programming',
+        'programming',
+        15
+    ),
+    (
+        'Data Science',
+        'data-science',
+        15
+    ),
+    (
+        'Artificial Intelligence',
+        'artificial-intelligence',
+        15
+    ),
+    ('Arts', 'arts', NULL),
+    ('Painting', 'painting', 19),
+    ('Sculpture', 'sculpture', 19),
+    ('Music', 'music', NULL),
+    (
+        'Classical Music',
+        'classical-music',
+        22
+    ),
+    (
+        'Jazz Music',
+        'jazz-music',
+        22
+    );
 
-INSERT INTO `question_type` (`type`, `slug`, `time_per_question`) VALUES 
-('Multiple Choice', 'multiple-choice', '30'),
-('True or False', 'true-or-false', '15'),
-('Short Answer', 'short-answer', '45'),
-('Fill in the Blank', 'fill-in-the-blank', '40'),
-('Matching', 'matching', '60'),
-('Essay', 'essay', '120');
+INSERT INTO
+    `question_type` (
+        `type`,
+        `slug`,
+        `time_per_question`
+    )
+VALUES (
+        'Multiple Choice',
+        'multiple-choice',
+        '30'
+    ),
+    (
+        'True or False',
+        'true-or-false',
+        '15'
+    ),
+    (
+        'Short Answer',
+        'short-answer',
+        '45'
+    ),
+    (
+        'Fill in the Blank',
+        'fill-in-the-blank',
+        '40'
+    ),
+    ('Matching', 'matching', '60'),
+    ('Essay', 'essay', '120');
 
-INSERT INTO `level` (`level`) VALUES 
-('Beginner'),
-('Intermediate'),
-('Advanced'),
-('Expert');
+INSERT INTO
+    `level` (`level`)
+VALUES ('Beginner'),
+    ('Intermediate'),
+    ('Advanced'),
+    ('Expert');
 
+INSERT INTO
+    `quizzes` (
+        `title`,
+        `description`,
+        `category_id`,
+        `user_id`,
+        `slug`,
+        `difficulty_level`
+    )
+VALUES (
+        'General Knowledge Quiz',
+        'A fun quiz covering various topics like science, history, and more.',
+        1,
+        1,
+        'general-knowledge-quiz',
+        1
+    ),
+    (
+        'Advanced Math Quiz',
+        'A challenging quiz for advanced mathematics enthusiasts.',
+        2,
+        2,
+        'advanced-math-quiz',
+        3
+    ),
+    (
+        'World History Quiz',
+        'Test your knowledge about the history of the world.',
+        9,
+        3,
+        'world-history-quiz',
+        2
+    ),
+    (
+        'Literature Quiz',
+        'A quiz about famous literary works and authors.',
+        12,
+        1,
+        'literature-quiz',
+        2
+    ),
+    (
+        'Computer Science Quiz',
+        'A quiz for computer science lovers with topics ranging from algorithms to programming languages.',
+        15,
+        4,
+        'computer-science-quiz',
+        3
+    ),
+    (
+        'Music Theory Quiz',
+        'A quiz about the fundamentals of music theory and musical compositions.',
+        22,
+        5,
+        'music-theory-quiz',
+        2
+    );
 
-INSERT INTO `quizzes` (`title`, `description`, `category_id`, `user_id`, `slug`, `difficulty_level`) VALUES
-('General Knowledge Quiz', 'A fun quiz covering various topics like science, history, and more.', 1, 1, 'general-knowledge-quiz', 1),
-('Advanced Math Quiz', 'A challenging quiz for advanced mathematics enthusiasts.', 2, 2, 'advanced-math-quiz', 3),
-('World History Quiz', 'Test your knowledge about the history of the world.', 9, 3, 'world-history-quiz', 2),
-('Literature Quiz', 'A quiz about famous literary works and authors.', 12, 1, 'literature-quiz', 2),
-('Computer Science Quiz', 'A quiz for computer science lovers with topics ranging from algorithms to programming languages.', 15, 4, 'computer-science-quiz', 3),
-('Music Theory Quiz', 'A quiz about the fundamentals of music theory and musical compositions.', 22, 5, 'music-theory-quiz', 2);
+INSERT INTO
+    `questions` (
+        `quiz_id`,
+        `question_text`,
+        `question_type`
+    )
+VALUES (
+        1,
+        'What is the capital of France?',
+        1
+    ), -- Multiple Choice question for Quiz 1
+    (
+        2,
+        'Solve for x: 2x + 3 = 7',
+        2
+    ), -- True/False question for Quiz 2
+    (
+        3,
+        'Who was the first president of the United States?',
+        1
+    ), -- Multiple Choice question for Quiz 3
+    (
+        4,
+        'What is the atomic number of Oxygen?',
+        2
+    ), -- True/False question for Quiz 4
+    (
+        5,
+        'Which programming language is known as the "mother of all languages"?',
+        1
+    );
+-- Multiple Choice question for Quiz 5
+INSERT INTO
+    `answers` (
+        `question_id`,
+        `answer`,
+        `reason`,
+        `isCorrect`
+    )
+VALUES (
+        1,
+        'Paris',
+        'Paris is the capital of France.',
+        TRUE
+    ), -- Correct answer for Question 1
+    (
+        1,
+        'Berlin',
+        'Berlin is the capital of Germany.',
+        FALSE
+    ), -- Incorrect answer for Question 1
+    (
+        1,
+        'Madrid',
+        'Madrid is the capital of Spain.',
+        FALSE
+    ), -- Incorrect answer for Question 1
+    (
+        2,
+        'x = 2',
+        'Solving the equation 2x + 3 = 7 gives x = 2.',
+        TRUE
+    ), -- Correct answer for Question 2
+    (
+        2,
+        'x = 3',
+        'This is an incorrect value for x in the equation 2x + 3 = 7.',
+        FALSE
+    ), -- Incorrect answer for Question 2
+    (
+        3,
+        'George Washington',
+        'George Washington was the first president of the United States.',
+        TRUE
+    ), -- Correct answer for Question 3
+    (
+        3,
+        'Abraham Lincoln',
+        'Abraham Lincoln was the 16th president of the United States, not the first.',
+        FALSE
+    ), -- Incorrect answer for Question 3
+    (
+        4,
+        '8',
+        'The atomic number of Oxygen is 8.',
+        TRUE
+    ), -- Correct answer for Question 4
+    (
+        4,
+        '10',
+        'This is incorrect as Oxygen has the atomic number 8, not 10.',
+        FALSE
+    ), -- Incorrect answer for Question 4
+    (
+        5,
+        'Fortran',
+        'Fortran is considered the mother of all programming languages.',
+        TRUE
+    ), -- Correct answer for Question 5
+    (
+        5,
+        'C',
+        'C is not considered the "mother of all languages".',
+        FALSE
+    );
+-- Incorrect answer for Question 5
+INSERT INTO
+    `programmes` (
+        `name`,
+        `slug`,
+        `description`,
+        `category_id`
+    )
+VALUES (
+        'IOE Preparation Test',
+        'ioe-preparation-test',
+        'A comprehensive test designed to prepare students for the IOE entrance exam.',
+        1
+    ),
+    (
+        'GRE Preparation Test',
+        'gre-preparation-test',
+        'Test series to help students prepare for the Graduate Record Examination (GRE).',
+        2
+    ),
+    (
+        'IELTS Preparation Test',
+        'ielts-preparation-test',
+        'Practice test for the International English Language Testing System (IELTS).',
+        12
+    ),
+    (
+        'JEE Main Preparation Test',
+        'jee-main-preparation-test',
+        'Test series for students preparing for the JEE Main engineering entrance exam.',
+        2
+    ),
+    (
+        'Civil Services Examination Mock Test',
+        'civil-services-exam-mock-test',
+        'Mock tests for students preparing for civil services exams.',
+        9
+    ),
+    (
+        'SAT Test Preparation',
+        'sat-test-preparation',
+        'Practice tests for students planning to take the SAT exam for college admissions.',
+        2
+    ),
+    (
+        'Medical Entrance Test Preparation',
+        'medical-entrance-test-preparation',
+        'Test series for students preparing for medical entrance exams like NEET.',
+        1
+    );
 
-INSERT INTO `questions` (`quiz_id`, `question_text`, `question_type`) VALUES
-(1, 'What is the capital of France?', 1),  -- Multiple Choice question for Quiz 1
-(2, 'Solve for x: 2x + 3 = 7', 2),       -- True/False question for Quiz 2
-(3, 'Who was the first president of the United States?', 1),  -- Multiple Choice question for Quiz 3
-(4, 'What is the atomic number of Oxygen?', 2),  -- True/False question for Quiz 4
-(5, 'Which programming language is known as the "mother of all languages"?', 1); -- Multiple Choice question for Quiz 5
+INSERT INTO
+    `programmes_mock_test` (`name`, `time`, `program_id`)
+VALUES (
+        'Test 1 - IOE Preparation',
+        60,
+        1
+    ), -- Mock Test 1 for IOE Preparation Test
+    (
+        'Test 2 - IOE Preparation',
+        75,
+        1
+    ), -- Mock Test 2 for IOE Preparation Test
+    (
+        'Mock Test - GRE Preparation',
+        120,
+        2
+    ), -- Mock Test for GRE Preparation Test
+    (
+        'Chapterwise Test - GRE Preparation',
+        90,
+        2
+    ), -- Chapterwise Test for GRE Preparation Test
+    (
+        'Test 1 - IELTS Preparation',
+        60,
+        3
+    ), -- Test 1 for IELTS Preparation Test
+    (
+        'Mock Test - IELTS Preparation',
+        90,
+        3
+    ), -- Mock Test for IELTS Preparation Test
+    (
+        'Test 1 - JEE Main Preparation',
+        120,
+        4
+    ), -- Test 1 for JEE Main Preparation Test
+    (
+        'Chapterwise Test - JEE Main Preparation',
+        90,
+        4
+    ), -- Chapterwise Test for JEE Main Preparation Test
+    (
+        'Mock Test - Civil Services Exam',
+        150,
+        5
+    ), -- Mock Test for Civil Services Examination
+    (
+        'Test 1 - SAT Test Preparation',
+        90,
+        6
+    ), -- Test 1 for SAT Test Preparation
+    (
+        'Chapterwise Test - SAT Test Preparation',
+        60,
+        6
+    ), -- Chapterwise Test for SAT Test Preparation
+    (
+        'Mock Test - Medical Entrance',
+        180,
+        7
+    );
+-- Mock Test for Medical Entrance Test
+INSERT INTO
+    `programmes_mock_test_questions` (
+        `qid`,
+        `programmes_mock_test_id`
+    )
+VALUES (1, 1), -- Question 1 from 'Test 1 - IOE Preparation' (programmes_mock_test_id = 1)
+    (2, 1), -- Question 2 from 'Test 1 - IOE Preparation' (programmes_mock_test_id = 1)
+    (3, 2), -- Question 3 from 'Test 2 - IOE Preparation' (programmes_mock_test_id = 2)
+    (4, 2), -- Question 4 from 'Test 2 - IOE Preparation' (programmes_mock_test_id = 2)
+    (5, 3), -- Question 5 from 'Mock Test - GRE Preparation' (programmes_mock_test_id = 3)
+    (1, 3), -- Question 1 from 'Mock Test - GRE Preparation' (programmes_mock_test_id = 3)
+    (2, 4), -- Question 2 from 'Chapterwise Test - GRE Preparation' (programmes_mock_test_id = 4)
+    (3, 4), -- Question 3 from 'Chapterwise Test - GRE Preparation' (programmes_mock_test_id = 4)
+    (4, 5), -- Question 4 from 'Test 1 - IELTS Preparation' (programmes_mock_test_id = 5)
+    (5, 5), -- Question 5 from 'Test 1 - IELTS Preparation' (programmes_mock_test_id = 5)
+    (1, 6), -- Question 1 from 'Mock Test - IELTS Preparation' (programmes_mock_test_id = 6)
+    (2, 6);
+-- Question 2 from 'Mock Test - IELTS Preparation' (programmes_mock_test_id = 6)
+INSERT INTO
+    `questions` (
+        `quiz_id`,
+        `question_text`,
+        `question_type`
+    )
+VALUES (
+        1,
+        'What is the largest planet in our solar system?',
+        1
+    ),
+    (
+        1,
+        'What is the capital of Australia?',
+        1
+    ),
+    (
+        1,
+        'Who wrote the play "Romeo and Juliet"?',
+        1
+    ),
+    (
+        1,
+        'What is the smallest country in the world by land area?',
+        1
+    ),
+    (
+        1,
+        'How many continents are there on Earth?',
+        1
+    ),
+    (
+        1,
+        'What is the chemical symbol for water?',
+        1
+    ),
+    (
+        1,
+        'What year did the Titanic sink?',
+        1
+    ),
+    (
+        1,
+        'What is the hardest natural substance on Earth?',
+        1
+    ),
+    (
+        1,
+        'Which planet is known as the Red Planet?',
+        1
+    ),
+    (
+        1,
+        'Who painted the Mona Lisa?',
+        1
+    ),
+    (
+        1,
+        'What is the currency of Japan?',
+        1
+    ),
+    (
+        1,
+        'What is the tallest mountain in the world?',
+        1
+    ),
+    (
+        1,
+        'In which year did World War II end?',
+        1
+    ),
+    (
+        1,
+        'What is the smallest ocean in the world?',
+        1
+    ),
+    (
+        1,
+        'How many bones are there in the human body?',
+        1
+    ),
+    (
+        1,
+        'What is the capital of Canada?',
+        1
+    ),
+    (
+        1,
+        'What is the most widely spoken language in the world?',
+        1
+    ),
+    (
+        1,
+        'Which element has the chemical symbol "O"?',
+        1
+    ),
+    (
+        1,
+        'Who developed the theory of relativity?',
+        1
+    ),
+    (
+        1,
+        'What is the largest desert in the world?',
+        1
+    );
 
-INSERT INTO `answers` (`question_id`, `answer`, `reason`, `isCorrect`) VALUES
-(1, 'Paris', 'Paris is the capital of France.', TRUE),    -- Correct answer for Question 1
-(1, 'Berlin', 'Berlin is the capital of Germany.', FALSE), -- Incorrect answer for Question 1
-(1, 'Madrid', 'Madrid is the capital of Spain.', FALSE),  -- Incorrect answer for Question 1
-(2, 'x = 2', 'Solving the equation 2x + 3 = 7 gives x = 2.', TRUE), -- Correct answer for Question 2
-(2, 'x = 3', 'This is an incorrect value for x in the equation 2x + 3 = 7.', FALSE), -- Incorrect answer for Question 2
-(3, 'George Washington', 'George Washington was the first president of the United States.', TRUE), -- Correct answer for Question 3
-(3, 'Abraham Lincoln', 'Abraham Lincoln was the 16th president of the United States, not the first.', FALSE), -- Incorrect answer for Question 3
-(4, '8', 'The atomic number of Oxygen is 8.', TRUE),  -- Correct answer for Question 4
-(4, '10', 'This is incorrect as Oxygen has the atomic number 8, not 10.', FALSE),  -- Incorrect answer for Question 4
-(5, 'Fortran', 'Fortran is considered the mother of all programming languages.', TRUE), -- Correct answer for Question 5
-(5, 'C', 'C is not considered the "mother of all languages".', FALSE);  -- Incorrect answer for Question 5
+INSERT INTO
+    `answers` (
+        `question_id`,
+        `answer`,
+        `isCorrect`
+    )
+VALUES (1, 'Earth', FALSE),
+    (1, 'Mars', FALSE),
+    (1, 'Jupiter', TRUE),
+    (1, 'Saturn', FALSE),
+    (2, 'Sydney', FALSE),
+    (2, 'Melbourne', FALSE),
+    (2, 'Canberra', TRUE),
+    (2, 'Brisbane', FALSE),
+    (3, 'Charles Dickens', FALSE),
+    (
+        3,
+        'William Shakespeare',
+        TRUE
+    ),
+    (3, 'George Orwell', FALSE),
+    (3, 'Mark Twain', FALSE),
+    (4, 'Monaco', FALSE),
+    (4, 'Vatican City', TRUE),
+    (4, 'Malta', FALSE),
+    (4, 'San Marino', FALSE),
+    (5, '5', FALSE),
+    (5, '6', FALSE),
+    (5, '7', TRUE),
+    (5, '8', FALSE),
+    (6, 'CO2', FALSE),
+    (6, 'O2', FALSE),
+    (6, 'H2O', TRUE),
+    (6, 'H2SO4', FALSE),
+    (7, '1912', TRUE),
+    (7, '1920', FALSE),
+    (7, '1918', FALSE),
+    (7, '1905', FALSE),
+    (8, 'Gold', FALSE),
+    (8, 'Iron', FALSE),
+    (8, 'Diamond', TRUE),
+    (8, 'Silver', FALSE),
+    (9, 'Venus', FALSE),
+    (9, 'Mars', TRUE),
+    (9, 'Jupiter', FALSE),
+    (9, 'Saturn', FALSE),
+    (10, 'Vincent van Gogh', FALSE),
+    (10, 'Leonardo da Vinci', TRUE),
+    (10, 'Pablo Picasso', FALSE),
+    (10, 'Claude Monet', FALSE),
+    (11, 'Won', FALSE),
+    (11, 'Peso', FALSE),
+    (11, 'Yen', TRUE),
+    (11, 'Rupee', FALSE),
+    (12, 'K2', FALSE),
+    (12, 'Mount Everest', TRUE),
+    (12, 'Kangchenjunga', FALSE),
+    (12, 'Makalu', FALSE),
+    (13, '1940', FALSE),
+    (13, '1942', FALSE),
+    (13, '1945', TRUE),
+    (13, '1948', FALSE),
+    (14, 'Indian Ocean', FALSE),
+    (14, 'Pacific Ocean', FALSE),
+    (14, 'Arctic Ocean', TRUE),
+    (14, 'Atlantic Ocean', FALSE),
+    (15, '200', FALSE),
+    (15, '206', TRUE),
+    (15, '220', FALSE),
+    (15, '215', FALSE),
+    (16, 'Toronto', FALSE),
+    (16, 'Vancouver', FALSE),
+    (16, 'Ottawa', TRUE),
+    (16, 'Montreal', FALSE),
+    (17, 'English', TRUE),
+    (17, 'Mandarin', FALSE),
+    (17, 'Spanish', FALSE),
+    (17, 'Hindi', FALSE),
+    (18, 'H', FALSE),
+    (18, 'O', TRUE),
+    (18, 'C', FALSE),
+    (18, 'N', FALSE),
+    (19, 'Isaac Newton', FALSE),
+    (19, 'Albert Einstein', TRUE),
+    (19, 'Galileo Galilei', FALSE),
+    (19, 'Nikola Tesla', FALSE),
+    (20, 'Sahara Desert', TRUE),
+    (20, 'Gobi Desert', FALSE),
+    (20, 'Kalahari Desert', FALSE),
+    (20, 'Arabian Desert', FALSE);
 
+SELECT 
+                        qa.question_id,
+                        qa.answer_id as selected_id,
+                        qa.is_correct,
+                        q.question_text,
+                        (
+                            SELECT JSON_ARRAYAGG(
+                                JSON_OBJECT(
+                                    'id', a.id,
+                                    'answer_text', a.answer,
+                                    'is_correct', a.isCorrect,
+                                    'explanation', COALESCE(a.reason, '')
+                                )
+                            )
+                            FROM answers a
+                            WHERE a.question_id = q.id
+                        ) as all_answers
+                    FROM quiz_answers qa
+                    JOIN questions q ON qa.question_id = q.id
+                    WHERE qa.attempt_id = :attempt_id
+                    ORDER BY qa.id;
 
-INSERT INTO `programmes` (`name`, `slug`, `description`, `category_id`) VALUES
-('IOE Preparation Test', 'ioe-preparation-test', 'A comprehensive test designed to prepare students for the IOE entrance exam.', 1),
-('GRE Preparation Test', 'gre-preparation-test', 'Test series to help students prepare for the Graduate Record Examination (GRE).', 2),
-('IELTS Preparation Test', 'ielts-preparation-test', 'Practice test for the International English Language Testing System (IELTS).', 12),
-('JEE Main Preparation Test', 'jee-main-preparation-test', 'Test series for students preparing for the JEE Main engineering entrance exam.', 2),
-('Civil Services Examination Mock Test', 'civil-services-exam-mock-test', 'Mock tests for students preparing for civil services exams.', 9),
-('SAT Test Preparation', 'sat-test-preparation', 'Practice tests for students planning to take the SAT exam for college admissions.', 2),
-('Medical Entrance Test Preparation', 'medical-entrance-test-preparation', 'Test series for students preparing for medical entrance exams like NEET.', 1);
+SELECT
+    qa.question_id,
+    qa.answer_id as selected_answer_id,
+    qa.is_correct,
+    q.question_text,
+    q.id as qid,
+    a.id as aid,
+    a.answer as answer_text,
+    a.isCorrect as is_correct,
+    a.reason
+FROM
+    quiz_answers qa
+    JOIN questions q ON qa.question_id = q.id
+    JOIN answers a ON q.id = a.question_id
+WHERE
+    qa.attempt_id = 47
+ORDER BY qa.question_order;
 
-
-INSERT INTO `programmes_mock_test` (`name`, `time`, `program_id`) VALUES
-('Test 1 - IOE Preparation', 60, 1),  -- Mock Test 1 for IOE Preparation Test
-('Test 2 - IOE Preparation', 75, 1),  -- Mock Test 2 for IOE Preparation Test
-('Mock Test - GRE Preparation', 120, 2),  -- Mock Test for GRE Preparation Test
-('Chapterwise Test - GRE Preparation', 90, 2),  -- Chapterwise Test for GRE Preparation Test
-('Test 1 - IELTS Preparation', 60, 3),  -- Test 1 for IELTS Preparation Test
-('Mock Test - IELTS Preparation', 90, 3),  -- Mock Test for IELTS Preparation Test
-('Test 1 - JEE Main Preparation', 120, 4),  -- Test 1 for JEE Main Preparation Test
-('Chapterwise Test - JEE Main Preparation', 90, 4),  -- Chapterwise Test for JEE Main Preparation Test
-('Mock Test - Civil Services Exam', 150, 5),  -- Mock Test for Civil Services Examination
-('Test 1 - SAT Test Preparation', 90, 6),  -- Test 1 for SAT Test Preparation
-('Chapterwise Test - SAT Test Preparation', 60, 6),  -- Chapterwise Test for SAT Test Preparation
-('Mock Test - Medical Entrance', 180, 7);  -- Mock Test for Medical Entrance Test
-
-
-INSERT INTO `programmes_mock_test_questions` (`qid`, `programmes_mock_test_id`) VALUES
-(1, 1),  -- Question 1 from 'Test 1 - IOE Preparation' (programmes_mock_test_id = 1)
-(2, 1),  -- Question 2 from 'Test 1 - IOE Preparation' (programmes_mock_test_id = 1)
-(3, 2),  -- Question 3 from 'Test 2 - IOE Preparation' (programmes_mock_test_id = 2)
-(4, 2),  -- Question 4 from 'Test 2 - IOE Preparation' (programmes_mock_test_id = 2)
-(5, 3),  -- Question 5 from 'Mock Test - GRE Preparation' (programmes_mock_test_id = 3)
-(1, 3),  -- Question 1 from 'Mock Test - GRE Preparation' (programmes_mock_test_id = 3)
-(2, 4),  -- Question 2 from 'Chapterwise Test - GRE Preparation' (programmes_mock_test_id = 4)
-(3, 4),  -- Question 3 from 'Chapterwise Test - GRE Preparation' (programmes_mock_test_id = 4)
-(4, 5),  -- Question 4 from 'Test 1 - IELTS Preparation' (programmes_mock_test_id = 5)
-(5, 5),  -- Question 5 from 'Test 1 - IELTS Preparation' (programmes_mock_test_id = 5)
-(1, 6),  -- Question 1 from 'Mock Test - IELTS Preparation' (programmes_mock_test_id = 6)
-(2, 6);  -- Question 2 from 'Mock Test - IELTS Preparation' (programmes_mock_test_id = 6)
+SELECT mta.*, pmt.name, (
+        mta.total_questions - (
+            mta.correct_answers + mta.wrong_answers
+        )
+    ) as unattempted, TIMESTAMPDIFF(
+        SECOND, mta.started_at, mta.completed_at
+    ) as time_taken
+FROM
+    mock_test_attempts mta
+    JOIN programmes_mock_test pmt ON mta.mock_test_id = pmt.id
+WHERE
+    mta.user_id = 6;

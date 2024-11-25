@@ -734,3 +734,114 @@ h1 {
   margin: 300px auto;
   padding: 24px;
 }
+
+
+/* Add to your CSS */
+.quiz-play-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.question-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.option {
+  display: block;
+  padding: 15px;
+  margin: 10px 0;
+  background: #f8f9fa;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.option:hover {
+  background: #e9ecef;
+}
+
+.quiz-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.results-container {
+  text-align: center;
+}
+
+.score-circle {
+  width: 150px;
+  height: 150px;
+  margin: 20px auto;
+  border-radius: 50%;
+  background: conic-gradient(#2ecc71 var(--score), #ecf0f1 0deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-item {
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 5px;
+}
+
+.review-item.correct {
+  background: #d4edda;
+}
+
+.review-item.wrong {
+  background: #f8d7da;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.history-table th,
+.history-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.history-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.history-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.review-btn {
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.review-btn:hover {
+  background-color: #0056b3;
+}

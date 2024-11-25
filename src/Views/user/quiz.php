@@ -1,5 +1,6 @@
 
 
+
     <div class="quiz-container">
         <h1>Available Quizzes</h1>
         <ul class="quiz-list">
@@ -12,3 +13,6 @@
             ?>
         </ul>
     </div>
+
+    <?php include __DIR__ . '/auth/login.php'; ?>
+    <?php include __DIR__ . '/auth/register.php'; ?>

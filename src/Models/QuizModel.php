@@ -34,6 +34,7 @@ class QuizModel extends BaseModel
         $result = $this->get([['field' => 'id', 'operator' => '=', 'value' => $id]]);
         return $result[0] ?? null;
     }
+    
     public function getQuestion($level, $num, $quiz_id)
     {
         $sql = "SELECT q.* 
@@ -134,6 +135,63 @@ class QuizModel extends BaseModel
             error_log("Error fetching questions for quiz ID $quizId: " . $e->getMessage());
             return [];
             // Alternatively: throw new \Exception("Error fetching questions: " . $e->getMessage());
+        }
+    }
+    public function getBySlug($slug) 
+    {
+        $sql = "SELECT q.*, c.name as category_name, l.level as difficulty_name,
+                (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count
+                FROM quizzes q
+                LEFT JOIN categories c ON c.id = q.category_id
+                LEFT JOIN level l ON l.id = q.difficulty_level
+                WHERE q.slug = :slug";
+    
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['slug' => $slug]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    public function getRandomQuestions($quizId, $count)
+    {
+        $sql = "SELECT 
+                    q.id,
+                    q.question_text,
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', a.id,
+                            'text', a.answer,
+                            'correct_answer', a.isCorrect,
+                            'reason', COALESCE(a.reason, '')
+                        )
+                    ) as answers
+                FROM questions q
+                LEFT JOIN answers a ON q.id = a.question_id
+                WHERE q.quiz_id = :quiz_id
+                GROUP BY q.id
+                ORDER BY RAND()
+                LIMIT :count";
+    
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindValue(':quiz_id', $quizId, PDO::PARAM_INT);
+            $stmt->bindValue(':count', $count, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Process answers
+            foreach ($questions as &$question) {
+                if ($question['answers']) {
+                    $question['answers'] = json_decode($question['answers'], true);
+                } else {
+                    $question['answers'] = [];
+                }
+            }
+            
+            return $questions;
+        } catch (\PDOException $e) {
+            error_log("Error fetching random questions: " . $e->getMessage());
+            return [];
         }
     }
 }

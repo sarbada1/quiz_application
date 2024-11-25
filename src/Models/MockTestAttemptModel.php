@@ -44,6 +44,27 @@ class MockTestAttemptModel extends BaseModel
             throw $e;
         }
     }
+    public function getAllAttempts()
+{
+    try {
+        $sql = "SELECT mta.*, 
+                u.username,
+                pmt.name as mock_test_name,
+                (mta.total_questions - (mta.correct_answers + mta.wrong_answers)) as unattempted,
+                TIMESTAMPDIFF(SECOND, mta.started_at, mta.completed_at) as time_taken
+                FROM mock_test_attempts mta
+                JOIN users u ON mta.user_id = u.id 
+                JOIN programmes_mock_test pmt ON mta.mock_test_id = pmt.id
+";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (\PDOException $e) {
+        error_log("Error getting all attempts: " . $e->getMessage());
+        return [];
+    }
+}
     public function completeAttempt($attemptId, $data)
     {
         try {
@@ -54,7 +75,7 @@ class MockTestAttemptModel extends BaseModel
                     score = :score,
                     time_taken = :time_taken,
                     completion_status = 'completed',
-                    completed_at = CURRENT_TIMESTAMP
+                    completed_at = NOW()
                     WHERE id = :attempt_id";
     
             $stmt = $this->pdo->prepare($sql);
@@ -104,5 +125,25 @@ class MockTestAttemptModel extends BaseModel
         $stmt->execute(['attemptId' => $attemptId]);
         
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    public function getUserHistory($userId)
+    {
+        try {
+            $sql = "SELECT 
+                    mta.*,
+                    pmt.name,
+                    (mta.total_questions - (mta.correct_answers + mta.wrong_answers)) as unattempted,
+                    TIMESTAMPDIFF(SECOND, mta.started_at, mta.completed_at) as time_taken
+                FROM mock_test_attempts mta
+                JOIN programmes_mock_test pmt ON mta.mock_test_id = pmt.id
+                WHERE mta.user_id = :user_id ";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['user_id' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            error_log("Error getting mock test history: " . $e->getMessage());
+            return [];
+        }
     }
 }

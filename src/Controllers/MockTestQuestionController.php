@@ -248,6 +248,7 @@ class MockTestQuestionController extends Controller
         exit;
     }
 
+    
 
     public function delete($id)
     {

@@ -88,4 +88,10 @@ class QuestionModel extends BaseModel
     {
         return $this->delete([['field' => 'id', 'operator' => '=', 'value' => $id]]);
     }
+
+    public function getCount()
+    {
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM questions");
+        return $stmt->fetchColumn();
+    }
 }

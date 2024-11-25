@@ -3,6 +3,7 @@
 namespace MVC\Controllers;
 
 use MVC\Controller;
+use MVC\Models\MockTestAttemptModel;
 use MVC\Models\MockTestModel;
 use MVC\Models\ProgramModel;
 use MVC\Models\QuizModel;
@@ -13,12 +14,14 @@ class MockTestController extends Controller
     public $programModel;
     public $quizModel;
     private $mockTestModel;
+    private $mockTestAttemptModel;
 
     public function __construct(PDO $pdo)
     {
         $this->programModel = new ProgramModel($pdo);
         $this->quizModel = new QuizModel($pdo);
         $this->mockTestModel = new MockTestModel($pdo);
+        $this->mockTestAttemptModel = new MockTestAttemptModel($pdo);
     }
 
     public function index($id)
@@ -159,4 +162,14 @@ class MockTestController extends Controller
         header('Location: /admin/mocktest/list/' . $mocktest['program_id']);
         exit;
     }
+    public function showAttempts()
+{
+    $attempts = $this->mockTestAttemptModel->getAllAttempts();
+    
+    $content = $this->render('admin/mocktest/attempts', [
+        'attempts' => $attempts
+    ]);
+
+    echo $this->render('admin/layout', ['content' => $content]);
+}
 }

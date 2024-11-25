@@ -2,13 +2,15 @@
 
 namespace MVC\Controllers;
 
-use MVC\Controller;
-use MVC\Models\CategoryModel;
-use MVC\Models\ProgramModel;
-use MVC\Models\QuizModel;
-use MVC\Models\User;
-use MVC\Models\UserInfoModel;
 use PDO;
+use MVC\Controller;
+use MVC\Models\User;
+use MVC\Models\QuizModel;
+use MVC\Models\ProgramModel;
+use MVC\Models\CategoryModel;
+use MVC\Models\UserInfoModel;
+use MVC\Models\QuizAttemptModel;
+use MVC\Models\MockTestAttemptModel;
 
 class ProfileController extends Controller
 {
@@ -18,6 +20,8 @@ class ProfileController extends Controller
     public $categoryModel;
     public $programModel;
     protected $pdo;
+    private $quizAttemptModel;
+    private $mockTestAttemptModel;
 
     public function __construct(PDO $pdo)
     {
@@ -27,6 +31,8 @@ class ProfileController extends Controller
         $this->categoryModel = new CategoryModel($pdo);
         $this->quizModel = new QuizModel($pdo);
         $this->programModel = new ProgramModel($pdo);
+        $this->quizAttemptModel = new QuizAttemptModel($pdo);
+        $this->mockTestAttemptModel = new MockTestAttemptModel($pdo);
     }
 
     public function index()
@@ -35,18 +41,24 @@ class ProfileController extends Controller
         $user = $this->userModel->getById($id);
         $userinfo = $this->userinfoModel->getById($id);
         $categories = $this->categoryModel->getTopCategories($id);
-        $quizzes=$this->quizModel->getAll();
+        $quizzes = $this->quizModel->getAll();
         $programs = $this->programModel->getWithCategory();
-        $content = $this->uirender('user/profile', ['user' => $user, 
-        'userinfo' => $userinfo,
-        'categories'=>$categories,
-        'quizzes'=>$quizzes,
-        'programs'=>$programs,
-    ]);
+        $quizHistory = $this->quizAttemptModel->getUserHistory($_SESSION['user_id']);
+        $mocktestHistory = $this->mockTestAttemptModel->getUserHistory($_SESSION['user_id']);
+
+        $content = $this->uirender('user/profile', [
+            'user' => $user,
+            'userinfo' => $userinfo,
+            'categories' => $categories,
+            'quizzes' => $quizzes,
+            'programs' => $programs,
+            'quizHistory' => $quizHistory,
+            'mocktestHistory' => $mocktestHistory
+        ]);
         echo $this->uirender('user/layout', ['content' => $content]);
     }
 
-    public function addUserInfo() 
+    public function addUserInfo()
     {
         $id = $_SESSION['user_id'];
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -58,7 +70,7 @@ class ProfileController extends Controller
             $address = $_POST['address'] ?? '';
 
             // Update the user data
-            $this->userModel->editUser($id, $username,$email);
+            $this->userModel->editUser($id, $username, $email);
 
             // Check if user info exists
             $existingUserInfo = $this->userinfoModel->getById($id);

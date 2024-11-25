@@ -48,4 +48,10 @@ class QuestionReportModel extends BaseModel
             'status' => $status
         ]);
     }
+
+    public function getCount()
+    {
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM question_reports");
+        return $stmt->fetchColumn();
+    }
 }

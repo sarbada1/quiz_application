@@ -34,9 +34,7 @@
                 </div>
 
                 <div class="control-buttons">
-                    <button class="btn btn-save" onclick="saveAnswers()">
-                        <i class="fas fa-save"></i> Save
-                    </button>
+                
                     <button class="btn btn-submit" onclick="submitTest()">
                         <i class="fas fa-check-circle"></i> Submit
                     </button>

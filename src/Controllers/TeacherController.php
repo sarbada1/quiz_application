@@ -21,6 +21,17 @@ class TeacherController extends Controller
         $content = $this->render('admin/teacher/addTeacher');
         echo $this->render('admin/layout', ['content' => $content]);
     }
+    public function getDashboardCounts() {
+        $sql = "SELECT 
+            (SELECT COUNT(*) FROM users WHERE usertype_id = 3) as student_count,
+            (SELECT COUNT(*) FROM users WHERE usertype_id = 2) as teacher_count,
+            (SELECT COUNT(*) FROM questions) as question_count,
+            (SELECT COUNT(*) FROM question_reports) as report_count";
+            
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     public function addTeacher()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

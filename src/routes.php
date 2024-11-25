@@ -26,13 +26,39 @@ return [
     ['route' => '/user/login', 'controller' => AuthController::class, 'action' => 'userlogin', 'method' => 'POST'],
     ['route' => '/user/logout', 'controller' => AuthController::class, 'action' => 'userLogout', 'method' => 'GET'],
     ['route' => '/category/{slug}', 'controller' => CategoryController::class, 'action' => 'showCategory', 'method' => 'GET'],
-    ['route' => '/quiz', 'controller' => QuizController::class, 'action' => 'showQuiz', 'method' => 'GET'],
-    ['route' => '/quiz/{slug}', 'controller' => QuizController::class, 'action' => 'showQuizDetail', 'method' => 'GET'],
     ['route' => '/test', 'controller' => ProgramController::class, 'action' => 'showTest', 'method' => 'GET'],
     ['route' => '/test/{slug}', 'controller' => MockTestController::class, 'action' => 'showTestDetail', 'method' => 'GET'],
     ['route' => '/mocktest/{slug}', 'controller' => MockTestQuestionController::class, 'action' => 'showMockTest', 'method' => 'GET'],
 
-    ['route' => '/quiz/{slug}/start', 'controller' => QuizController::class, 'action' => 'startQuiz', 'method' => 'GET'],
+    // Add this near the top of routes array, before more specific routes
+    [
+        'route' => '/review/{attemptId}',
+        'controller' => QuizController::class,
+        'action' => 'getReview',
+        'method' => 'GET'
+    ],
+
+    [
+        'route' => '/review/{id}',
+        'controller' => 'MVC\Controllers\QuizController',
+        'action' => 'getReview',
+        'method' => 'GET'
+    ],
+    ['route' => '/quiz/submit', 'controller' => QuizController::class, 'action' => 'submitQuiz', 'method' => 'POST'],
+    ['route' => '/quiz/history', 'controller' => QuizController::class, 'action' => 'showHistory', 'method' => 'GET'],
+  
+    ['route' => '/quiz/{slug}/start/{count}', 'controller' => QuizController::class, 'action' => 'startQuiz', 'method' => 'GET'],
+
+    ['route' => '/quiz/{slug}', 'controller' => QuizController::class, 'action' => 'showQuizDetail', 'method' => 'GET'],
+    ['route' => '/quiz', 'controller' => QuizController::class, 'action' => 'showQuiz', 'method' => 'GET'],
+
+
+    [
+        'route' => '/ajax/quiz-answer',
+        'controller' => QuizController::class,
+        'action' => 'checkAnswer',
+        'method' => 'POST'
+    ],
 
     ['route' => '/admin', 'controller' => AuthController::class, 'action' => 'showDashboard', 'method' => 'GET'],
     ['route' => '/admin/login', 'controller' => AuthController::class, 'action' => 'showLoginForm', 'method' => 'GET'],
@@ -117,6 +143,7 @@ return [
     ['route' => '/admin/program/add', 'controller' => ProgramController::class, 'action' => 'index', 'method' => 'GET'],
     ['route' => '/admin/program/add', 'controller' => ProgramController::class, 'action' => 'add', 'method' => 'POST'],
     ['route' => '/admin/program/delete/{id}', 'controller' => ProgramController::class, 'action' => 'delete', 'method' => 'GET'],
+    ['route' => '/admin/mocktest/attempts', 'controller' => MockTestController::class, 'action' => 'showAttempts', 'method' => 'GET'],
 
     [
         'route' => '/question/report',
@@ -136,7 +163,7 @@ return [
         'action' => 'updateReportStatus',
         'method' => 'POST'
     ],
-    
+
     ['route' => '/ajax/filter-questions/{id}', 'controller' => QuestionController::class, 'action' => 'filterQuestion', 'method' => 'GET'],
     ['route' => '/ajax/toggle-question/{action}/{id}/{mocktestid}', 'controller' => MockTestQuestionController::class, 'action' => 'toggleQuestion', 'method' => 'GET'],
     [
@@ -159,6 +186,6 @@ return [
         'controller' => MockTestQuestionController::class,
         'action' => 'clearTestSession',
         'method' => 'GET'
-    ]
+    ],
 
 ];

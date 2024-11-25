@@ -2,12 +2,13 @@
 
 namespace MVC\Controllers;
 
+use PDO;
 use MVC\Controller;
-use MVC\Models\CategoryModel;
+use MVC\Models\QuizModel;
 use MVC\Models\LevelModel;
 use MVC\Models\ProgramModel;
-use MVC\Models\QuizModel;
-use PDO;
+use MVC\Models\CategoryModel;
+use MVC\Models\QuizAttemptModel;
 
 session_start();
 
@@ -17,6 +18,8 @@ class QuizController extends Controller
     public $levelModel;
     public $categoryModel;
     public $programModel;
+    private $quizAttemptModel;
+
 
 
     public function __construct(PDO $pdo)
@@ -25,6 +28,8 @@ class QuizController extends Controller
         $this->levelModel = new LevelModel($pdo);
         $this->categoryModel = new CategoryModel($pdo);
         $this->programModel = new ProgramModel($pdo);
+        $this->quizAttemptModel = new QuizAttemptModel($pdo); // Add this line
+
     }
 
     public function index()
@@ -57,39 +62,135 @@ class QuizController extends Controller
         echo $this->uirender('user/layout', ['content' => $content]);
     }
 
-    public function startQuiz($slug)
+
+    public function startQuiz($slug, $count = 10)
     {
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: /login');
+        error_log("Starting quiz with slug: $slug and count: $count"); // Debug log
+    
+        try {
+            if (!isset($_SESSION['user_id'])) {
+                $_SESSION['message'] = 'Please login to start the quiz';
+                header('Location: /quiz/' . $slug);
+                exit;
+            }
+    
+            $quiz = $this->quizModel->getBySlug($slug);
+            if (!$quiz) {
+                $_SESSION['message'] = 'Quiz not found';
+                header('Location: /quiz');
+                exit;
+            }
+    
+            error_log("Found quiz: " . json_encode($quiz)); // Debug log
+    
+            $questionCount = min((int)$count, 50);
+            
+            // Debug log attempt data
+            error_log("Attempting to create quiz attempt with data: " . json_encode([
+                'user_id' => $_SESSION['user_id'],
+                'quiz_id' => $quiz['id'],
+                'total_questions' => $questionCount
+            ]));
+    
+            // Create attempt
+            $attemptData = [
+                'user_id' => $_SESSION['user_id'],
+                'quiz_id' => $quiz['id'],
+                'total_questions' => $questionCount,
+                'started_at' => date('Y-m-d H:i:s')
+            ];
+    
+            $attemptId = $this->quizAttemptModel->createAttempt($attemptData);
+            
+            if (!$attemptId) {
+                throw new \Exception('Failed to create quiz attempt');
+            }
+    
+            error_log("Created attempt with ID: $attemptId"); // Debug log
+    
+            $questions = $this->quizModel->getRandomQuestions($quiz['id'], $questionCount);
+            if (empty($questions)) {
+                throw new \Exception('No questions found for this quiz');
+            }
+    
+            $content = $this->uirender('user/quiz/play', [
+                'quiz' => $quiz,
+                'questions' => $questions,
+                'attemptId' => $attemptId
+            ]);
+    
+            echo $this->uirender('user/layout', ['content' => $content]);
+    
+        } catch (\Exception $e) {
+            error_log("Error in startQuiz: " . $e->getMessage());
+            $_SESSION['message'] = $e->getMessage();
+            $_SESSION['status'] = 'error';
+            header('Location: /quiz/' . $slug);
             exit;
         }
+    }
 
-        $quiz = $this->quizModel->getQuizQuestionBySlug($slug);
-        if (!$quiz) {
-            header('location:/404.php');
-            echo "Quiz not found";
-            return;
-        }
-        $question = $this->quizModel->getQuestionsByQuizId($quiz['id']);
+    public function submitQuiz()
+    {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (!$data || !isset($data['attemptId']) || !isset($data['answers'])) {
+                throw new \Exception('Invalid request data');
+            }
     
-
-        $content = $this->uirender('user/question', [
-            'questions' => $question
-        ]);
-
-        echo $this->uirender('user/layout', ['content' => $content]);
-
+            // Save each answer with question order
+            foreach ($data['answers'] as $questionId => $answer) {
+                $this->quizAttemptModel->saveAnswer(
+                    $data['attemptId'],
+                    $questionId,
+                    $answer['answerId'],
+                    $answer['isCorrect'],
+                    $answer['questionOrder'] ?? 0
+                );
+            }
+    
+            // Complete the attempt
+            $success = $this->quizAttemptModel->completeAttempt($data['attemptId'], [
+                'correct_answers' => $data['correctCount'],
+                'wrong_answers' => $data['wrongCount'],
+                'score' => $data['score']
+            ]);
+    
+            if (!$success) {
+                throw new \Exception('Failed to save attempt');
+            }
+    
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'attemptId' => $data['attemptId'],
+                'score' => (float)$data['score'],
+                'correctCount' => (int)$data['correctCount'],
+                'wrongCount' => (int)$data['wrongCount'],
+                'totalQuestions' => (int)$data['totalQuestions']
+            ]);
+            
+        } catch (\Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
     public function showQuiz()
     {
         $quiz = $this->quizModel->getAll();
         $programs = $this->programModel->getWithCategory();
+        $isLoggedIn = isset($_SESSION['user_id']);
 
 
         $content = $this->uirender('user/quiz', [
             'quiz' => $quiz,
             'quizzes' => $quiz,
             'programs' => $programs,
+            'isLoggedIn' => $isLoggedIn,
         ]);
 
         echo $this->uirender('user/layout', ['content' => $content]);
@@ -209,4 +310,46 @@ class QuizController extends Controller
         header('Location: /admin/quiz/list');
         exit;
     }
+    public function getReview($attemptId)
+    {
+        try {
+            if (!isset($_SESSION['user_id'])) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized']);
+                exit;
+            }
+    
+            $reviewData = $this->quizAttemptModel->getReviewData($attemptId);
+            
+            if ($reviewData === false) {
+                throw new \Exception('Failed to load review data');
+            }
+    
+            echo json_encode([
+                'success' => true,
+                'answers' => $reviewData
+            ]);
+        } catch (\Exception $e) {
+            error_log("Review error: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    public function showHistory()
+{
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: /login');
+        exit;
+    }
+
+    $history = $this->quizAttemptModel->getUserHistory($_SESSION['user_id']);
+    
+    $content = $this->uirender('user/quiz/history', [
+        'history' => $history
+    ]);
+    
+    echo $this->uirender('user/layout', ['content' => $content]);
+}
 }

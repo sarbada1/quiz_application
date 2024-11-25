@@ -75,4 +75,38 @@ class MockTestModel extends BaseModel
     {
         return $this->delete([['field' => 'id', 'operator' => '=', 'value' => $id]]);
     }
+    public function saveProgress($data)
+{
+    $sql = "INSERT INTO saved_mock_test_progress 
+            (user_id, mock_test_id, question_id, selected_answer_id, remaining_time) 
+            VALUES (:user_id, :mock_test_id, :question_id, :selected_answer_id, :remaining_time)";
+            
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute($data);
+}
+
+public function clearSavedProgress($userId, $mockTestId)
+{
+    $sql = "DELETE FROM saved_mock_test_progress 
+            WHERE user_id = :user_id AND mock_test_id = :mock_test_id";
+            
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute([
+        'user_id' => $userId,
+        'mock_test_id' => $mockTestId
+    ]);
+}
+
+public function getProgress($userId, $mockTestId)
+{
+    $sql = "SELECT * FROM saved_mock_test_progress 
+            WHERE user_id = :user_id AND mock_test_id = :mock_test_id";
+            
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute([
+        'user_id' => $userId,
+        'mock_test_id' => $mockTestId
+    ]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 }

@@ -4,7 +4,7 @@
     </div>
     <nav class="sidebar-nav">
         <ul>
-            <li><a href="#"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/admin"><i class="fas fa-home"></i> Dashboard</a></li>
             <li class="has-submenu">
                 <a href="#" class="submenu-toggle">
                     <span><i class="fas fa-list-alt"></i> Category</span>
@@ -79,6 +79,7 @@
                     <li><a href="/admin/program/list"><i class="fas fa-eye"></i> View</a></li>
                 </ul>
             </li>
+            <li><a href="/admin/mocktest/attempts"><i class="fas fa-cog"></i> Mock Test Attempts</a></li>
             <li><a href="/admin/reports"><i class="fas fa-cog"></i> Report</a></li>
             <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
         </ul>

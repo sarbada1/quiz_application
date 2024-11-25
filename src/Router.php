@@ -34,6 +34,7 @@ class Router {
 
     public function dispatch($uri) {
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
+        $uri = strtok($uri, '?');
 
         // Apply middleware
         $request = ['uri' => $uri, 'method' => $method];
@@ -49,24 +50,33 @@ class Router {
 
         foreach ($this->routes as $route) {
             $pattern = $this->convertRouteToRegex($route['route']);
+            error_log("Checking route pattern: $pattern against URI: $uri");
+            
             if (preg_match($pattern, $uri, $matches) && $route['method'] === $method) {
                 array_shift($matches); // Remove the full match
                 $controllerClass = $route['controller'];
                 $action = $route['action'];
-
-                // Check if controller requires PDO
-                if ($this->pdo) {
-                    $controller = new $controllerClass($this->pdo);
-                } else {
-                    $controller = new $controllerClass();
+    
+                try {
+                    if ($this->pdo) {
+                        $controller = new $controllerClass($this->pdo);
+                    } else {
+                        $controller = new $controllerClass();
+                    }
+                    
+                    call_user_func_array([$controller, $action], $matches);
+                    return;
+                } catch (\Exception $e) {
+                    error_log("Route execution error: " . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Internal Server Error']);
+                    exit;
                 }
-                
-                call_user_func_array([$controller, $action], $matches);
-                return;
             }
         }
 
         // If no route matches
+        
         http_response_code(404);
         include 'src/404.php';
         exit();

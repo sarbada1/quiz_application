@@ -15,9 +15,10 @@
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($reports as $report): ?>
+            <?php 
+            $i=1;foreach ($reports as $report): ?>
                 <tr>
-                    <td><?= $report['id'] ?></td>
+                    <td><?= $i++ ?></td>
                     <td><?= htmlspecialchars($report['question_text']) ?></td>
                     <td><?= htmlspecialchars($report['reporter_name']) ?></td>
                     <td><?= htmlspecialchars($report['reason']) ?></td>

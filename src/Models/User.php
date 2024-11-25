@@ -3,25 +3,35 @@
 namespace MVC\Models;
 use PDO;
 class User extends BaseModel {
+    // Add constants for user types
+    const ADMIN_TYPE = 1;
+    const TEACHER_TYPE = 2;
+    const STUDENT_TYPE = 3;
+
     public function __construct(PDO $pdo) {
         parent::__construct($pdo, 'users');
     }
 
     public function validateUser($username, $password) {
-        $conditions = [
-            ['field' => 'username', 'operator' => '=', 'value' => $username]
-        ];
-        
-       
-        $users = $this->get($conditions);
-        if (!empty($users)) {
-            $user = $users[0];
-            if (password_verify($password, $user['password'])) {
-                return $user;  // Return the entire user data
+        try {
+            $conditions = [
+                ['field' => 'username', 'operator' => '=', 'value' => $username]
+            ];
+            
+            $users = $this->get($conditions);
+            
+            if (!empty($users)) {
+                $user = $users[0];
+                if (password_verify($password, $user['password'])) {
+                    return $user;
+                }
             }
+            
+            return false;
+        } catch (\PDOException $e) {
+            error_log("Error in validateUser: " . $e->getMessage());
+            return false;
         }
-        
-        return false;
     }
 
     public function getAll()
