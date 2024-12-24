@@ -67,6 +67,7 @@
                 <ul class="submenu">
                     <li><a href="/admin/question/add"><i class="fas fa-plus"></i> Add</a></li>
                     <li><a href="/admin/question/list"><i class="fas fa-eye"></i> View</a></li>
+                    <li><a href="/admin/question/import"><i class="fas fa-eye"></i> Import</a></li>
                 </ul>
             </li>
             <li class="has-submenu">

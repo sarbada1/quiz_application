@@ -28,11 +28,30 @@ class HomeController extends Controller
 
     public function index()
     {
-        $categories = $this->quizModel->getAll();
-        $programs = $this->programModel->getWithCategory();
-        $content = $this->uirender('user/index', ['quizzes' => $categories,'programs'=>$programs]);
-       
-        echo $this->uirender('user/layout', ['content' => $content]);
+        try {
+            $categories = $this->quizModel->getAll();
+            $parentCategories = $this->categoryModel->getParentCategoriesWithChildren();
+            $programs = $this->programModel->getWithCategory();
+    
+            // Add default description if missing
+            foreach ($parentCategories as &$category) {
+                if (!isset($category['description'])) {
+                    $category['description'] = 'Explore ' . $category['name'] . ' topics and test your knowledge.';
+                }
+            }
+            unset($category); // Break reference
+    
+            $content = $this->uirender('user/index', [
+                'quizzes' => $categories,
+                'programs' => $programs,
+                'parentCategories' => $parentCategories
+            ]);
+            
+            echo $this->uirender('user/layout', ['content' => $content]);
+        } catch (\Exception $e) {
+            error_log("Error in HomeController::index - " . $e->getMessage());
+            // Handle error appropriately
+        }
     }
 
 

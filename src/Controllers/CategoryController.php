@@ -26,7 +26,7 @@ class CategoryController extends Controller
 
     public function showAddForm()
     {
-        $categories = $this->categoryModel->getAllCategories();
+        $categories = $this->categoryModel->getAllCategoriesWithParent();
         $content = $this->render('admin/category/add', ['categories' => $categories]);
         echo $this->render('admin/layout', ['content' => $content]);
     }

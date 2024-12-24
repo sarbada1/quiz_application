@@ -66,7 +66,29 @@ body {
     overflow-y: auto;
     z-index: 100;
 }
+.test-rules {
+    background: #f8f9fa;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+.btn-rules {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
 
+.timer-progress {
+    height: 4px;
+    background-color: #4CAF50;
+    width: 0%;
+    transition: width 1s linear;
+    margin-top: 5px;
+}
 .header {
     position: fixed;
     top: 0;
@@ -122,6 +144,73 @@ width: 90%;    margin-left: auto;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     height: fit-content;
 }
+.question-number-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.question-number-btn:hover {
+    background: #e9ecef;
+}
+
+.question-number-btn.current {
+    background: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.question-number-btn.attempted {
+    border-color: #28a745;
+}
+
+.question-number-btn.correct {
+    background: #28a745;
+    color: white;
+}
+
+.question-number-btn.wrong {
+    background: #dc3545;
+    color: white;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding: 10px;
+}
+
+.pagination-controls button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.question {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 .question {
     margin-bottom: 1.5rem;
 }
@@ -137,7 +226,21 @@ width: 90%;    margin-left: auto;
     flex-direction: column;
     gap: 0.8rem;
 }
+.question-number-btn.active {
+    background: #4CAF50;
+    color: white;
+    border-color: #45a049;
+}
 
+.question-number-btn.attempted {
+    background: #2196F3;
+    color: white;
+}
+
+/* Ensure attempted and active states don't conflict */
+.question-number-btn.attempted.active {
+    background: #4CAF50;
+}
 .option {
     display: flex;
     align-items: center;

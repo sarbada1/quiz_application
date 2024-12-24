@@ -17,7 +17,7 @@ class QuizModel extends BaseModel
     {
         $sql = "SELECT quizzes.*,categories.name
             from quizzes
-    join categories on categories.id = quizzes.category_id";
+        join categories on categories.id = quizzes.category_id";
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -34,7 +34,7 @@ class QuizModel extends BaseModel
         $result = $this->get([['field' => 'id', 'operator' => '=', 'value' => $id]]);
         return $result[0] ?? null;
     }
-    
+
     public function getQuestion($level, $num, $quiz_id)
     {
         $sql = "SELECT q.* 
@@ -43,18 +43,18 @@ class QuizModel extends BaseModel
                 WHERE qz.difficulty_level = :level 
                 AND q.quiz_id = :quiz_id 
                 LIMIT $num";
-    
+
         $stmt = $this->pdo->prepare($sql);
-        
+
         $stmt->bindParam(':level', $level, PDO::PARAM_STR);
         $stmt->bindParam(':quiz_id', $quiz_id, PDO::PARAM_INT);
-        
+
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         return $result;
     }
-    
+
     public function createQuiz($title, $slug, $description, $category_id, $user_id, $difficulty_level)
     {
         return $this->insert([
@@ -137,7 +137,7 @@ class QuizModel extends BaseModel
             // Alternatively: throw new \Exception("Error fetching questions: " . $e->getMessage());
         }
     }
-    public function getBySlug($slug) 
+    public function getBySlug($slug)
     {
         $sql = "SELECT q.*, c.name as category_name, l.level as difficulty_name,
                 (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count
@@ -145,12 +145,12 @@ class QuizModel extends BaseModel
                 LEFT JOIN categories c ON c.id = q.category_id
                 LEFT JOIN level l ON l.id = q.difficulty_level
                 WHERE q.slug = :slug";
-    
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['slug' => $slug]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
+
     public function getRandomQuestions($quizId, $count)
     {
         $sql = "SELECT 
@@ -170,15 +170,15 @@ class QuizModel extends BaseModel
                 GROUP BY q.id
                 ORDER BY RAND()
                 LIMIT :count";
-    
+
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->bindValue(':quiz_id', $quizId, PDO::PARAM_INT);
             $stmt->bindValue(':count', $count, PDO::PARAM_INT);
             $stmt->execute();
-            
+
             $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Process answers
             foreach ($questions as &$question) {
                 if ($question['answers']) {
@@ -187,10 +187,62 @@ class QuizModel extends BaseModel
                     $question['answers'] = [];
                 }
             }
-            
+
             return $questions;
         } catch (\PDOException $e) {
             error_log("Error fetching random questions: " . $e->getMessage());
+            return [];
+        }
+    }
+    public function getCustomQuestions($categoryId, $levelId, $questionCount) 
+    {
+        try {
+            $sql = "SELECT q.*, qz.category_id, qz.difficulty_level, 
+                    a.id as answer_id, a.answer as text, a.isCorrect as correct_answer 
+                    FROM questions q
+                    JOIN quizzes qz ON q.quiz_id = qz.id
+                    JOIN answers a ON q.id = a.question_id 
+                    WHERE 1=1";
+            
+            $params = [];
+    
+            if ($categoryId) {
+                $sql .= " AND qz.category_id = :category_id";
+                $params['category_id'] = $categoryId;
+            }
+    
+            if ($levelId) {
+                $sql .= " AND qz.difficulty_level = :level_id";
+                $params['level_id'] = $levelId;
+            }
+    
+            // Randomize questions but keep answers grouped
+            $sql .= " ORDER BY RAND()";
+    
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+            // Group answers by question
+            $questions = [];
+            foreach ($rows as $row) {
+                if (!isset($questions[$row['id']])) {
+                    $questions[$row['id']] = [
+                        'id' => $row['id'],
+                        'question_text' => $row['question_text'],
+                        'answers' => []
+                    ];
+                }
+                $questions[$row['id']]['answers'][] = [
+                    'id' => $row['answer_id'],
+                    'text' => $row['text'],
+                    'correct_answer' => $row['correct_answer']
+                ];
+            }
+    
+            return array_slice(array_values($questions), 0, $questionCount);
+        } catch (\PDOException $e) {
+            error_log("Error in getCustomQuestions: " . $e->getMessage());
             return [];
         }
     }

@@ -1,6 +1,5 @@
 <?php
 
-use MVC\Middleware\AuthMiddleware;
 use MVC\Controllers\AuthController;
 use MVC\Controllers\HomeController;
 use MVC\Controllers\QuizController;
@@ -14,6 +13,7 @@ use MVC\Controllers\MockTestController;
 use MVC\Controllers\QuestionController;
 use MVC\Controllers\QuestionTypeController;
 use MVC\Controllers\MockTestAnswerController;
+use MVC\Controllers\QuestionImportController;
 use MVC\Controllers\QuestionReportController;
 use MVC\Controllers\MockTestQuestionController;
 
@@ -22,6 +22,8 @@ return [
     ['route' => '/profile', 'controller' => ProfileController::class, 'action' => 'index', 'method' => 'GET'],
     ['route' => '/profile', 'controller' => ProfileController::class, 'action' => 'addUserInfo', 'method' => 'POST'],
     ['route' => '/user/register', 'controller' => AuthController::class, 'action' => 'register', 'method' => 'POST'],
+    ['route' => '/user/verify-otp', 'controller' => AuthController::class, 'action' => 'verifyOTP', 'method' => 'POST'],
+    ['route' => '/user/resend-otp', 'controller' => AuthController::class, 'action' => 'resendOTP', 'method' => 'POST'],
     ['route' => '/user/login', 'controller' => AuthController::class, 'action' => 'loginmodal', 'method' => 'GET'],
     ['route' => '/user/login', 'controller' => AuthController::class, 'action' => 'userlogin', 'method' => 'POST'],
     ['route' => '/user/logout', 'controller' => AuthController::class, 'action' => 'userLogout', 'method' => 'GET'],
@@ -44,21 +46,41 @@ return [
         'action' => 'getReview',
         'method' => 'GET'
     ],
+    [
+    'route' => '/ajax/save-progress',
+    'controller' => MockTestController::class,
+    'action' => 'saveProgress',
+    'method' => 'POST'
+],
+[
+    'route' => '/ajax/load-progress/{mockTestId}',
+    'controller' => MockTestController::class,
+    'action' => 'loadProgress',
+    'method' => 'GET'
+],
+[
+    'route' => '/ajax/save-progress',
+    'controller' => MockTestController::class,
+    'action' => 'saveProgress',
+    'method' => 'POST'
+],
+[
+    'route' => '/ajax/load-progress/{mockTestId}',
+    'controller' => MockTestController::class,
+    'action' => 'loadProgress',
+    'method' => 'GET'
+],
+['route' => '/mocktest/register/{mocktestId}', 'controller' => MockTestController::class, 'action' => 'register', 'method' => 'POST'],
+    // Quiz routes in correct order - from most specific to least specific
+    ['route' => '/quiz/configure', 'controller' => QuizController::class, 'action' => 'configureQuiz', 'method' => 'GET'],
+    ['route' => '/quiz/custom', 'controller' => QuizController::class, 'action' => 'startCustomQuiz', 'method' => 'POST'],
     ['route' => '/quiz/submit', 'controller' => QuizController::class, 'action' => 'submitQuiz', 'method' => 'POST'],
     ['route' => '/quiz/history', 'controller' => QuizController::class, 'action' => 'showHistory', 'method' => 'GET'],
-  
     ['route' => '/quiz/{slug}/start/{count}', 'controller' => QuizController::class, 'action' => 'startQuiz', 'method' => 'GET'],
-
     ['route' => '/quiz/{slug}', 'controller' => QuizController::class, 'action' => 'showQuizDetail', 'method' => 'GET'],
     ['route' => '/quiz', 'controller' => QuizController::class, 'action' => 'showQuiz', 'method' => 'GET'],
 
-
-    [
-        'route' => '/ajax/quiz-answer',
-        'controller' => QuizController::class,
-        'action' => 'checkAnswer',
-        'method' => 'POST'
-    ],
+    ['route' => '/ajax/quiz-answer', 'controller' => QuizController::class, 'action' => 'checkAnswer', 'method' => 'POST'],
 
     ['route' => '/admin', 'controller' => AuthController::class, 'action' => 'showDashboard', 'method' => 'GET'],
     ['route' => '/admin/login', 'controller' => AuthController::class, 'action' => 'showLoginForm', 'method' => 'GET'],
@@ -103,6 +125,11 @@ return [
     ['route' => '/admin/quiz/delete/{id}', 'controller' => QuizController::class, 'action' => 'delete', 'method' => 'GET'],
 
     ['route' => '/admin/question/list', 'controller' => QuestionController::class, 'action' => 'index', 'method' => 'GET'],
+    ['route' => '/admin/question/import', 'controller' => QuestionImportController::class, 'action' => 'import', 'method' => 'POST'],
+    ['route' => '/admin/question/import', 'controller' => QuestionImportController::class, 'action' => 'index', 'method' => 'GET'],
+    ['route' => '/admin/question/import-text', 'controller' => QuestionImportController::class, 'action' => 'importText', 'method' => 'POST'],
+    ['route' => '/admin/question/word', 'controller' => QuestionImportController::class, 'action' => 'indexword', 'method' => 'GET'],
+    ['route' => '/admin/question/template/download', 'controller' => QuestionImportController::class, 'action' => 'downloadTemplate', 'method' => 'GET'],
     ['route' => '/admin/question/add', 'controller' => QuestionController::class, 'action' => 'showAddForm', 'method' => 'GET'],
     ['route' => '/admin/question/add', 'controller' => QuestionController::class, 'action' => 'add', 'method' => 'POST'],
     ['route' => '/admin/question/edit/{id}', 'controller' => QuestionController::class, 'action' => 'edit', 'method' => 'GET'],

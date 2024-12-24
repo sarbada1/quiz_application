@@ -1,6 +1,4 @@
-<?php
-session_start();
-?>
+
 
 <form method="POST" action="/admin/teacher/add" class="form-group">
 <?php if (isset($_SESSION['message'])): ?>

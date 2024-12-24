@@ -106,14 +106,14 @@ header .user i {
   background-color: aqua;
   color: #000000;
 }
- 
+l
 .hero {
   position: relative;
   height: 100vh;
   width: 100%;
   overflow: hidden;
 }
-.hero-shape1 {
+/* .hero-shape1 {
   height: 146vh;
   width: 58%;
   background-color: rgb(211 241 237);
@@ -124,6 +124,7 @@ header .user i {
   border-radius: 60px;
   z-index: -2;
 }
+
 .hero-shape2 {
   height: 52vh;
   width: 58%;
@@ -134,7 +135,7 @@ header .user i {
   right: -97px;
   border-radius: 37px;
   z-index: -1;
-}
+} */
 .content {
   display: flex;
   justify-content: space-between;

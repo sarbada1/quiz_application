@@ -4,7 +4,6 @@ namespace MVC\Middleware;
 
 class AuthMiddleware {
     public function handle($request, $next) {
-        session_start();
 
         // Allow access to the login page
         if ($request['uri'] === '/admin/login') {

@@ -18,9 +18,13 @@ class QuestionReportController extends Controller
     public function submitReport()
     {
         if (!isset($_SESSION['user_id'])) {
-            echo json_encode(['error' => 'User not logged in']);
-            return;
+            $_SESSION['message'] = "Please login to report questions.";
+            $_SESSION['status'] = "danger";
+            header('Location: /');
+            exit;
         }
+
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/';
 
         $data = [
             'question_id' => $_POST['question_id'],
@@ -30,10 +34,16 @@ class QuestionReportController extends Controller
         ];
 
         if ($this->reportModel->createReport($data)) {
-            echo json_encode(['success' => true]);
+            $_SESSION['message'] = "Question reported successfully.";
+            $_SESSION['status'] = "success";
         } else {
-            echo json_encode(['error' => 'Failed to submit report']);
+            $_SESSION['message'] = "Failed to submit report.";
+            $_SESSION['status'] = "danger";
         }
+
+        // Redirect back to the page where report was initiated
+        header('Location: ' . $referer);
+        exit;
     }
 
     public function viewReports()

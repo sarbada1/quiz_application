@@ -27,7 +27,10 @@
     <select id="parent_id" name="parent_id">
         <option value="0">None (Top Level)</option>
         <?php foreach ($categories as $category): ?>
-            <option value="<?= $category['id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+            <option value="<?= $category['id'] ?>">
+                <?= htmlspecialchars($category['name']) ?> 
+                <?= $category['parent_name'] ? '(' . htmlspecialchars($category['parent_name']) . ')' : '(Top Level)' ?>
+            </option>
         <?php endforeach; ?>
     </select>
     

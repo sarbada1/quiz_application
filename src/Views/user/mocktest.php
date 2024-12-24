@@ -8,17 +8,16 @@
         unset($_SESSION['status']);
         ?>
     <?php endif; ?>
-    <div id="quizModal" class="modal">
+    <div id="quizModal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close" data-modal="quizModal">&times;</span>
-            <h2><?= htmlspecialchars($quiz['title']) ?></h2>
             <p>Please log in to start the quiz.</p>
             <button class="bg-primary text-dark text-lg" id="startQuiz">Login</button>
         </div>
     </div>
     <?php include __DIR__ . '/auth/login.php'; ?>
     <?php include __DIR__ . '/auth/register.php'; ?>
-    <?php if (isset($isLoggedIn) && $isLoggedIn): ?>
+    <?php if ($isLoggedIn): ?>
         <div class="confirmation-dialog" id="confirmDialog">
             <h2>Exam will be started.</h2>
             <div class="dialog-buttons">
@@ -28,13 +27,17 @@
         </div>
         <div class="test-container" id="testContainer" data-mocktest-id="<?= $mockTest['id'] ?>">
             <div class="header">
-                <div class="timer" id="timer">
-                    <i class="fas fa-clock"></i>
-                    --:--:--
+                <div class="timer-section">
+                    <div class="timer" id="timer">
+                        <i class="fas fa-clock"></i>
+                        <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+                    </div>
+                    <div class="timer-progress" id="timerProgress"></div>
                 </div>
-
+                <button onclick="showRules()" class="btn btn-rules">
+                    <i class="fas fa-info-circle"></i> Show Rules
+                </button>
                 <div class="control-buttons">
-                
                     <button class="btn btn-submit" onclick="submitTest()">
                         <i class="fas fa-check-circle"></i> Submit
                     </button>
@@ -100,30 +103,235 @@
 
 
     <div id="reportQuestionModal" class="modal">
-    <div class="modal-content">
-        <span class="close" data-modal="reportQuestionModal">&times;</span>
-        <h2>Report Question</h2>
-        <form id="reportForm" method="POST" action="/question/report">
-            <input type="hidden" id="reportQuestionId" name="question_id">
-            
-            <label for="reportReason">Reason for Report:</label>
-            <select id="reportReason" name="reason" required>
-                <option value="">Select a reason</option>
-                <option value="no_correct_answer">No Correct Answer</option>
-                <option value="multiple_correct">Multiple Correct Answers</option>
-                <option value="unclear">Question is Unclear</option>
-                <option value="other">Other</option>
-            </select>
+        <div class="modal-content">
+            <span class="close" data-modal="reportQuestionModal">&times;</span>
+            <h2>Report Question</h2>
+            <form id="reportForm" method="POST" action="/question/report">
+                <input type="hidden" id="reportQuestionId" name="question_id">
 
-            <label for="reportDescription">Additional Details:</label>
-            <textarea id="reportDescription" name="description" rows="4" ></textarea>
+                <label for="reportReason">Reason for Report:</label>
+                <select id="reportReason" name="reason" required>
+                    <option value="">Select a reason</option>
+                    <option value="no_correct_answer">No Correct Answer</option>
+                    <option value="multiple_correct">Multiple Correct Answers</option>
+                    <option value="unclear">Question is Unclear</option>
+                    <option value="other">Other</option>
+                </select>
 
-            <button type="submit" class="btn btn-primary">Submit Report</button>
-        </form>
+                <label for="reportDescription">Additional Details:</label>
+                <textarea id="reportDescription" name="description" rows="4"></textarea>
+
+                <button type="submit" class="btn btn-primary">Submit Report</button>
+            </form>
+        </div>
     </div>
-</div>
 </body>
+<script>
+    let currentQuestionIndex = 0;
+    const questionsPerPage = 1; // Show one question at a time
 
+    function showRules() {
+        const rules = `
+        <div class="test-rules">
+            <h3>Mock Test Rules & Information</h3>
+            <ul>
+                <li>Total duration: ${duration} minutes</li>
+                <li>Each question has only one correct answer</li>
+                <li>Once you confirm an answer, it cannot be changed</li>
+                <li>Green indicates correct answer, red indicates wrong answer</li>
+                <li>Test will auto-submit when time expires</li>
+                <li>You can submit the test anytime using the Submit button</li>
+            </ul>
+        </div>
+    `;
+        document.querySelector('.test-container').insertAdjacentHTML('afterbegin', rules);
+    }
+
+    function startTest() {
+        console.log('startTest function called'); // Debug log
+
+        try {
+            const isLoggedIn = <?= isset($_SESSION['user_id']) ? 'true' : 'false' ?>;
+            console.log('Login status:', isLoggedIn);
+
+            if (!isLoggedIn) {
+                document.getElementById('quizModal').style.display = 'block';
+                return;
+            }
+
+            const confirmDialog = document.getElementById('confirmDialog');
+            const testContainer = document.getElementById('testContainer');
+
+            console.log('confirmDialog:', confirmDialog); // Debug log
+            console.log('testContainer:', testContainer); // Debug log
+
+            if (confirmDialog) confirmDialog.style.display = 'none';
+            if (testContainer) testContainer.style.display = 'block';
+
+            startTimer();
+            showQuestion(currentQuestion);
+            initializeQuestionPalette();
+
+        } catch (error) {
+            console.error('Error in startTest:', error);
+        }
+    }
+
+    // Add this JavaScript to handle the timer
+    function startTimer(duration) {
+        let timer = duration;
+        let hours, minutes, seconds;
+
+        const countdown = setInterval(function() {
+            hours = parseInt(timer / 3600, 10);
+            minutes = parseInt((timer % 3600) / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+
+            hours = hours < 10 ? "0" + hours : hours;
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            document.getElementById('hours').textContent = hours;
+            document.getElementById('minutes').textContent = minutes;
+            document.getElementById('seconds').textContent = seconds;
+
+            // Update progress bar
+            const progress = (timer / duration) * 100;
+            document.getElementById('timerProgress').style.width = progress + '%';
+
+            // Warning colors
+            if (timer < 300) { // Last 5 minutes
+                document.getElementById('timer').classList.add('timer-warning');
+            }
+            if (timer < 60) { // Last minute
+                document.getElementById('timer').classList.add('timer-danger');
+            }
+
+            if (--timer < 0) {
+                clearInterval(countdown);
+                alert("Time's up! Your test will be submitted automatically.");
+                showPerformanceModal();
+                submitTest();
+            }
+        }, 1000);
+    }
+    function showQuestion(index) {
+    const questions = document.querySelectorAll('.question');
+    const totalQuestions = questions.length;
+    
+    // Validate index
+    if (index < 0 || index >= totalQuestions) return;
+    
+    // Hide all questions
+    questions.forEach(q => q.style.display = 'none');
+    
+    // Show selected question
+    questions[index].style.display = 'block';
+    currentQuestionIndex = index;
+    
+    // Update palette highlighting
+    updatePaletteHighlight(index);
+    
+    // Update pagination buttons
+    document.getElementById('prevQuestion').disabled = index === 0;
+    document.getElementById('nextQuestion').disabled = index === totalQuestions - 1;
+}
+
+    function selectAnswer(questionId, selectedOption) {
+    if (confirmedAnswers.includes(questionId)) {
+        alert("You've already confirmed an answer for this question!");
+        return;
+    }
+    function updatePaletteHighlight(currentIndex) {
+    // Remove current highlight
+    document.querySelectorAll('.question-number-btn').forEach(btn => {
+        btn.classList.remove('current');
+    });
+    
+    // Add highlight to current question
+    const currentBtn = document.querySelector(`.question-number-btn[data-index="${currentIndex}"]`);
+    if (currentBtn) {
+        currentBtn.classList.add('current');
+    }
+}
+    // Show confirmation dialog
+    const confirmSubmit = confirm("Are you sure you want to submit this answer? You cannot change it after confirmation.");
+    
+    if (confirmSubmit) {
+        const questionElement = document.querySelector(`[data-question-id="${questionId}"]`);
+        const options = questionElement.querySelectorAll('.option');
+        
+        // Disable all radio buttons for this question
+        const radioButtons = questionElement.querySelectorAll('input[type="radio"]');
+        radioButtons.forEach(radio => radio.disabled = true);
+        
+        confirmedAnswers.push(questionId);
+        
+        // Call API to submit answer
+        fetch(`/ajax/submit-answer/${selectedOption}/${questionId}/${mockTestId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.isCorrect) {
+                    markAnswerCorrect(questionId);
+                } else {let currentQuestionIndex = 0;
+
+                    markAnswerWrong(questionId);
+                }
+                
+                // Update question palette
+                updateQuestionPalette(questionId, data.isCorrect);
+            })
+            .catch(error => console.error('Error:', error));
+    }
+}
+
+function updateQuestionPalette(questionId, isCorrect) {
+    const paletteBtn = document.querySelector(`.question-number-btn[data-question="${questionId}"]`);
+    if (paletteBtn) {
+        paletteBtn.classList.add('attempted');
+        paletteBtn.classList.add(isCorrect ? 'correct' : 'wrong');
+    }
+}
+
+function initializeQuestionPalette() {
+    const palette = document.createElement('div');
+    palette.className = 'question-palette';
+    
+    // Get all questions
+    const questions = document.querySelectorAll('.question');
+    
+    // Create number buttons
+    questions.forEach((_, index) => {
+        const numberBtn = document.createElement('button');
+        numberBtn.className = 'question-number-btn';
+        numberBtn.textContent = index + 1;
+        numberBtn.setAttribute('data-index', index);
+        numberBtn.onclick = () => navigateToQuestion(index);
+        palette.appendChild(numberBtn);
+    });
+
+    // Add pagination controls
+    const paginationControls = `
+        <div class="pagination-controls">
+            <button id="prevQuestion" onclick="navigateToQuestion(currentQuestionIndex - 1)">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="nextQuestion" onclick="navigateToQuestion(currentQuestionIndex + 1)">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    `;
+    function navigateToQuestion(index) {
+    showQuestion(index);
+}
+    // Add palette to DOM
+    document.querySelector('.test-container').insertAdjacentElement('afterbegin', palette);
+    document.querySelector('.test-container').insertAdjacentHTML('beforeend', paginationControls);
+    
+    // Show initial question
+    showQuestion(0);
+}
+</script>
 <script>
     let answeredQuestions = new Set();
     let currentQuestion = 0;
@@ -135,6 +343,9 @@
         if (!isLoggedIn) {
             document.getElementById('quizModal').style.display = 'block';
         }
+
+        // Add start test button handler
+        document.getElementById('startTestBtn').addEventListener('click', startTest);
 
         // Close modal when clicking the close button
         document.querySelector('.close').addEventListener('click', function() {
@@ -149,62 +360,24 @@
                 window.history.back();
             }
         }
+        loadSavedProgress();
+
     });
 
-    function startTest() {
-        const isLoggedIn = <?= isset($_SESSION['user_id']) ? 'true' : 'false' ?>;
 
-        if (!isLoggedIn) {
-            document.getElementById('quizModal').style.display = 'block';
-            return;
-        }
-
-        document.getElementById('confirmDialog').style.display = 'none';
-        document.getElementById('testContainer').style.display = 'block';
-        startTimer();
-        showQuestion(currentQuestion);
-        initializeQuestionPalette();
-    }
 
     function reportQuestion(questionId) {
         const modal = document.getElementById('reportQuestionModal');
-    const questionIdInput = document.getElementById('reportQuestionId');
-    if (modal && questionIdInput) {
-        questionIdInput.value = questionId;
-        modal.style.display = 'block';
-    }
-    }
-
-    function showQuestion(index) {
-        // Hide all questions
-        const allQuestions = document.querySelectorAll('.question');
-        allQuestions.forEach((q) => {
-            // q.style.display = 'none';
-        });
-
-        // Show the current question
-        const current = allQuestions[index];
-        if (current) {
-            current.style.display = 'block';
+        const questionIdInput = document.getElementById('reportQuestionId');
+        if (modal && questionIdInput) {
+            questionIdInput.value = questionId;
+            modal.style.display = 'block';
         }
     }
 
-    function initializeQuestionPalette() {
-        // Add event listeners to question options to mark as attempted
-        const questions = document.querySelectorAll('.question');
-        questions.forEach((question, index) => {
-            const options = question.querySelectorAll('input[type="radio"]');
-            options.forEach((option) => {
-                option.addEventListener('change', () => markAttempted(index));
-            });
-        });
 
-        // Add click event to question palette buttons
-        const paletteButtons = document.querySelectorAll('.question-number-btn');
-        paletteButtons.forEach((button, index) => {
-            button.addEventListener('click', () => jumpToQuestion(index));
-        });
-    }
+
+
 
     function markAttempted(index) {
         const paletteButtons = document.querySelectorAll('.question-number-btn');
@@ -218,33 +391,7 @@
 
     let timeLeft = <?= $mockTest['time'] * 60 ?>; // Convert minutes to seconds
 
-    function startTimer() {
-        const timerDisplay = document.getElementById('timer');
-        timer = setInterval(() => {
-            const hours = Math.floor(timeLeft / 3600);
-            const minutes = Math.floor((timeLeft % 3600) / 60);
-            const seconds = timeLeft % 60;
 
-            timerDisplay.innerHTML = `
-                <i class="fas fa-clock"></i>
-                ${hours.toString().padStart(2, '0')}:
-                ${minutes.toString().padStart(2, '0')}:
-                ${seconds.toString().padStart(2, '0')}
-            `;
-
-            if (timeLeft <= 300) { // 5 minutes remaining
-                timerDisplay.style.color = '#e74c3c';
-                timerDisplay.style.animation = 'pulse 1s infinite';
-            }
-
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                submitTest();
-            }
-
-            timeLeft--;
-        }, 1000);
-    }
 
     // Add pulse animation
     const style = document.createElement('style');
@@ -267,9 +414,8 @@
 
     // Update submitAnswer function
     function submitAnswer(answerId, questionId) {
-        // Check if question already answered
         if (answeredQuestions.has(questionId)) {
-            return; // Exit if already answered
+            return;
         }
 
         const mocktestId = document.getElementById('testContainer').dataset.mocktestId;
@@ -280,21 +426,21 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Add question to answered set
                 answeredQuestions.add(questionId);
 
-                // Disable all radio buttons for this question
                 const questionContainer = document.querySelector(`[data-question-id="${questionId}"]`);
                 const allOptions = questionContainer.querySelectorAll('input[type="radio"]');
                 allOptions.forEach(option => {
                     option.disabled = true;
                 });
 
-                // Add disabled style to options
                 const allOptionLabels = questionContainer.querySelectorAll('.option');
                 allOptionLabels.forEach(label => {
                     label.classList.add('disabled');
                 });
+
+                // Save progress after successful submission
+                saveProgress(answerId, questionId, data.isCorrect);
 
                 if (data.isCorrect) {
                     markAnswerCorrect(questionId);
@@ -307,9 +453,8 @@
     }
 
 
-    // Update submitTest function in mocktest.php:
 
-    // Update submitTest function with better error handling
+
     function submitTest() {
         clearInterval(timer);
 
@@ -451,23 +596,98 @@
     }
 
     // Add this JavaScript code
-document.addEventListener('DOMContentLoaded', function() {
-    // Close modal when clicking the close button
-    document.querySelectorAll('.close').forEach(function(closeBtn) {
-        closeBtn.onclick = function() {
-            const modalId = this.getAttribute('data-modal');
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'none';
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close modal when clicking the close button
+        document.querySelectorAll('.close').forEach(function(closeBtn) {
+            closeBtn.onclick = function() {
+                const modalId = this.getAttribute('data-modal');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
             }
         }
     });
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = 'none';
+    let savedProgress = {
+        answers: new Map(),
+        currentQuestion: 0,
+        timeLeft: null
+    };
+
+    function saveProgress(answerId, questionId, isCorrect) {
+        savedProgress.answers.set(questionId, {
+            answerId: answerId,
+            isCorrect: isCorrect
+        });
+        savedProgress.currentQuestion = currentQuestion;
+        savedProgress.timeLeft = timeLeft;
+
+        // Save to localStorage
+        localStorage.setItem(`mocktest_${mocktestId}`, JSON.stringify({
+            answers: Array.from(savedProgress.answers.entries()),
+            currentQuestion: currentQuestion,
+            timeLeft: timeLeft
+        }));
+
+        // Save to server
+        fetch('/ajax/save-progress', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                mockTestId: mocktestId,
+                answers: Array.from(savedProgress.answers.entries()),
+                currentQuestion: currentQuestion,
+                timeLeft: timeLeft
+            })
+        });
+    }
+
+    function loadSavedProgress() {
+        const mocktestId = document.getElementById('testContainer').dataset.mocktestId;
+        const saved = localStorage.getItem(`mocktest_${mocktestId}`);
+
+        if (saved) {
+            const data = JSON.parse(saved);
+
+            // Restore answers
+            savedProgress.answers = new Map(data.answers);
+            savedProgress.currentQuestion = data.currentQuestion;
+            savedProgress.timeLeft = data.timeLeft;
+
+            // Apply saved answers
+            savedProgress.answers.forEach((answer, questionId) => {
+                const input = document.querySelector(`input[name="question_${questionId}"][value="${answer.answerId}"]`);
+                if (input) {
+                    input.checked = true;
+                    input.disabled = true;
+                    answeredQuestions.add(parseInt(questionId));
+
+                    const questionContainer = input.closest('.question');
+                    if (questionContainer) {
+                        const allOptions = questionContainer.querySelectorAll('.option');
+                        allOptions.forEach(option => option.classList.add('disabled'));
+                    }
+                }
+            });
+
+            // Restore question position
+            currentQuestion = data.currentQuestion;
+            showQuestion(currentQuestion);
+
+            // Restore timer
+            if (data.timeLeft) {
+                timeLeft = data.timeLeft;
+            }
         }
     }
-});
 </script>

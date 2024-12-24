@@ -33,6 +33,18 @@ endif;
         <label for="time">Time required (in seconds)</label>
         <input type="number" class="form-control" id="time" name="time" value="<?= htmlspecialchars($mocktest['time']) ?>" required>
     </div>
+    <div class="form-group">
+        <label for="date">Exam Date</label>
+        <input type="date" class="form-control" id="date" value="<?= htmlspecialchars($mocktest['date']) ?>" name="date">
+    </div>
+    <div class="form-group">
+        <label for="exam_time">Exam time</label>
+        <input type="time" class="form-control" id="exam_time" value="<?= htmlspecialchars($mocktest['exam_time']) ?>" name="exam_time">
+    </div>
+    <div class="form-group">
+        <label for="no_of_student">No of Students</label>
+        <input type="number" class="form-control" id="no_of_student" name="no_of_student" value="<?= htmlspecialchars($mocktest['no_of_student']) ?>" required>
+    </div>
 
     <button class="success mt-5" type="submit">Update</button>
 </form>

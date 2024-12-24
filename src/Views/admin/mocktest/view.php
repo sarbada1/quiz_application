@@ -29,6 +29,7 @@ endif;
             <th>S.N</th>
             <th>Name</th>
             <th>Time (in seconds)</th>
+            <th>No of Student</th>
             <th>Question</th>
             <th>Action</th>
         </tr>
@@ -41,6 +42,7 @@ endif;
                 <td><?= $i++ ?></td>
                 <td><?= $answer['name'] ?></td>
                 <td><?= $answer['time'] ?> seconds</td>
+                <td><?= $answer['no_of_student'] ?> </td>
                 <td>
                     <button class="info"> <a href="/admin/mocktestquestion/add/<?= $answer['id'] ?>">Add</a></button>
                     <button class="warning"> <a href="/admin/mocktestquestion/list/<?= $answer['id'] ?>">View</a></button>

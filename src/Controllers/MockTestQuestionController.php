@@ -13,6 +13,10 @@ use PDO;
 
 class MockTestQuestionController extends Controller
 {
+    const ADMIN_TYPE = 1;
+    const TEACHER_TYPE = 2;
+    const STUDENT_TYPE = 3;
+
     private $mockTestModel;
     private $mockTestQuestionModel;
     private $questionModel;
@@ -60,25 +64,33 @@ class MockTestQuestionController extends Controller
     public function showAddForm($mockTestId)
     {
         $mockTest = $this->mockTestModel->getById($mockTestId);
-        $allQuestions = $this->questionModel->getAll();
         $existingQuestions = $this->mockTestQuestionModel->getQuestionIdsByMockTestId($mockTestId);
-
+        $quizzes = $this->quizModel->getAll();
+        $questionTypes = $this->questionModel->getQuestionTypes();
+        
+        // Get filter parameters
+        $quizId = $_GET['quiz_id'] ?? null;
+        $questionType = $_GET['question_type'] ?? null;
+        
+        // Fetch filtered questions
+        $allQuestions = $this->questionModel->getFilteredQuestions($quizId, $questionType);
+        
         if (!$mockTest) {
             $_SESSION['message'] = "Mock Test not found.";
             $_SESSION['status'] = "danger";
             header('Location: /admin/mocktest/list/' . $mockTest['program_id']);
             exit;
         }
-
+        
         $content = $this->render('admin/mocktestquestion/add', [
             'mockTest' => $mockTest,
             'questions' => $allQuestions,
             'existingQuestions' => $existingQuestions,
+            'quizzes' => $quizzes,
+            'questionTypes' => $questionTypes,
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
-
-
     public function toggleQuestion($action, $questionId, $mockTestId)
     {
         if ($action === 'add') {
@@ -102,7 +114,10 @@ class MockTestQuestionController extends Controller
             $_SESSION['answeredQuestions'][$mockTestId] = [];
         }
 
-        $isLoggedIn = isset($_SESSION['user_id']);
+        
+        
+        $isLoggedIn =isset($_SESSION['user_id']) && isset($_SESSION['usertype_id']) 
+        && $_SESSION['usertype_id'] == self::STUDENT_TYPE;
         $_SESSION['current_mocktest_id'] = $mockTestId;
         $_SESSION['test_start_time'] = time();
 

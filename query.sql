@@ -17,7 +17,14 @@ CREATE TABLE `users` (
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`usertype_id`) REFERENCES `usertype` (`id`) ON DELETE CASCADE
 );
-
+ALTER TABLE users 
+ADD COLUMN otp VARCHAR(6) NULL,
+ADD COLUMN otp_attempts INT DEFAULT 0,
+ADD COLUMN otp_expires TIMESTAMP NULL;
+ALTER TABLE users 
+ADD COLUMN is_verified TINYINT(1) DEFAULT 0;
+ALTER TABLE users 
+ADD COLUMN last_otp_sent TIMESTAMP NULL;
 CREATE TABLE `user_info` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT UNSIGNED NOT NULL,
@@ -38,7 +45,7 @@ CREATE TABLE `level` (
     `level` VARCHAR(255) NOT NULL
 );
 
-ALTER TABLE question_type add COLUMN slug VARCHAR(255) null;
+ALTER TABLE users add COLUMN phone VARCHAR(255) null;
 
 ALTER TABLE question_type
 add COLUMN time_per_question VARCHAR(255) null;
@@ -97,6 +104,9 @@ ALTER TABLE categories add COLUMN slug VARCHAR(255) null;
 ALTER TABLE programmes add COLUMN slug VARCHAR(255) null;
 
 ALTER TABLE programmes_mock_test add COLUMN slug VARCHAR(255) null;
+ALTER TABLE programmes_mock_test add COLUMN no_of_student VARCHAR(255) null;
+ALTER TABLE programmes_mock_test add COLUMN date DATE null;
+ALTER TABLE programmes_mock_test add COLUMN exam_time TIME null;
 
 CREATE TABLE `quizzes` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -283,7 +293,15 @@ CREATE TABLE user_quiz_history (
     FOREIGN KEY (quiz_id) REFERENCES quizzes (id),
     FOREIGN KEY (attempt_id) REFERENCES quiz_attempts (id)
 );
-
+CREATE TABLE mocktest_registrations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    mocktest_id BIGINT UNSIGNED NOT NULL,
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (mocktest_id) REFERENCES programmes_mock_test(id),
+    UNIQUE KEY (user_id, mocktest_id)
+);
 DROP Table quiz_answers;
 
 DROP Table user_quiz_history;
@@ -1071,3 +1089,12 @@ FROM
     JOIN programmes_mock_test pmt ON mta.mock_test_id = pmt.id
 WHERE
     mta.user_id = 6;
+
+
+     SELECT 
+            c1.*, 
+            (SELECT GROUP_CONCAT(c2.id, ':', c2.name, ':', c2.slug)
+             FROM categories c2 
+             WHERE c2.category_id = c1.id) as children
+        FROM categories c1
+        WHERE c1.category_id = 0

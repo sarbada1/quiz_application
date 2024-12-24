@@ -1,5 +1,14 @@
 <?php
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Configure session
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+session_start();
+
 require 'vendor/autoload.php';
 
 use MVC\Config\Database;
@@ -11,8 +20,12 @@ $dsn = 'mysql:host=localhost;dbname=quiz_system';
 $username = 'root';
 $password = 'Root@1234';
 
-$database = new Database($dsn, $username, $password);
-$pdo = $database->getPdo();
+try {
+    $database = new Database($dsn, $username, $password);
+    $pdo = $database->getPdo();
+} catch (PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
+}
 
 // Create router with PDO instance
 $router = new Router($pdo);

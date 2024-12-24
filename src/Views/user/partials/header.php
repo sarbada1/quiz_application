@@ -48,7 +48,6 @@
                         <?php endif; ?>
                     </ul>
                 </li>
-                <li><a href="#">About</a></li>
             </ul>
         </nav>
         <?php if (isset($_SESSION['name'])) { ?>

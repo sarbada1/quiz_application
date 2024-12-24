@@ -43,7 +43,7 @@ class ProgramModel extends BaseModel
         }
         return $this->get([], null, null, 'programmes.title ASC');
     }
-    public function createProgram($categoryId, $name, $description = null,$slug)
+    public function createProgram($categoryId, $name,$slug, $description = null)
     {
         return $this->insert([
             'category_id' => $categoryId,
@@ -53,7 +53,7 @@ class ProgramModel extends BaseModel
         ]);
     }
 
-    public function updateProgram($id, $categoryId, $name, $description = null,$slug)
+    public function updateProgram($id, $categoryId, $name, $slug,$description = null)
     {
         return $this->update(
             [

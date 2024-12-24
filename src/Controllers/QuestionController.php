@@ -26,12 +26,20 @@ class QuestionController extends Controller
 
     public function index()
     {
-        $questions = $this->questionModel->getAll();
-        $quizzes = $this->quizModel->getAll();
-
+        $page = $_GET['page'] ?? 1;
+        $selectedQuiz = $_GET['quiz'] ?? null;
+        $questionType = $_GET['question_type'] ?? null;
+    
+        $result = $this->questionModel->getQuestionsGroupedPaginated($page, 10, $selectedQuiz, $questionType);
+    
         $content = $this->render('admin/question/view', [
-            'questions' => $questions,
-            'quizzes' => $quizzes,
+            'questions' => $result['questions'],
+            'totalPages' => $result['pages'],
+            'currentPage' => $page,
+            'selectedQuiz' => $selectedQuiz,
+            'questionType' => $questionType,
+            'quizzes' => $this->quizModel->getAll(),
+            'questionTypes' => $this->questionModel->getQuestionTypes()
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
@@ -74,7 +82,7 @@ class QuestionController extends Controller
             if ($result) {
                 $_SESSION['message'] = "Question added successfully!";
                 $_SESSION['status'] = "success";
-                header('Location: /admin/question/add');
+                header('Location: /quiz-play/admin/question/add');
             } else {
                 $_SESSION['message'] = "Error adding Question";
                 $_SESSION['status'] = "danger";
@@ -116,12 +124,12 @@ class QuestionController extends Controller
             if ($result) {
                 $_SESSION['message'] = "Question edited successfully!";
                 $_SESSION['status'] = "success";
-                header('Location: /admin/question/edit/' . $id);
+                header('Location: /quiz-play/admin/question/edit/' . $id);
                 exit;
             } else {
                 $_SESSION['message'] = "Error updating Question.";
                 $_SESSION['status'] = "danger";
-                header('Location: /admin/question/edit/' . $id);
+                header('Location: /quiz-play/admin/question/edit/' . $id);
                 exit;
             }
         }
@@ -153,18 +161,18 @@ class QuestionController extends Controller
             echo "<td>".$question['type']."</td>";
             echo '<td>
                     <button class="success">
-                        <a href="/admin/answer/add/'.$question["id"].'">Add</a>
+                        <a href="/quiz-play/admin/answer/add/'.$question["id"].'">Add</a>
                     </button>
                     <button class="warning">
-                        <a href="/admin/answer/list/'.$question["id"].'">View</a>
+                        <a href="/quiz-play/admin/answer/list/'.$question["id"].'">View</a>
                     </button>
                   </td>';
             echo '<td>
                     <button class="primary">
-                        <a href="/admin/question/edit/'.$question["id"].'">Edit</a>
+                        <a href="/quiz-play/admin/question/edit/'.$question["id"].'">Edit</a>
                     </button>
                     <button class="danger">
-                        <a href="/admin/question/delete/'.$question["id"].'" onclick="return confirm(\'Are you sure to delete?\')">Delete</a>
+                        <a href="/quiz-play/admin/question/delete/'.$question["id"].'" onclick="return confirm(\'Are you sure to delete?\')">Delete</a>
                     </button>
                   </td>';
             echo '</tr>';
@@ -187,7 +195,7 @@ class QuestionController extends Controller
             $_SESSION['status'] = "danger";
         }
 
-        header('Location: /admin/question/list');
+        header('Location: /quiz-play/admin/question/list');
         exit;
     }
 }
