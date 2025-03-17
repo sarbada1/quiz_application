@@ -1,5 +1,6 @@
 <?php
 $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
+// print_r($quizzes);   
 ?>
 
 <header id="navbar-container">

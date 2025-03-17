@@ -5,6 +5,8 @@ namespace MVC\Controllers;
 use MVC\Models\CategoryModel;
 use MVC\Controller;
 use MVC\Models\CategoryTypeModel;
+use MVC\Models\ProgramModel;
+use MVC\Models\QuizModel;
 use PDO;
 
 
@@ -12,11 +14,15 @@ use PDO;
 class CategoryController extends Controller
 {
     public $categoryModel;
+    public $programModel;
+    public $quizModel;
     public $categoryTypeModel;
 
     public function __construct(PDO $pdo)
     {
         $this->categoryModel = new CategoryModel($pdo);
+        $this->programModel = new ProgramModel($pdo);
+        $this->quizModel = new QuizModel($pdo);
         $this->categoryTypeModel = new CategoryTypeModel($pdo);
     }
 
@@ -52,12 +58,15 @@ class CategoryController extends Controller
         }
     // print_r($category);die;
         $quizzes = $this->categoryModel->getQuizzesByCategory($category['id']);
-    
-        $content = $this->render('user/categories', [
+        $programs = $this->programModel->getWithCategory();
+        $quiz= $this->quizModel->getAll();
+        $content = $this->uirender('user/categories', [
             'category' => $category,
-            'quizzes' => $quizzes
+            'c_quizzes' => $quizzes,
+            'quizzes' => $quiz,
+            'programs' => $programs,
         ]);
-        echo $this->render('user/layout', ['content' => $content]);
+        echo $this->uirender('user/layout', ['content' => $content]);
     }
 
     public function add()

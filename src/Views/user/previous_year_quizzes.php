@@ -1,20 +1,20 @@
 <div class="container">
     <h2>Previous Year Quizzes</h2>
     <div class="quiz-list">
-        <?php if (!empty($quizzes)): ?>
-            <?php foreach ($quizzes as $quiz): ?>
+        <?php if (!empty($previousYearQuizzes)): ?>
+            <?php foreach ($previousYearQuizzes as $quiz): ?>
                 <div class="quiz-card">
                     <h3><?= htmlspecialchars($quiz['title']) ?></h3>
                     <p><?= htmlspecialchars($quiz['description']) ?></p>
-                    <a href="<?= $url('previous-year-quiz/<?= $quiz[') ?>"id'] ?>" class="btn btn-primary">Start Quiz</a>
-                </div>
+                    <a href="<?= $url('previous-year-quiz/' . $quiz['id']) ?>" class="btn btn-primary">Start Quiz</a>                </div>
             <?php endforeach; ?>
         <?php else: ?>
             <p>No previous year quizzes available.</p>
         <?php endif; ?>
     </div>
 </div>
-
+<?php include __DIR__ . '/auth/login.php'; ?>
+<?php include __DIR__ . '/auth/register.php'; ?>
 <style>
 .container {
     max-width: 800px;

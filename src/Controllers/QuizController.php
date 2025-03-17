@@ -58,17 +58,30 @@ class QuizController extends Controller
     public function previousYearQuizzes()
     {
         $quizzes = $this->quizModel->getQuiz('previous_year');
-        $content = $this->render('user/previous_year_quizzes', ['quizzes' => $quizzes]);
-        echo $this->render('user/layout', ['content' => $content]);
+        $programs = $this->programModel->getWithCategory();
+        $quiz = $this->quizModel->getAll();
+        $content = $this->uirender('user/previous_year_quizzes', [
+            'previousYearQuizzes' => $quizzes,
+            'quizzes' => $quiz,
+            'programs' => $programs,
+        ]);
+        echo $this->uirender('user/layout', ['content' => $content]);
     }
 
     public function previousYearQuiz($id)
     {
         $quiz = $this->quizModel->getById($id);
         $questions = $this->questionModel->getPreviousYearQuestions($id);
-
-        $content = $this->render('user/previous_year_quiz', ['quiz' => $quiz, 'questions' => $questions]);
-        echo $this->render('user/layout', ['content' => $content]);
+        $programs = $this->programModel->getWithCategory();
+        $quizzes = $this->quizModel->getAll();
+        $content = $this->uirender('user/previous_year_quiz', [
+            'quiz' => $quiz, 
+            'questions' => $questions,
+            'quizzes' => $quizzes,
+            'programs' => $programs,
+            ]
+        );
+        echo $this->uirender('user/layout', ['content' => $content]);
     }
     public function previousYearQuizQuestions($quizId)
     {

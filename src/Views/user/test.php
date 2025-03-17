@@ -10,8 +10,7 @@
 
                       </button> 
                       <button class="primary w-50 ml-5"> 
-                        <a href="<?= $url('test/<?php echo $program[') ?>"slug']; ?>">Mock Test</a>
-                      </button> 
+                      <a href="<?= $url('test/' . $program['slug']) ?>">Mock Test</a>                      </button> 
                     </div>
                 </div>
             <?php endforeach; ?>

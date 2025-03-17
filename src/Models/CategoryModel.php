@@ -107,7 +107,7 @@ class CategoryModel extends BaseModel
         JOIN categories c ON qc.category_id = c.id
         LEFT JOIN questions qu ON c.id = qu.category_id
         LEFT JOIN level l ON qu.difficulty_level = l.id
-        WHERE c.id = :categoryId
+        WHERE c.id = :categoryId and q.type!='real_exam'
         GROUP BY 
             q.id,
             q.title,

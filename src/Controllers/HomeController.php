@@ -30,8 +30,8 @@ class HomeController extends Controller
     {
         try {
             $categories = $this->quizModel->getAll();
-            $parentCategories = $this->categoryModel->getParentCategoriesWithChildren();
             $programs = $this->programModel->getWithCategory();
+            $parentCategories = $this->categoryModel->getParentCategoriesWithChildren();
     
             // Add default description if missing
             foreach ($parentCategories as &$category) {

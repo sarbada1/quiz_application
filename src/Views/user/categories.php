@@ -1,7 +1,7 @@
 <div class="category-container">
-    <?php if (!empty($quizzes)): ?>
+    <?php if (!empty($c_quizzes)): ?>
         <div class="quiz-grid">
-            <?php foreach ($quizzes as $quiz): ?>
+            <?php foreach ($c_quizzes as $quiz): ?>
                 <div class="quiz-card">
                     <div class="quiz-icon">
                         <i class="fas fa-book-open"></i>
@@ -19,11 +19,11 @@
                         <?php
                         if($quiz['question_count']!=0){
                             ?>
-                        <button class="quiz-btn">
-                            <a href="<?= $url('quiz/<?= htmlspecialchars($quiz[') ?>"slug']) ?>">
-                                Start Quiz <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </button>
+           <button class="quiz-btn">
+    <a href="<?= $url('quiz/' . htmlspecialchars($quiz['slug'])) ?>">
+        Start Quiz <i class="fas fa-arrow-right"></i>
+    </a>
+</button>
                         <?php
                     }?>
                     </div>
