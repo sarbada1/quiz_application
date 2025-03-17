@@ -19,7 +19,7 @@ class App {
             self::$baseUrl = '';  // Empty means no prefix needed
         } else {
             // For production environment
-            self::$baseUrl = 'https://phpstack-1210227-5344978.cloudwaysapps.com/';
+            self::$baseUrl = 'https://phpstack-1210227-5344978.cloudwaysapps.com';
         }
         
         // For debugging
