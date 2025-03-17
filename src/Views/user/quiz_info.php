@@ -159,6 +159,7 @@
 <script>
     function startQuiz() {
         const count = document.getElementById('questionCount').value;
-        window.location.href="<?= $url('quiz/<?= $quiz[') ?>"slug'] ?>/start/' + count;
+        const slug = "<?= $quiz['slug'] ?>";
+        window.location.href = "<?= $url('quiz') ?>/" + slug + "/start/" + count;
     }
 </script>
