@@ -276,8 +276,7 @@ class MockTestQuestionController extends Controller
                 $_SESSION['user_id'],
                 'test_attempt',
                 'Submitted mock test',
-                '📝'
-            );
+'fa-clipboard-check'            );
 
             // Clear test session
             unset($_SESSION['test_answers']);

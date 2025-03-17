@@ -61,9 +61,9 @@ if (!isset($_SESSION['username'])) {
         </button>
         <?php if ($_SESSION['role'] == 1) { ?>
 
-        <button onclick="window.location = '<?= $url('admin/teacher/add') ?>'" class="action-btn">
-            <i class="fas fa-user-plus"></i> Add Teacher
-        </button>
+            <button onclick="window.location = '<?= $url('admin/teacher/add') ?>'" class="action-btn">
+                <i class="fas fa-user-plus"></i> Add Teacher
+            </button>
         <?php } ?>
         <button onclick="window.location = '<?= $url('admin/reports') ?>'" class="action-btn">
             <i class="fas fa-flag"></i> View Reports
@@ -79,7 +79,31 @@ if (!isset($_SESSION['username'])) {
         <div class="activity-list">
             <?php foreach ($recentActivities as $activity): ?>
                 <div class="activity-item">
-                    <span class="activity-icon"><?= $activity['icon'] ?></span>
+                    <?php
+                    // Map activity types to Font Awesome icons
+                    $iconMap = [
+                        'login' => '<i class="fas fa-sign-in-alt"></i>',
+                        'logout' => '<i class="fas fa-sign-out-alt"></i>',
+                        'question_add' => '<i class="fas fa-plus-circle"></i>',
+                        'question_edit' => '<i class="fas fa-edit"></i>',
+                        'quiz_add' => '<i class="fas fa-folder-plus"></i>',
+                        'quiz_attempt' => '<i class="fas fa-pencil-alt"></i>',
+                        'test_attempt' => '<i class="fas fa-clipboard-check"></i>',
+                        'report' => '<i class="fas fa-flag"></i>',
+                        'user_add' => '<i class="fas fa-user-plus"></i>',
+                        'default' => '<i class="fas fa-bell"></i>'
+                    ];
+
+                    // Determine the icon to use
+                    $activityIcon = $iconMap['default']; // Default icon
+                    foreach ($iconMap as $type => $icon) {
+                        if (strpos($activity['type'] ?? '', $type) !== false) {
+                            $activityIcon = $icon;
+                            break;
+                        }
+                    }
+                    ?>
+                    <span class="activity-icon"><?= $activityIcon ?></span>
                     <div class="activity-details">
                         <p class="activity-text"><?= $activity['description'] ?></p>
                         <span class="activity-time"><?= $activity['time'] ?></span>
@@ -88,3 +112,4 @@ if (!isset($_SESSION['username'])) {
             <?php endforeach; ?>
         </div>
     </div>
+</div>
