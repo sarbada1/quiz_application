@@ -2,7 +2,7 @@
 <div class="quiz-config-container">
     <h2 class="config-title">Customize Your Quiz</h2>
     
-    <form action="/quiz/custom" method="POST" class="quiz-config-form">
+    <form action="<?= $url('quiz/custom') ?>" method="POST" class="quiz-config-form">
         <div class="config-grid">
             <!-- Category Selection -->
             <div class="config-section">

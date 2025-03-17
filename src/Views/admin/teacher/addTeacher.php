@@ -1,6 +1,6 @@
 
 
-<form method="POST" action="/admin/teacher/add" class="form-group">
+<form method="POST" action="<?= $url('admin/teacher/add') ?>" class="form-group">
 <?php if (isset($_SESSION['message'])): ?>
     <div id="alert" class="alert alert-<?= $_SESSION['status'] ?>" role="alert">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -15,7 +15,7 @@
     ?>
     <h1>Add Teacher</h1>
     <div class="breadcrumb">
-        <a href="/admin/teacher/list">Teacher</a>
+        <a href="<?= $url('admin/teacher/list') ?>">Teacher</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Create</a>
     </div>

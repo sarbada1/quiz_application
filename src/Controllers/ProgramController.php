@@ -24,7 +24,7 @@ class ProgramController extends Controller
 
     public function index()
     {
-        $categories = $this->categoryModel->getTopCategories();
+        $categories = $this->categoryModel->getAllCategories();
         $content = $this->render('admin/program/add', ['categories' => $categories]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
@@ -69,6 +69,7 @@ public function showTest()
 {
     $programs = $this->programModel->getWithCategory();
     $quiz = $this->quizModel->getAll();
+    
 
     $content = $this->uirender('user/test', [
         'programs' => $programs,
@@ -101,7 +102,7 @@ public function showTest()
         }
 
         $program = $this->programModel->getById($id);
-        $categories = $this->categoryModel->getTopCategories();
+        $categories = $this->categoryModel->getAllCategories();
         
         $content = $this->render('admin/program/edit', [
             'program' => $program,

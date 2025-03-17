@@ -1,122 +1,155 @@
-<h1>List Question</h1>
-<div class="row">
-    <div class="breadcrumb">
-        <a href="/quiz-play/admin/question/list">Question</a>
-        <i class="fas fa-chevron-right"></i>
-        <a href="#" style="margin-left: 7px;cursor:default">List</a>
-    </div>
-    <div>
-        <button class='success mb-5'><a href='/quiz-play/admin/question/add'>Add Question</a></button>
-    </div>
-</div>
+<div class="container">
+    <h2>Questions</h2>
+    <div class="mb-4">
+        <h4>Filter Questions</h4>
+        <div class="filter-container mb-4">
+    <form method="GET" class="filter-form">
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <select name="category" id="category" class="form-control">
+                <option value="">All Categories</option>
+                <?php foreach ($categories as $category): ?>
+                    <option value="<?= $category['id'] ?>" <?= $selectedCategory == $category['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($category['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
 
-<div class="mb-4">
-    <h4>Filter Questions</h4>
-    <form id="filterForm" method="get" action="">
-        <div class="form-group">
-            <label for="quiz_id">Quiz:</label>
-            <select name="quiz" id="quiz_id" class="form-control">
-                <option value="">--Select Quiz--</option>
-                <?php foreach ($quizzes as $quiz): ?>
-                    <option value="<?= $quiz['id'] ?>" <?= $selectedQuiz == $quiz['id'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($quiz['title']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="question_type">Question Type:</label>
-            <select name="question_type" id="question_type" class="form-control">
-                <option value="">--Select Question Type--</option>
-                <?php foreach ($questionTypes as $type): ?>
-                    <option value="<?= $type['id'] ?>" <?= $questionType == $type['id'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($type['type']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary mb-5">Filter</button>
+
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="<?= $url('admin/question/list') ?>" class="btn btn-secondary">Reset</a>
     </form>
 </div>
-<?php if (empty($questions)): ?>
-    <table>
-        <tr>
-            <td>   No questions available.
-            </td>
-        </tr>
-    </table>
-<?php else: ?>
-<?php
-$currentQuiz = null;
-$i = 1;
-foreach ($questions as $question):
-    if ($currentQuiz !== $question['title']):
-        if ($currentQuiz !== null): ?>
-            </tbody>
-        </table>
-        <?php endif; 
-        $currentQuiz = $question['title'];
-        ?>
-        <h3 class="mt-4 mb-3"><?= htmlspecialchars($question['title']) ?></h3>
-        <table class="questions-table">
-            <thead>
-                <tr>
-                    <th>SN</th>
-                    <th>Question</th>
-                    <th>Type</th>
-                    <th>Answer</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-    <?php endif; ?>
-    <tr>
-        <td><?= $i++ ?></td>
-        <td><?= htmlspecialchars($question['question_text']) ?></td>
-        <td><?= htmlspecialchars($question['type']) ?></td>
-        <td>
-            <button class="success mb-5"><a href="/quiz-play/admin/answer/add/<?= $question['id'] ?>">Add</a></button>
-            <button class="warning"><a href="/quiz-play/admin/answer/list/<?= $question['id'] ?>">View</a></button>
-        </td>
-        <td>
-            <button class="primary mb-5"><a href="/quiz-play/admin/question/edit/<?= $question['id'] ?>">Edit</a></button>
-            <button class="danger"><a href="/quiz-play/admin/question/delete/<?= $question['id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
-        </td>
-    </tr>
-<?php endforeach; ?>
-</tbody>
-</table>
-<?php endif; ?>
+    </div>
 
-<!-- Pagination -->
-<div class="pagination mt-4">
+
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Question</th>
+                <th>Category</th>
+                <!-- <th>Difficulty</th> -->
+                <th>Marks</th>
+                <th>Answer</th>
+                <!-- <th>Tags</th> -->
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            $i = 1;
+            foreach ($questions as $question): ?>
+                <tr>
+                    <td><?= $i++ ?></td>
+                    <td><?= htmlspecialchars($question['question_text']) ?></td>
+                    <td><?= htmlspecialchars($question['category_name']) ?></td>
+                    <!-- <td><?= htmlspecialchars($question['difficulty_level']) ?></td> -->
+                    <td><?= $question['marks'] ?></td>
+                    <!-- <td><?= htmlspecialchars($question['tags'] ?? '') ?></td> -->
+                    <td>
+                        <a href="<?= $url('admin/answer/add/<?= $question[') ?>"id'] ?>" class="btn flex btn-primary">Add</a>
+                        <a href="<?= $url('admin/answer/list/<?= $question[') ?>"id'] ?>"
+                            class="btn flex btn-danger">View</a>
+                    </td>
+                    <td>
+                        <a href="<?= $url('admin/question/edit/<?= $question[') ?>"id'] ?>" class="btn flex btn-primary">Edit</a>
+                        <a href="<?= $url('admin/question/delete/<?= $question[') ?>"id'] ?>"
+                            class="btn flex btn-danger"
+                            onclick="return confirm('Are you sure?')">Delete</a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
     <?php if ($totalPages > 1): ?>
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?page=<?= $i ?><?= $selectedQuiz ? '&quiz='.$selectedQuiz : '' ?><?= $questionType ? '&question_type='.$questionType : '' ?>" 
-               class="page-link <?= $currentPage == $i ? 'active' : '' ?>">
-                <?= $i ?>
-            </a>
-        <?php endfor; ?>
-    <?php endif; ?>
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <!-- Previous Button -->
+            <?php if ($currentPage > 1): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<?= $currentPage - 1 ?>" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
+            <?php
+            $startPage = max(1, $currentPage - 2);
+            $endPage = min($totalPages, $currentPage + 2);
+
+            if ($startPage > 1) {
+                echo '<li class="page-item"><a class="page-link" href="?page=1">1</a></li>';
+                if ($startPage > 2) {
+                    echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            for ($i = $startPage; $i <= $endPage; $i++): ?>
+                <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
+                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                </li>
+            <?php endfor;
+
+            if ($endPage < $totalPages) {
+                if ($endPage < $totalPages - 1) {
+                    echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+                echo '<li class="page-item"><a class="page-link" href="?page=' . $totalPages . '">' . $totalPages . '</a></li>';
+            }
+            ?>
+
+            <!-- Next Button -->
+            <?php if ($currentPage < $totalPages): ?>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<?= $currentPage + 1 ?>" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+        </ul>
+    </nav>
+<?php endif; ?>
 </div>
 
 <style>
 .pagination {
-    display: flex;
     gap: 5px;
-    justify-content: center;
+    display: flex;
+    list-style: none;
 }
+
 .page-link {
-    padding: 5px 10px;
+    border-radius: 4px;
+    padding: 8px 16px;
+    color: #2c3e50;
     border: 1px solid #ddd;
-    text-decoration: none;
 }
-.page-link.active {
-    background-color: #007bff;
+
+.page-item.active .page-link {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.page-link:hover {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+  
+    background-color: #fff;
+}
+.page-item.active .page-link {
+    background-color: #3498db;
+    border-color: #3498db;
     color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
 }
-.questions-table {
-    width: 100%;
-    margin-bottom: 20px;
-}
+
 </style>

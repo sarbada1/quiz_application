@@ -52,7 +52,29 @@ class ProgramModel extends BaseModel
             'description' => $description,
         ]);
     }
-
+    public function getProgramsWithQuestions() {
+        $sql = "SELECT DISTINCT p.*, 
+                CASE WHEN sq.question_count > 0 THEN 1 ELSE 0 END as has_subject_questions,
+                CASE WHEN mq.question_count > 0 THEN 1 ELSE 0 END as has_mocktest_questions
+                FROM programs p
+                LEFT JOIN (
+                    SELECT s.program_id, COUNT(q.id) as question_count
+                    FROM subjects s
+                    JOIN questions q ON s.id = q.subject_id
+                    GROUP BY s.program_id
+                ) sq ON p.id = sq.program_id
+                LEFT JOIN (
+                    SELECT mt.program_id, COUNT(q.id) as question_count
+                    FROM programmes_mock_test mt
+                    JOIN mock_test_questions q ON mt.id = q.mock_test_id
+                    GROUP BY mt.program_id
+                ) mq ON p.id = mq.program_id
+                WHERE sq.question_count > 0 OR mq.question_count > 0";
+    
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     public function updateProgram($id, $categoryId, $name, $slug,$description = null)
     {
         return $this->update(

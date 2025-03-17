@@ -16,12 +16,12 @@
  
     <div class="row">
         <div class="breadcrumb">
-        <a href="/admin/program/list">Test</a>
+        <a href="<?= $url('admin/program/list') ?>">Test</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">List</a>
         </div>
         <div>
-            <button class='success mb-5'><a href='/admin/program/add'>Add New Test</a></button>
+            <button class='success mb-5'><a href="<?= $url('admin/program/add') ?>">Add New Test</a></button>
         </div>
     </div>
 
@@ -44,12 +44,12 @@
                     <td><?= htmlspecialchars($program['name']) ?></td>
                     <td><?= htmlspecialchars($program['cname']) ?></td>
                     <td>
-                      <button class="info">  <a href="/admin/mocktest/add/<?= $program['id'] ?>" >Add</a></button>
-                      <button class="warning"> <a href="/admin/mocktest/list/<?= $program['id'] ?>" >View</a></button> 
+                      <button class="info">  <a href="<?= $url('admin/mocktest/add/<?= $program[') ?>"id'] ?>" >Add</a></button>
+                      <button class="warning"> <a href="<?= $url('admin/mocktest/list/<?= $program[') ?>"id'] ?>" >View</a></button> 
                     </td>
                     <td>
-                      <button class="primary">  <a href="/admin/program/edit/<?= $program['id'] ?>" >Edit</a></button>
-                      <button class="danger"> <a href="/admin/program/delete/<?= $program['id'] ?>" onclick="return confirm('Are you sure you want to delete this program?')">Delete</a></button> 
+                      <button class="primary">  <a href="<?= $url('admin/program/edit/<?= $program[') ?>"id'] ?>" >Edit</a></button>
+                      <button class="danger"> <a href="<?= $url('admin/program/delete/<?= $program[') ?>"id'] ?>" onclick="return confirm('Are you sure you want to delete this program?')">Delete</a></button> 
                     </td>
                 </tr>
             <?php endforeach; ?>

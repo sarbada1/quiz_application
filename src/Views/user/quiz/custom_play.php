@@ -123,7 +123,7 @@
             }
         });
 
-        fetch('/quiz/submit', {
+        fetch('<?= $url('quiz/submit') ?>', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -9,10 +9,10 @@
  unset($_SESSION['message']);
  unset($_SESSION['status']);
 endif; ?>
-<form action="/admin/questiontype/add" method="POST" class="form-group">
+<form action="<?= $url('admin/questiontype/add') ?>" method="POST" class="form-group">
 <h2>Add Question Type</h2>
 <div class="breadcrumb">
-        <a href="/admin/questiontype/list">Question Type</a>
+        <a href="<?= $url('admin/questiontype/list') ?>">Question Type</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Create</a>
     </div>

@@ -11,18 +11,18 @@
 endif;
 ?>
 
-<form method="post" action="/admin/answer/edit/<?= $answer['id'] ?>">
+<form method="post" action="<?= $url('admin/answer/edit/<?= $answer[') ?>"id'] ?>">
     <h1>Edit Answer for Question: <?= $question['question_text'] ?></h1>
     <div class="row">
         <div class="breadcrumb">
-            <a href="/admin/question/list">Question</a>
+            <a href="<?= $url('admin/question/list') ?>">Question</a>
             <i class="fas fa-chevron-right"></i>
-            <a href="/admin/answer/list/<?= $question['id'] ?>" style="margin-left: 7px;">Answers</a>
+            <a href="<?= $url('admin/answer/list/<?= $question[') ?>"id'] ?>" style="margin-left: 7px;">Answers</a>
             <i class="fas fa-chevron-right"></i>
             <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
         </div>
         <div>
-            <button class='danger mb-5'><a href='/admin/answer/delete/<?= $answer['question_id'] ?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+            <button class='danger mb-5'><a href="<?= $url('admin/answer/delete/<?= $answer[') ?>"question_id'] ?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
         </div>
     </div>
     <div class="form-group">

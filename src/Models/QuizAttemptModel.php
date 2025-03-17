@@ -3,6 +3,8 @@
 namespace MVC\Models;
 
 use PDO;
+use Exception;
+use PDOException;
 
 class QuizAttemptModel extends BaseModel
 {
@@ -10,95 +12,185 @@ class QuizAttemptModel extends BaseModel
     {
         parent::__construct($pdo, 'quiz_attempts');
     }
-
-    public function createAttempt($data)
-    {
+    public function createAttempt($data) {
         try {
             $this->pdo->beginTransaction();
     
-            error_log("Creating attempt with data: " . json_encode($data));
-    
-            $sql = "INSERT INTO quiz_attempts 
-                    (user_id, quiz_id, total_questions, started_at) 
-                    VALUES (:user_id, :quiz_id, :total_questions, :started_at)";
+            $sql = "INSERT INTO quiz_attempts (
+                        user_id, 
+                        quiz_id, 
+                        total_questions,
+                        start_time,
+                        total_marks,
+                        obtained_marks,
+                        attempted_questions,
+                        correct_answers,
+                        status
+                    ) VALUES (
+                        :user_id,
+                        :quiz_id,
+                        :total_questions,
+                        CURRENT_TIMESTAMP,
+                        0,
+                        0,
+                        0,
+                        0,
+                        'started'
+                    )";
     
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([
-                'user_id' => $data['user_id'],
-                'quiz_id' => $data['quiz_id'],
-                'total_questions' => $data['total_questions'],
-                'started_at' => $data['started_at']
+            
+            $stmt->execute([
+                ':user_id' => $data['user_id'],
+                ':quiz_id' => $data['quiz_id'],
+                ':total_questions' => $data['total_questions']
             ]);
-    
-            if (!$result) {
-                error_log("SQL Error: " . json_encode($stmt->errorInfo()));
-                throw new \Exception("Failed to insert attempt");
-            }
     
             $attemptId = $this->pdo->lastInsertId();
             
+            if (!$attemptId) {
+                throw new Exception("Failed to create attempt");
+            }
+    
             $this->pdo->commit();
-            error_log("Successfully created attempt with ID: $attemptId");
-            
             return $attemptId;
     
-        } catch (\Exception $e) {
+        } catch (PDOException $e) {
             $this->pdo->rollBack();
-            error_log("Error in createAttempt: " . $e->getMessage());
-            return false;
+            error_log("Create attempt error: " . $e->getMessage());
+            throw new Exception("Database error occurred");
+        }
+    }
+    public function updateAttempt($attemptId, $data) {
+        try {
+            $updateData = [
+                'completed_at' => date('Y-m-d H:i:s'),
+                'score' => $data['score'],
+                'status' => 'completed'
+            ];
+
+            return $this->update($updateData, [
+                ['field' => 'id', 'operator' => '=', 'value' => $attemptId]
+            ]);
+
+        } catch (PDOException $e) {
+            error_log("Error updating quiz attempt: " . $e->getMessage());
+            throw new Exception("Failed to update quiz attempt");
         }
     }
 
-    public function saveAnswer($attemptId, $questionId, $answerId, $isCorrect, $questionOrder)
-    {
+    public function saveAnswer($attemptId, $questionId, $answerId, $isCorrect, $questionOrder) {
         try {
-            $sql = "INSERT INTO quiz_answers 
-                    (attempt_id, question_id, answer_id, is_correct, question_order) 
-                    VALUES (:attempt_id, :question_id, :answer_id, :is_correct, :question_order)";
+            // Get category_id for the question
+            $stmt = $this->pdo->prepare("SELECT category_id FROM questions WHERE id = ?");
+            $stmt->execute([$questionId]);
+            $categoryId = $stmt->fetchColumn();
+    
+            // Calculate marks obtained
+            $stmt = $this->pdo->prepare("
+                SELECT marks_allocated/number_of_questions as marks_per_question 
+                FROM quiz_categories 
+                WHERE quiz_id = (SELECT quiz_id FROM quiz_attempts WHERE id = ?) 
+                AND category_id = ?
+            ");
+            $stmt->execute([$attemptId, $categoryId]);
+            $marksPerQuestion = $stmt->fetchColumn();
+    
+            $sql = "INSERT INTO quiz_attempt_answers (
+                        attempt_id,
+                        question_id,
+                        category_id,
+                        selected_option_id,
+                        is_correct,
+                        marks_obtained
+                    ) VALUES (
+                        :attempt_id,
+                        :question_id,
+                        :category_id,
+                        :selected_option_id,
+                        :is_correct,
+                        :marks_obtained
+                    )";
     
             $stmt = $this->pdo->prepare($sql);
-            
-            // Save answer regardless of correctness
-            $result = $stmt->execute([
-                'attempt_id' => $attemptId,
-                'question_id' => $questionId,
-                'answer_id' => $answerId,
-                'is_correct' => $isCorrect ? 1 : 0,
-                'question_order' => $questionOrder
+            return $stmt->execute([
+                ':attempt_id' => $attemptId,
+                ':question_id' => $questionId,
+                ':category_id' => $categoryId,
+                ':selected_option_id' => $answerId,
+                ':is_correct' => $isCorrect ? 1 : 0,
+                ':marks_obtained' => $isCorrect ? $marksPerQuestion : 0
             ]);
     
-            if (!$result) {
-                error_log("Failed to save answer for question: $questionId");
-                return false;
-            }
-    
-            return true;
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Error saving answer: " . $e->getMessage());
             return false;
         }
     }
+    
+    public function updateAttemptStats($attemptId) {
+        $sql = "UPDATE quiz_attempts q 
+                SET attempted_questions = (
+                    SELECT COUNT(DISTINCT question_id) FROM quiz_attempt_answers WHERE attempt_id = :id
+                ),
+                correct_answers = (
+                    SELECT COUNT(*) FROM quiz_attempt_answers WHERE attempt_id = :id AND is_correct = 1
+                ),
+                obtained_marks = (
+                    SELECT COALESCE(SUM(marks_obtained), 0) FROM quiz_attempt_answers WHERE attempt_id = :id
+                )
+                WHERE q.id = :id";
+    
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([':id' => $attemptId]);
+    }
 
-    public function completeAttempt($attemptId, $data)
-    {
+
+    public function completeAttempt($attemptId, $data) {
         try {
-            $sql = "UPDATE quiz_attempts 
-                    SET correct_answers = :correct,
-                        wrong_answers = :wrong,
-                        score = :score,
-                        completed_at = NOW()
-                    WHERE id = :attempt_id";
-
+            $this->pdo->beginTransaction();
+    
+            // Get quiz total marks and obtained marks from categories
+            $sql = "SELECT 
+                    COALESCE(SUM(qaa.marks_obtained), 0) as obtained_marks,
+                    (SELECT COALESCE(SUM(marks_allocated), 0) 
+                     FROM quiz_categories qc 
+                     WHERE qc.quiz_id = qa.quiz_id) as total_marks
+                    FROM quiz_attempts qa
+                    LEFT JOIN quiz_attempt_answers qaa ON qa.id = qaa.attempt_id
+                    WHERE qa.id = ?
+                    GROUP BY qa.id";
+            
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([
-                'attempt_id' => $attemptId,
-                'correct' => $data['correct_answers'],
-                'wrong' => $data['wrong_answers'],
-                'score' => $data['score']
+            $stmt->execute([$attemptId]);
+            $marks = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+            // Update attempt
+            $sql = "UPDATE quiz_attempts SET 
+                    obtained_marks = :obtained_marks,
+                    total_marks = :total_marks,
+                    correct_answers = :correct_answers,
+                    attempted_questions = :attempted_questions,
+                    end_time = CURRENT_TIMESTAMP,
+                    status = 'completed'
+                    WHERE id = :attempt_id";
+    
+            $stmt = $this->pdo->prepare($sql);
+            $result = $stmt->execute([
+                ':attempt_id' => $attemptId,
+                ':obtained_marks' => $marks['obtained_marks'],
+                ':total_marks' => $marks['total_marks'],
+                ':correct_answers' => $data['correct_answers'],
+                ':attempted_questions' => $data['correct_answers'] + $data['wrong_answers']
             ]);
-        } catch (\PDOException $e) {
+    
+            $this->pdo->commit();
+            return $result;
+    
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
             error_log("Error completing attempt: " . $e->getMessage());
-            return false;
+            throw new Exception("Failed to complete attempt");
         }
     }
 
@@ -209,28 +301,58 @@ class QuizAttemptModel extends BaseModel
         }
     }
 
-    public function getUserHistory($userId)
-    {
+    public function getUserHistory($userId) {
         try {
-            $sql = "SELECT qa.*, q.title as quiz_title,
-                    qa.correct_answers,
-                    qa.wrong_answers,
+            $sql = "SELECT 
+                    qa.id as attempt_id,
+                    q.title,
+                    q.type,
+                    qa.start_time,
+                    qa.end_time,
+                    qa.total_marks,
+                    qa.obtained_marks,
                     qa.total_questions,
-                    qa.score,
-                    qa.completed_at as attempted_at,
-                    qa.id as attempt_id
+                    qa.attempted_questions,
+                    qa.correct_answers,
+                    qa.status,
+                    (SELECT COUNT(DISTINCT category_id) 
+                     FROM quiz_attempt_answers 
+                     WHERE attempt_id = qa.id) as categories_attempted
                 FROM quiz_attempts qa
                 JOIN quizzes q ON qa.quiz_id = q.id
-                WHERE qa.user_id = :user_id
-                AND qa.completed_at IS NOT NULL
-                ORDER BY qa.completed_at DESC";
-
+                WHERE qa.user_id = :user_id 
+                AND qa.status IN ('completed', 'abandoned')
+                ORDER BY qa.start_time DESC";
+    
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute(['user_id' => $userId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (\PDOException $e) {
-            error_log("Error getting quiz history: " . $e->getMessage());
-            return [];
+            
+            $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Format data
+            return array_map(function($attempt) {
+                return [
+                    'attempt_id' => $attempt['attempt_id'],
+                    'title' => $attempt['title'],
+                    'type' => $attempt['type'],
+                    'start_time' => $attempt['start_time'],
+                    'end_time' => $attempt['end_time'],
+                    'duration' => strtotime($attempt['end_time']) - strtotime($attempt['start_time']),
+                    'total_marks' => $attempt['total_marks'],
+                    'obtained_marks' => $attempt['obtained_marks'],
+                    'accuracy' => $attempt['total_questions'] > 0 ? 
+                        round(($attempt['correct_answers'] / $attempt['total_questions']) * 100, 2) : 0,
+                    'total_questions' => $attempt['total_questions'],
+                    'attempted_questions' => $attempt['attempted_questions'],
+                    'correct_answers' => $attempt['correct_answers'],
+                    'categories_attempted' => $attempt['categories_attempted'],
+                    'status' => $attempt['status']
+                ];
+            }, $attempts);
+    
+        } catch (PDOException $e) {
+            error_log("Error fetching user history: " . $e->getMessage());
+            throw new Exception("Failed to fetch quiz history");
         }
     }
 }

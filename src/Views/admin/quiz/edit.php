@@ -10,51 +10,68 @@
     unset($_SESSION['status']);
 endif;
 ?>
-<form method="POST" class="form-group">
-    <h1>Edit Quiz</h1>
-    <div class="row">
-        <div class="breadcrumb">
-            <a href="/admin/quiz/list">Quiz</a>
-            <i class="fas fa-chevron-right"></i>
-            <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
-        </div>
-        <div>
-            <button class='danger mb-5'><a href='/admin/quiz/delete/<?= $category['id'] ?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
-        </div>
+<form action="<?= $url('admin/quiz/edit/<?= $quiz[') ?>"id'] ?>" method="POST" class="form-group">
+    <h2>Edit Quiz</h2>
+    <div class="breadcrumb">
+        <a href="<?= $url('admin/quiz/list') ?>">Quiz</a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
     </div>
-    <label for="title">Title:</label>
-    <input type="text" id="title" name="title" value="<?= htmlspecialchars($category['title']) ?>">
 
+    <div class="form-group">
+        <label>Quiz Type</label>
+        <select name="type" required>
+            <option value="mock" <?= $quiz['type'] === 'mock' ? 'selected' : '' ?>>Mock Test</option>
+            <option value="previous_year" <?= $quiz['type'] === 'previous_year' ? 'selected' : '' ?>>Previous Year</option>
+            <option value="quiz" <?= $quiz['type'] === 'quiz' ? 'selected' : '' ?>>Quiz</option>
+            <option value="real_exam" <?= $quiz['type'] === 'real_exam' ? 'selected' : '' ?>>Real Exam</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" value="<?= htmlspecialchars($quiz['title']) ?>" required>
+    </div>
     <label for="slug">Slug:</label>
-    <input type="text" id="slug" name="slug" value="<?= htmlspecialchars($category['slug']) ?>" readonly>
+    <input type="text" id="slug" name="slug" value="<?= htmlspecialchars($quiz['slug']) ?>" readonly>
+    <div class="form-group">
+        <label for="description">Description:</label>
+        <textarea name="description" id="description"><?= htmlspecialchars($quiz['description']) ?></textarea>
+    </div>
 
-    <label for="description">Description:</label>
-    <textarea name="description" id="description"><?= htmlspecialchars($category['description']) ?></textarea>
-
-    <label for="category_id"> Category:</label>
-    <select id="category_id" name="category_id">
-        <option value="0" <?= $category['category_id'] == 0 ? 'selected' : '' ?>>None (Top Level)</option>
-        <?php foreach ($categories as $cat): ?>
-            <?php if ($cat['id'] != $category['id']): ?>
-                <option value="<?= $cat['id'] ?>" <?= $cat['id'] == $category['category_id'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($cat['name']) ?>
+    <div class="form-group">
+        <label>Categories</label>
+        <select name="categories[]" multiple required>
+            <?php foreach ($categories as $category): ?>
+                <option value="<?= $category['id'] ?>" 
+                    <?= in_array($category['id'], $selectedCategories) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($category['name']) ?>
                 </option>
-            <?php endif; ?>
-        <?php endforeach; ?>
-    </select>
+            <?php endforeach; ?>
+        </select>
+    </div>
 
-    <label for="difficulty_level"> Level of difficulty:</label>
-    <select id="difficulty_level" name="difficulty_level">
-        <option value="0" >--Select Level--</option>
-        <?php foreach ($levels as $level): ?>
-            <?php if ($cat['id'] != $category['id']): ?>
-                <option value="<?= $level['id'] ?>" <?= $level['id'] == $category['difficulty_level'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($level['level']) ?>
+    <div class="form-group">
+        <label>Tags</label>
+        <select name="tags[]" multiple>
+            <?php foreach ($tags as $tag): ?>
+                <option value="<?= $tag['id'] ?>"
+                    <?= in_array($tag['id'], $selectedTags) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($tag['name']) ?>
                 </option>
-            <?php endif; ?>
-        <?php endforeach; ?>
-    </select>
+            <?php endforeach; ?>
+        </select>
+    </div>
 
+    <div class="form-group">
+        <label>Total Marks</label>
+        <input type="number" name="total_marks" value="<?= $quiz['total_marks'] ?>" required>
+    </div>
 
-    <button type="submit" class="warning mt-5">Save changes</button>
+    <div class="form-group">
+        <label>Duration (minutes)</label>
+        <input type="number" name="duration" value="<?= $quiz['duration'] ?>" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update Quiz</button>
 </form>

@@ -2,8 +2,8 @@
     <div class="flex w-100 justify-between">
 
         <h1>Online Mock Test</h1>
-        <!-- <button class='warning mb-5'><a href='/admin/mocktestquestion/add/<?= $mockTest['id'] ?>'>Add</a></button> -->
-        <button class='warning mb-5'><a href='/admin/mocktestquestion/add/<?= $mockTest['id'] ?>'>Edit</a></button>
+        <!-- <button class='warning mb-5'><a href="<?= $url('admin/mocktestquestion/add/<?= $mockTest[') ?>"id'] ?>'>Add</a></button> -->
+        <button class='warning mb-5'><a href="<?= $url('admin/mocktestquestion/add/<?= $mockTest[') ?>"id'] ?>'>Edit</a></button>
     </div>
     <div class="test-info">
         <div>

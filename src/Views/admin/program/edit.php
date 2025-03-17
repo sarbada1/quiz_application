@@ -11,10 +11,10 @@
     unset($_SESSION['status']);
     endif; 
     ?>
-<form action="/admin/program/edit/<?= $program['id'] ?>" method="POST" class="form-group">
+<form action="<?= $url('admin/program/edit/<?= $program[') ?>"id'] ?>" method="POST" class="form-group">
     <h2>Edit Test</h2>
     <div class="breadcrumb">
-        <a href="/admin/program/list">Test</a>
+        <a href="<?= $url('admin/program/list') ?>">Test</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
     </div>

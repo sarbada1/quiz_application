@@ -2,12 +2,15 @@
 
 namespace MVC\Controllers;
 
+use PDO;
+use Exception;
 use MVC\Controller;
+use MVC\Models\TagModel;
+use MVC\Models\QuizModel;
 use MVC\Models\CategoryModel;
+use MVC\Models\LevelModel;
 use MVC\Models\QuestionModel;
 use MVC\Models\QuestionTypeModel;
-use MVC\Models\QuizModel;
-use PDO;
 
 
 
@@ -16,31 +19,45 @@ class QuestionController extends Controller
     public $quizModel;
     public $questiontypeModel;
     public $questionModel;
+    public $tagModel;
+    public $levelModel;
+    public $pdo;
+
 
     public function __construct(PDO $pdo)
     {
+        parent::__construct($pdo);
+        $this->pdo = $pdo;
         $this->quizModel = new QuizModel($pdo);
         $this->questiontypeModel = new QuestionTypeModel($pdo);
         $this->questionModel = new QuestionModel($pdo);
+        $this->tagModel = new TagModel($pdo);
+        $this->levelModel = new LevelModel($pdo);
     }
 
     public function index()
     {
         $page = $_GET['page'] ?? 1;
-        $selectedQuiz = $_GET['quiz'] ?? null;
-        $questionType = $_GET['question_type'] ?? null;
-    
-        $result = $this->questionModel->getQuestionsGroupedPaginated($page, 10, $selectedQuiz, $questionType);
-    
+        $selectedCategory = $_GET['category'] ?? null;
+        $selectedTag = $_GET['tag'] ?? null;
+
+        $result = $this->questionModel->getQuestionsGroupedPaginated(
+            $page,
+            10,
+            $selectedCategory,
+            $selectedTag
+        );
+
         $content = $this->render('admin/question/view', [
             'questions' => $result['questions'],
             'totalPages' => $result['pages'],
             'currentPage' => $page,
-            'selectedQuiz' => $selectedQuiz,
-            'questionType' => $questionType,
-            'quizzes' => $this->quizModel->getAll(),
-            'questionTypes' => $this->questionModel->getQuestionTypes()
+            'selectedCategory' => $selectedCategory,
+            'selectedTag' => $selectedTag,
+            'categories' => $this->categoryModel->getAllCategories(),
+            'tags' => $this->tagModel->getAllTags()
         ]);
+
         echo $this->render('admin/layout', ['content' => $content]);
     }
 
@@ -49,9 +66,16 @@ class QuestionController extends Controller
     {
         $questionTypes = $this->questiontypeModel->getAll();
         $quizModels = $this->quizModel->getAll();
+        $tags = $this->tagModel->getAllTags();
+        $categories = $this->categoryModel->getAllCategories();
+        $levels = $this->levelModel->getAll();
+
         $content = $this->render('admin/question/add', [
             'questionTypes' => $questionTypes,
             'quizModels' => $quizModels,
+            'tags' => $tags,
+            'categories' => $categories,
+            'levels' => $levels
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
@@ -60,129 +84,171 @@ class QuestionController extends Controller
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $question_text = $_POST['question_text'] ?? '';
-            $quiz_id = $_POST['quiz_id'] ?? '';
-            $question_type = $_POST['question_type'] ?? '';
-
-            if (empty($question_text)) {
-                echo "Question text is required.";
-                return;
+            $category_id = $_POST['category_id'] ?? '';
+            $difficulty_level = $_POST['difficulty_level'] ?? 'easy';
+            $marks = $_POST['marks'] ?? 1;
+            $year = $_POST['year'] ?? null;
+            $question_type = $_POST['question_type'] ?? 'quiz';
+            $tagIds = $_POST['tags'] ?? [];
+    
+            if (empty($question_text) || empty($category_id)) {
+                $_SESSION['message'] = "Question text and category are required.";
+                $_SESSION['status'] = "danger";
+                header('Location: /admin/question/add');
+                exit;
             }
-            if (empty($quiz_id)) {
-                echo "Quiz is required.";
-                return;
-            }
-            if (empty($question_type)) {
-                echo "Question Type is required.";
-                return;
-            }
-
-
-            $result = $this->questionModel->createQuestion($question_text, $quiz_id, $question_type);
-
-            if ($result) {
+    
+            try {
+                $this->pdo->beginTransaction();
+    
+                $questionId = $this->questionModel->createQuestion(
+                    $question_text,
+                    $difficulty_level,
+                    $marks,
+                    $category_id,
+                    $question_type,
+                    $year
+                );
+    
+                if ($questionId && !empty($tagIds)) {
+                    $this->questionModel->addQuestionTags($questionId, $tagIds);
+                }
+    
+                $this->pdo->commit();
                 $_SESSION['message'] = "Question added successfully!";
                 $_SESSION['status'] = "success";
-                header('Location: /quiz-play/admin/question/add');
-            } else {
-                $_SESSION['message'] = "Error adding Question";
+            } catch (Exception $e) {
+                $this->pdo->rollBack();
+                $_SESSION['message'] = "Error adding question: " . $e->getMessage();
                 $_SESSION['status'] = "danger";
             }
+    
+            header('Location: /admin/question/add');
+            exit;
         }
     }
 
     public function edit($id)
     {
-        $category = $this->questionModel->getById($id);
-        if (!$category) {
-            echo "Quiz not found.";
-            return;
-        }
-        $questionTypes = $this->questiontypeModel->getAll();
-        $quizModels = $this->quizModel->getAll();
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $question_text = $_POST['question_text'] ?? '';
-            $quiz_id = $_POST['quiz_id'] ?? '';
             $question_type = $_POST['question_type'] ?? '';
-
-
-            if (empty($question_text)) {
-                echo "Question text is required.";
-                return;
-            }
-            if (empty($quiz_id)) {
-                echo "Quiz is required.";
-                return;
-            }
-            if (empty($question_type)) {
-                echo "Question Type is required.";
-                return;
-            }
-
-            $result = $this->questionModel->updateQuestion($id, $question_text, $quiz_id, $question_type);
-
-            if ($result) {
-                $_SESSION['message'] = "Question edited successfully!";
-                $_SESSION['status'] = "success";
-                header('Location: /quiz-play/admin/question/edit/' . $id);
-                exit;
-            } else {
-                $_SESSION['message'] = "Error updating Question.";
+            $difficulty_level = $_POST['difficulty_level'] ?? 'easy';
+            $marks = $_POST['marks'] ?? 1;
+            $year = $_POST['year'] ?? null;
+            $category_id = $_POST['category_id'] ?? '';
+            $tagIds = $_POST['tags'] ?? [];
+    
+            if (empty($question_text) || empty($question_type) || empty($category_id)) {
+                $_SESSION['message'] = "All fields are required.";
                 $_SESSION['status'] = "danger";
-                header('Location: /quiz-play/admin/question/edit/' . $id);
+                header("Location: /admin/question/edit/$id");
                 exit;
             }
+    
+            $this->pdo->beginTransaction();
+            try {
+                $result = $this->questionModel->updateQuestion(
+                    $id, 
+                    $question_text, 
+                    $question_type, 
+                    $difficulty_level, 
+                    $marks, 
+                    $year, 
+                    $category_id
+                );
+    
+                // Update tags
+                $this->questionModel->deleteQuestionTags($id);
+                if (!empty($tagIds)) {
+                    $this->questionModel->addQuestionTags($id, $tagIds);
+                }
+    
+                $this->pdo->commit();
+                if ($result) {
+                    $_SESSION['message'] = "Question updated successfully!";
+                    $_SESSION['status'] = "success";
+                }
+            } catch (Exception $e) {
+                $this->pdo->rollBack();
+                $_SESSION['message'] = "Error updating question: " . $e->getMessage();
+                $_SESSION['status'] = "danger";
+            }
+    
+            header("Location: /admin/question/edit/$id");
+            exit;
         }
-
-        $content = $this->render('admin/question/edit', [
-            'questionTypes' => $questionTypes,
-            'quizModels' => $quizModels,
-            'category' => $category,
-        ]);
-        echo $this->render('admin/layout', ['content' => $content]);
-    }
-    public function filterQuestion($id)
+    
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get question data
+            $question = $this->questionModel->getById($id);
+            if (!$question) {
+                $_SESSION['message'] = "Question not found";
+                $_SESSION['status'] = "danger";
+                header('Location: /admin/question/list');
+                exit;
+            }
+    
+            // Get all required data
+            $quizModels = $this->quizModel->getAll();
+            $questionTypes = $this->questiontypeModel->getAll();
+            $tags = $this->tagModel->getAllTags();
+            $questionTags = $this->questionModel->getQuestionTags($id);
+            $categories = $this->categoryModel->getAllCategories();
+            $levels = $this->levelModel->getAll();
+    
+            // Render edit form
+            $content = $this->render('admin/question/edit', [
+                'question' => $question,
+                'quizModels' => $quizModels,
+                'questionTypes' => $questionTypes,
+                'tags' => $tags,
+                'questionTags' => $questionTags,
+                'categories' => $categories,
+                'levels' => $levels
+            ]);
+            echo $this->render('admin/layout', ['content' => $content]);
+            return;
+        }
+    }    public function filterQuestion($id)
     {
-        if($id=='0'){
+        if ($id == '0') {
             $questions = $this->questionModel->getAll();
-        }
-        else{
+        } else {
 
             $questions = $this->questionModel->questionFilter($id);
         }
         $i = 1; // Initialize $i before the loop
-    if($questions){
-        foreach($questions as $question)
-        {
-            echo '<tr>';
-            echo '<td>'.$i++.'</td>'; // Increment $i inside the loop
-            echo "<td>".$question['question_text']."</td>";
-            echo "<td>".$question['title']."</td>";
-            echo "<td>".$question['type']."</td>";
-            echo '<td>
+        if ($questions) {
+            foreach ($questions as $question) {
+                echo '<tr>';
+                echo '<td>' . $i++ . '</td>'; // Increment $i inside the loop
+                echo "<td>" . $question['question_text'] . "</td>";
+                echo "<td>" . $question['title'] . "</td>";
+                echo "<td>" . $question['type'] . "</td>";
+                echo '<td>
                     <button class="success">
-                        <a href="/quiz-play/admin/answer/add/'.$question["id"].'">Add</a>
+                        <a href="/quiz-play/admin/answer/add/' . $question["id"] . '">Add</a>
                     </button>
                     <button class="warning">
-                        <a href="/quiz-play/admin/answer/list/'.$question["id"].'">View</a>
+                        <a href="/quiz-play/admin/answer/list/' . $question["id"] . '">View</a>
                     </button>
                   </td>';
-            echo '<td>
+                echo '<td>
                     <button class="primary">
-                        <a href="/quiz-play/admin/question/edit/'.$question["id"].'">Edit</a>
+                        <a href="/quiz-play/admin/question/edit/' . $question["id"] . '">Edit</a>
                     </button>
                     <button class="danger">
-                        <a href="/quiz-play/admin/question/delete/'.$question["id"].'" onclick="return confirm(\'Are you sure to delete?\')">Delete</a>
+                        <a href="/quiz-play/admin/question/delete/' . $question["id"] . '" onclick="return confirm(\'Are you sure to delete?\')">Delete</a>
                     </button>
                   </td>';
-            echo '</tr>';
+                echo '</tr>';
+            }
+        } else {
+            echo '<tr><td colspan="6">No data found</td></tr>';
         }
     }
-    else{
-        echo '<tr><td colspan="6">No data found</td></tr>';
-    }
-    }
-    
+
     public function delete($id)
     {
         $result = $this->questionModel->deleteQuestion($id);

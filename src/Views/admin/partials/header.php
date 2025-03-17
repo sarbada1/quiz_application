@@ -6,7 +6,7 @@
         <div>
             <button class="danger">
 
-                <a href="/admin/logout">Logout</a>
+                <a href="<?= $url('admin/logout') ?>">Logout</a>
             </button>
         </div>
     </div>

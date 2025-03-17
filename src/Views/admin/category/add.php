@@ -10,10 +10,10 @@
     unset($_SESSION['status']);
     endif; 
     ?>
-<form action="/admin/category/add" method="POST" class="form-group">
+<form action="<?= $url('admin/category/add') ?>" method="POST" class="form-group">
 <h2>Add New Category</h2>
 <div class="breadcrumb">
-        <a href="/admin/category/list">Category</a>
+        <a href="<?= $url('admin/category/list') ?>">Category</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Create</a>
     </div>
@@ -30,6 +30,15 @@
             <option value="<?= $category['id'] ?>">
                 <?= htmlspecialchars($category['name']) ?> 
                 <?= $category['parent_name'] ? '(' . htmlspecialchars($category['parent_name']) . ')' : '(Top Level)' ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <label for="category_type_id"> Category Type:</label>
+    <select id="category_type_id" name="category_type_id">
+        <option value="0">None </option>
+        <?php foreach ($categorytypes as $categorytype): ?>
+            <option value="<?= $categorytype['id'] ?>">
+                <?= ($categorytype['name']) ?> 
             </option>
         <?php endforeach; ?>
     </select>

@@ -13,9 +13,9 @@ endif;
 <h1>Edit Mock Test: <?= htmlspecialchars($mocktest['name']) ?></h1>
 <div class="row">
     <div class="breadcrumb">
-        <a href="/admin/program/list">Test</a>
+        <a href="<?= $url('admin/program/list') ?>">Test</a>
         <i class="fas fa-chevron-right"></i>
-        <a href="/admin/mocktest/list/<?= $mocktest['program_id'] ?>" style="margin-left: 7px;cursor:default">MockTest</a>
+        <a href="<?= $url('admin/mocktest/list/<?= $mocktest[') ?>"program_id'] ?>" style="margin-left: 7px;cursor:default">MockTest</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
     </div>
@@ -43,7 +43,7 @@ endif;
     </div>
     <div class="form-group">
         <label for="no_of_student">No of Students</label>
-        <input type="number" class="form-control" id="no_of_student" name="no_of_student" value="<?= htmlspecialchars($mocktest['no_of_student']) ?>" required>
+        <input type="number" class="form-control" id="no_of_student" name="no_of_student" value="<?= htmlspecialchars($mocktest['no_of_student']) ?>" >
     </div>
 
     <button class="success mt-5" type="submit">Update</button>

@@ -13,12 +13,12 @@ endif;
 <h1>List Level</h1>
 <div class="row">
     <div class="breadcrumb">
-        <a href="/admin/level/list">Level</a>
+        <a href="<?= $url('admin/level/list') ?>">Level</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">List</a>
     </div>
     <div>
-        <button class='success mb-5'><a href='/admin/level/add'>Add Level</a></button>
+        <button class='success mb-5'><a href="<?= $url('admin/level/add') ?>">Add Level</a></button>
     </div>
 </div>
 <table>
@@ -37,8 +37,8 @@ endif;
                 <td><?php echo $i++; ?></td>
                 <td><?= $teacher['level'] ?></td>
                 <td>
-                    <button class="primary"> <a href="/admin/level/edit/<?= $teacher['id'] ?>">Edit</a></button>
-                    <button class="danger"> <a href="/admin/level/delete/<?= $teacher['id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+                    <button class="primary"> <a href="<?= $url('admin/level/edit/<?= $teacher[') ?>"id'] ?>">Edit</a></button>
+                    <button class="danger"> <a href="<?= $url('admin/level/delete/<?= $teacher[') ?>"id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
                 </td>
             </tr>
         <?php endforeach; ?>

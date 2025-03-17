@@ -10,6 +10,7 @@ use MVC\Models\ProgramModel;
 use MVC\Models\CategoryModel;
 use MVC\Models\UserInfoModel;
 use MVC\Models\QuizAttemptModel;
+use MVC\Models\QuestionReportModel;
 use MVC\Models\MockTestAttemptModel;
 
 class ProfileController extends Controller
@@ -22,6 +23,7 @@ class ProfileController extends Controller
     protected $pdo;
     private $quizAttemptModel;
     private $mockTestAttemptModel;
+    private $reportModel;
 
     public function __construct(PDO $pdo)
     {
@@ -33,6 +35,8 @@ class ProfileController extends Controller
         $this->programModel = new ProgramModel($pdo);
         $this->quizAttemptModel = new QuizAttemptModel($pdo);
         $this->mockTestAttemptModel = new MockTestAttemptModel($pdo);
+        $this->reportModel = new QuestionReportModel($pdo);
+
     }
 
     public function index()
@@ -45,6 +49,11 @@ class ProfileController extends Controller
         $programs = $this->programModel->getWithCategory();
         $quizHistory = $this->quizAttemptModel->getUserHistory($_SESSION['user_id']);
         $mocktestHistory = $this->mockTestAttemptModel->getUserHistory($_SESSION['user_id']);
+// print_r($quizHistory);
+$reports = $this->reportModel->getUserReports($_SESSION['user_id']);
+$unreadReportsCount = $this->reportModel->getUnreadReportsCount($_SESSION['user_id']);
+
+$_SESSION['unreadReportsCount'] = $unreadReportsCount;
 
         $content = $this->uirender('user/profile', [
             'user' => $user,
@@ -53,7 +62,11 @@ class ProfileController extends Controller
             'quizzes' => $quizzes,
             'programs' => $programs,
             'quizHistory' => $quizHistory,
-            'mocktestHistory' => $mocktestHistory
+            'mocktestHistory' => $mocktestHistory,
+            'reports' => $reports,
+            'unreadReportsCount' => $unreadReportsCount
+
+
         ]);
         echo $this->uirender('user/layout', ['content' => $content]);
     }
@@ -65,7 +78,6 @@ class ProfileController extends Controller
             $username = $_POST['username'] ?? '';
             $email = $_POST['email'] ?? '';
             $age = $_POST['age'] ?? '';
-            $phone = $_POST['phone'] ?? '';
             $college = $_POST['college'] ?? '';
             $address = $_POST['address'] ?? '';
 
@@ -77,10 +89,10 @@ class ProfileController extends Controller
 
             if ($existingUserInfo) {
                 // Update existing user info
-                $this->userinfoModel->updateUserInfo($age, $phone, $address, $college, $id);
+                $this->userinfoModel->updateUserInfo($age, $address, $college, $id);
             } else {
                 // Create new user info
-                $this->userinfoModel->createUserInfo($age, $phone, $address, $college, $id);
+                $this->userinfoModel->createUserInfo($age, $address, $college, $id);
             }
 
             // Set success message and redirect

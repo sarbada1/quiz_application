@@ -7,7 +7,7 @@
             <?php
             foreach($quiz as $quizdata){
                 echo '<li class="quiz-item">';
-                echo '<a href="/quiz/' . ($quizdata['slug']) . '" class="quiz-name text-none">' . htmlspecialchars($quizdata['title']) . '</a>';
+                echo '<a href="<?= $url('quiz/') ?>" . ($quizdata['slug']) . '" class="quiz-name text-none">' . htmlspecialchars($quizdata['title']) . '</a>';
                 echo '</li>';
             }
             ?>

@@ -15,7 +15,7 @@
     
     <!-- Download template button -->
     <div class="mb-4">
-        <a href="/admin/question/template/download" class="btn btn-primary">
+        <a href="<?= $url('admin/question/template/download') ?>" class="btn btn-primary">
             Download CSV Template
         </a>
     </div>
@@ -32,7 +32,7 @@
     </div>
 
     <!-- Import form -->
-    <form method="post" action="/admin/question/import" enctype="multipart/form-data">
+    <form method="post" action="<?= $url('admin/question/import') ?>" enctype="multipart/form-data">
         <div class="form-group">
             <label for="csv_file">Upload Questions CSV File</label>
             <input type="file" name="csv_file" accept=".csv" required class="form-control">

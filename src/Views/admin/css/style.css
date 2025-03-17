@@ -164,9 +164,17 @@ html {
   cursor: pointer;
   transition: background-color 0.3s;
 }
+.btn.flex{
+  display: flex;
+  margin: 5px;
 
+}
 .btn-primary {
   background-color: #3498db;
+  color: #fff;
+}
+.btn-danger {
+  background-color: red;
   color: #fff;
 }
 
@@ -361,6 +369,11 @@ button.mb-5 {
 
 .alert-success {
   color: #4caf50;
+  background-color: #dff0d8;
+  border-color: #d6e9c6;
+}
+.alert-danger {
+  color: #e91010;
   background-color: #dff0d8;
   border-color: #d6e9c6;
 }
@@ -897,4 +910,47 @@ table th {
 
 .orders {
   background: #29b6f6;
+}
+quick-actions {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.action-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+}
+.activity-list, .notification-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.activity-item, .notification-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }

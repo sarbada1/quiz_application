@@ -1,16 +1,28 @@
 <!-- index.php -->
+<?php if (isset($_SESSION['message'])): ?>
+    <div id="alert" class="alert mt-20 w-75 alert-<?= $_SESSION['status'] ?>" role="alert">
+        <button type="button" class="closealert" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        <?= $_SESSION['message'] ?>
+    </div>
+    <?php unset($_SESSION['message']);
+    unset($_SESSION['status']); ?>
+<?php endif; ?>
 <main>
     <section class="hero">
         <div class="hero-content">
             <h1>Master Your Knowledge</h1>
             <p>Take quizzes, practice mock tests, and track your progress</p>
             <div class="hero-buttons">
-                <a href="/quiz/configure" class="btn-primary">Start Quiz</a>
-                <a href="/test" class="btn-secondary">Try Mock Test</a>
+                <a href="<?= $url('quiz') ?>" class="btn-primary">Start Quiz</a>
+                <a href="<?= $url('test') ?>" class="btn-secondary">Try Mock Test</a>
+                <a href="<?= $url('previous-year-quizzes') ?>" class="btn btn-secondary">Previous Year Quizzes</a>
+
             </div>
         </div>
         <div class="hero-image">
-            <img src="/src/Views/user/img/bg.png" alt="Quiz illustration">
+            <img src="<?= $url('src/Views/user/img/bg.png') ?>" alt="Quiz illustration">
         </div>
     </section>
 
@@ -27,7 +39,7 @@
                     <?php if (!empty($category['children'])): ?>
                         <div class="subcategories collapsed">
                             <?php foreach (array_slice($category['children'], 0, 3) as $child): ?>
-                                <a href="/category/<?= htmlspecialchars($child['slug'] ?? '') ?>" class="subcategory-link">
+                                <a href="<?= $url('category/' . htmlspecialchars($child['slug'] ?? '')) ?>" class="subcategory-link">
                                     <?= htmlspecialchars($child['name']) ?>
                                 </a>
                             <?php endforeach; ?>
@@ -37,19 +49,19 @@
                                     Show More
                                 </button>
                                 <div class="hidden-subcategories" id="category-<?= $category['id'] ?>">
-                                    <?php foreach (array_slice($category['children'], 3) as $child): ?>
-                                        <a href="/category/<?= htmlspecialchars($child['slug'] ?? '') ?>" class="subcategory-link">
-                                            <?= htmlspecialchars($child['name']) ?>
-                                        </a>
-                                    <?php endforeach; ?>
+                                <?php foreach (array_slice($category['children'], 3) as $child): ?>
+    <a href="<?= $url('category/' . htmlspecialchars($child['slug'] ?? '')) ?>" class="subcategory-link">
+        <?= htmlspecialchars($child['name']) ?>
+    </a>
+<?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
 
-                    <a href="/category/<?= $category['slug'] ?>" class="btn-explore">
-                        Explore <?= htmlspecialchars($category['name']) ?>
-                    </a>
+                    <a href="<?= $url('category/' . $category['slug']) ?>" class="btn-explore">
+    Explore <?= htmlspecialchars($category['name']) ?>
+</a>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -110,7 +122,7 @@
 
     .btn-primary,
     .btn-secondary {
-        padding: 0.8rem 1.8rem;
+        padding: 0.8rem 1rem;
         border-radius: 30px;
         font-weight: 600;
         text-decoration: none;
@@ -290,6 +302,134 @@
 
     .btn-explore:hover {
         background: #2980b9;
+    }
+
+    /* Responsive navbar */
+    @media (max-width: 768px) {
+        #navbar {
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .sidebar-nav ul li {
+            display: block;
+            text-align: center;
+        }
+
+        .sidebar-nav ul li ul.dropdown {
+            position: static;
+            width: 100%;
+            box-shadow: none;
+        }
+    }
+
+    /* Responsive main content */
+    @media (max-width: 1024px) {
+        .main-content {
+            grid-template-columns: 1fr;
+            margin-top: 120px;
+        }
+
+        .question-palette {
+            position: relative;
+            top: 0;
+            order: -1;
+        }
+
+        .palette-buttons {
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        }
+    }
+
+    /* Responsive header */
+    @media (max-width: 768px) {
+        .header {
+            flex-direction: column;
+            padding: 10px;
+            height: auto;
+        }
+
+        .timer-section {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+    }
+
+    /* Responsive quiz container */
+    @media (max-width: 768px) {
+        .test-container {
+            margin: 100px auto 20px;
+            padding: 10px;
+        }
+
+        .question-card {
+            padding: 15px;
+        }
+
+        .option {
+            padding: 12px;
+        }
+    }
+
+    /* Responsive review section */
+    @media (max-width: 768px) {
+        .review-container {
+            padding: 10px;
+        }
+
+        .review-item {
+            margin: 5px 0;
+        }
+
+        .answers-list {
+            padding: 5px;
+        }
+    }
+
+    /* Performance modal responsive */
+    @media (max-width: 768px) {
+        .performance-modal .modal-content {
+            width: 95%;
+            padding: 15px;
+        }
+
+        .performance-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-buttons button {
+            width: 100%;
+        }
+    }
+
+    /* Timer responsive */
+    @media (max-width: 768px) {
+        .timer {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Question navigation responsive */
+    @media (max-width: 480px) {
+        .palette-btn {
+            width: 35px;
+            height: 35px;
+            font-size: 12px;
+        }
+
+        .category-section {
+            padding: 10px;
+        }
     }
 </style>
 

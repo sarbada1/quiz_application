@@ -18,16 +18,16 @@
         <div class="quiz-preferences">
             <h2>Customize Your Quiz</h2>
             <form id="quizPreferenceForm">
-    <div class="form-group">
-        <label for="questionCount">Number of Questions:</label>
-        <select id="questionCount" name="count" required>
-            <?php foreach ([5, 10, 15, 20, 25, 30] as $value): ?>
-                <option value="<?= $value ?>"><?= $value ?> Questions</option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-    <button type="button" onclick="startQuiz()" class="start-quiz-btn">Start Quiz</button>
-</form>
+                <div class="form-group">
+                    <label for="questionCount">Number of Questions:</label>
+                    <select id="questionCount" name="count" required>
+                        <?php foreach ([5, 10, 15, 20, 25, 30] as $value): ?>
+                            <option value="<?= $value ?>"><?= $value ?> Questions</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button type="button" onclick="startQuiz()" class="start-quiz-btn">Start Quiz</button>
+            </form>
         </div>
     <?php else: ?>
         <div id="quizModal" class="modal">
@@ -45,120 +45,120 @@
 <?php include __DIR__ . '/auth/register.php'; ?>
 
 <style>
-.quiz-info-container {
-    max-width: 800px;
-    margin: 7rem auto 0 auto;
-    padding: 2rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
+    .quiz-info-container {
+        max-width: 800px;
+        margin: 7rem auto 0 auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
 
-.quiz-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+    .quiz-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
 
-.quiz-meta {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1rem;
-    color: #666;
-}
+    .quiz-meta {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1rem;
+        color: #666;
+    }
 
-.quiz-meta span {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+    .quiz-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-.quiz-description {
-    margin: 2rem 0;
-    padding: 1.5rem;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
+    .quiz-description {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
 
-.quiz-preferences {
-    margin-top: 2rem;
-}
+    .quiz-preferences {
+        margin-top: 2rem;
+    }
 
-.form-group {
-    margin-bottom: 1.5rem;
-}
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
 
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
 
-#questionCount {
-    width: 200px;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
+    #questionCount {
+        width: 200px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
 
-.category-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 0.5rem;
-}
+    .category-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
 
-.category-option {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 8px;
-    background: #f8f9fa;
-    border-radius: 4px;
-    cursor: pointer;
-}
+    .category-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        cursor: pointer;
+    }
 
-.category-option:hover {
-    background: #e9ecef;
-}
+    .category-option:hover {
+        background: #e9ecef;
+    }
 
-.form-actions {
-    text-align: center;
-    margin-top: 2rem;
-}
+    .form-actions {
+        text-align: center;
+        margin-top: 2rem;
+    }
 
-.start-quiz-btn {
-    padding: 12px 24px;
-    font-size: 1.1rem;
-    background: linear-gradient(to right, #4CAF50, #45a049);
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
+    .start-quiz-btn {
+        padding: 12px 24px;
+        font-size: 1.1rem;
+        background: linear-gradient(to right, #4CAF50, #45a049);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
 
-.start-quiz-btn:hover {
-    transform: translateY(-2px);
-}
+    .start-quiz-btn:hover {
+        transform: translateY(-2px);
+    }
 
-.login-btn {
-    padding: 10px 20px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
+    .login-btn {
+        padding: 10px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
 
-.login-btn:hover {
-    background: #0056b3;
-}
+    .login-btn:hover {
+        background: #0056b3;
+    }
 </style>
 
 <script>
-function startQuiz() {
-    const count = document.getElementById('questionCount').value;
-    window.location.href = '/quiz/<?= $quiz['slug'] ?>/start/' + count;
-}
+    function startQuiz() {
+        const count = document.getElementById('questionCount').value;
+        window.location.href="<?= $url('quiz/<?= $quiz[') ?>"slug'] ?>/start/' + count;
+    }
 </script>

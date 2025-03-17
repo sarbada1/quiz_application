@@ -29,15 +29,32 @@ class MockTestController extends Controller
         $this->mockTestAttemptModel = new MockTestAttemptModel($pdo);
     }
 
-    public function index($id)
+    public function index($id = null)
     {
-        $program = $this->programModel->getById($id);
-        $mocktests = $this->mockTestModel->getByProgramId($id);
-
-        $content = $this->render('admin/mocktest/view', [
-            'program' => $program,
-            'mocktests' => $mocktests,
-        ]);
+        if (!$id) {
+            // Get all programs if no ID provided
+            $programs = $this->programModel->getAll();
+            $content = $this->render('admin/mocktest/list', [
+                'programs' => $programs
+            ]);
+        } else {
+            // Get specific program's mock tests
+            $program = $this->programModel->getById($id);
+            $mocktests = $this->mockTestModel->getByProgramId($id);
+    
+            if (!$program) {
+                $_SESSION['message'] = "Program not found";
+                $_SESSION['status'] = "error";
+                header('Location: /admin/program/list');
+                exit;
+            }
+    
+            $content = $this->render('admin/mocktest/view', [
+                'program' => $program,
+                'mocktests' => $mocktests,
+            ]);
+        }
+        
         echo $this->render('admin/layout', ['content' => $content]);
     }
 
@@ -57,62 +74,71 @@ class MockTestController extends Controller
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
-    public function showTestDetail($slug)
-    {
+    public function showTestDetail($slug) {
         $programs = $this->programModel->getWithCategory();
         $quiz = $this->quizModel->getAll();
-        $id = $this->programModel->getBySlug($slug);
-        $mocktests = $this->mockTestModel->getAllMockTests($id['id']);
-        $isLoggedIn =isset($_SESSION['user_id']) && isset($_SESSION['usertype_id']) 
-        && $_SESSION['usertype_id'] == self::STUDENT_TYPE;
+        $mocktest = $this->mockTestModel->getBySlug($slug);
+
+        // print_r($mocktest);
+        
+        // Get sets if they exist
+        $sets = [];
+        if ($mocktest) {
+            $sets = $this->quizModel->getSets($mocktest['id']);
+        }
+        // print_r($sets);
+
+        $isLoggedIn = isset($_SESSION['user_id']) && isset($_SESSION['usertype_id']);
+    
         $content = $this->uirender('user/test_info', [
             'programs' => $programs,
-            'quizzes' => $quiz,
-            'mocktests' => $mocktests,
+            'quizzes' => $quiz, 
+            'mocktest' => $mocktest,
+            'sets' => $sets,
             'isLoggedIn' => $isLoggedIn,
-
         ]);
-
+    
         echo $this->uirender('user/layout', ['content' => $content]);
     }
-public function register($mocktestId)
-{
-    session_start();
-    if (!isset($_SESSION['user_id'])) {
-        $_SESSION['message'] = "Please log in to register for the exam.";
-        $_SESSION['status'] = "danger";
-        header('Location: /login');
-        exit;
-    }
+    public function mocktestRegister()
+    {
+        header('Content-Type: application/json');
 
-    $userId = $_SESSION['user_id'];
-    $userType = $_SESSION['user_type'];
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            $mockTestId = $data['mockTestId'];
+            $userId = $data['userId'];
 
-    if ($userType != 3) { // Check if the user is a student
-        $_SESSION['message'] = "Only students can register for exams.";
-        $_SESSION['status'] = "danger";
-        header('Location: /mocktest/' . $mocktestId);
-        exit;
-    }
+            // Check if already registered
+            if ($this->mockTestModel->isUserRegistered($userId, $mockTestId)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'You are already registered for this exam'
+                ]);
+                return;
+            }
 
-    if ($this->mockTestModel->isUserRegistered($userId, $mocktestId)) {
-        $_SESSION['message'] = "You are already registered for this exam.";
-        $_SESSION['status'] = "info";
-    } else {
-        $availableSeats = $this->mockTestModel->getAvailableSeats($mocktestId);
-        if ($availableSeats > 0) {
-            $this->mockTestModel->registerUser($userId, $mocktestId);
-            $_SESSION['message'] = "Successfully registered for the exam.";
-            $_SESSION['status'] = "success";
-        } else {
-            $_SESSION['message'] = "No available seats for this exam.";
-            $_SESSION['status'] = "danger";
+            // Register the user
+            $result = $this->mockTestModel->registerUser($userId, $mockTestId);
+
+            if ($result) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Successfully registered for exam'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Registration failed'
+                ]);
+            }
+        } catch (\Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
         }
     }
-
-    header('Location: /mocktest/' . $mocktestId);
-    exit;
-}
     public function add($id)
     {
         $program = $this->programModel->getById($id);
@@ -132,7 +158,7 @@ public function register($mocktestId)
             $exam_time = $_POST['exam_time'] ?? '';
             $date = $_POST['date'] ?? '';
 
-            $result = $this->mockTestModel->createMockTest($id, $name, $time, $slug, $no_of_student,$exam_time,$date);
+            $result = $this->mockTestModel->createMockTest($id, $name, $time, $slug, $no_of_student, $exam_time, $date);
 
             if ($result) {
                 $_SESSION['message'] = "Mock Test added successfully!";
@@ -170,7 +196,7 @@ public function register($mocktestId)
             $exam_time = $_POST['exam_time'] ?? '';
             $date = $_POST['date'] ?? '';
 
-            $result = $this->mockTestModel->updateMockTest($id, $name, $time, $slug, $no_of_student,$exam_time,$date);
+            $result = $this->mockTestModel->updateMockTest($id, $name, $time, $slug, $no_of_student, $exam_time, $date);
 
             if ($result) {
                 $_SESSION['message'] = "Mock Test edited successfully!";
@@ -180,6 +206,7 @@ public function register($mocktestId)
             } else {
                 $_SESSION['message'] = "Error updating Mock Test.";
                 $_SESSION['status'] = "danger";
+                header('Location: /admin/mocktest/edit/' . $mocktest['id']);
             }
         }
 
@@ -242,9 +269,10 @@ public function register($mocktestId)
             return false;
         }
     }
-    public function saveProgress() {
+    public function saveProgress()
+    {
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         try {
             $stmt = $this->pdo->prepare("
                 INSERT INTO saved_mock_test_progress 
@@ -254,7 +282,7 @@ public function register($mocktestId)
                 progress_data = :progress_data,
                 remaining_time = :remaining_time
             ");
-    
+
             return $stmt->execute([
                 'user_id' => $_SESSION['user_id'],
                 'mock_test_id' => $data['mockTestId'],
@@ -266,5 +294,4 @@ public function register($mocktestId)
             return false;
         }
     }
-    
 }

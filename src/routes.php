@@ -1,5 +1,6 @@
 <?php
 
+use MVC\Controllers\TagController;
 use MVC\Controllers\AuthController;
 use MVC\Controllers\HomeController;
 use MVC\Controllers\QuizController;
@@ -11,6 +12,8 @@ use MVC\Controllers\TeacherController;
 use MVC\Controllers\CategoryController;
 use MVC\Controllers\MockTestController;
 use MVC\Controllers\QuestionController;
+use MVC\Controllers\SubjectTestController;
+use MVC\Controllers\CategoryTypeController;
 use MVC\Controllers\QuestionTypeController;
 use MVC\Controllers\MockTestAnswerController;
 use MVC\Controllers\QuestionImportController;
@@ -30,48 +33,68 @@ return [
     ['route' => '/category/{slug}', 'controller' => CategoryController::class, 'action' => 'showCategory', 'method' => 'GET'],
     ['route' => '/test', 'controller' => ProgramController::class, 'action' => 'showTest', 'method' => 'GET'],
     ['route' => '/test/{slug}', 'controller' => MockTestController::class, 'action' => 'showTestDetail', 'method' => 'GET'],
-    ['route' => '/mocktest/{slug}', 'controller' => MockTestQuestionController::class, 'action' => 'showMockTest', 'method' => 'GET'],
-
-    // Add this near the top of routes array, before more specific routes
     [
-        'route' => '/review/{attemptId}',
+        'route' => '/ajax/review/{attemptId}',
+        'controller' => MockTestQuestionController::class,
+        'action' => 'getReview',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/mocktests',
+        'controller' => MockTestController::class,
+        'action' => 'index',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/mocktest/{id}',
+        'controller' => MockTestQuestionController::class,
+        'action' => 'showMockTest',
+        'method' => 'GET'
+    ], // Add these new routes
+    ['route' => '/subject/{slug}', 'controller' => SubjectTestController::class, 'action' => 'showSubjectTest', 'method' => 'GET'],
+    ['route' => '/test/subject/{id}', 'controller' => MockTestQuestionController::class, 'action' => 'showMockTest', 'method' => 'GET'],
+    ['route' => '/test/chapter/{id}', 'controller' => SubjectTestController::class, 'action' => 'startChapterTest', 'method' => 'GET'],
+    ['route' => '/ajax/subject/submit-answer/{answerId}/{questionId}/{subjectId}', 'controller' => SubjectTestController::class, 'action' => 'checkAnswer', 'method' => 'GET'],
+    ['route' => '/ajax/subject/submit-performance', 'controller' => SubjectTestController::class, 'action' => 'submitPerformance', 'method' => 'POST'],
+
+    ['route' => '/ajax/mocktest/register', 'controller' => MockTestController::class, 'action' => 'mocktestRegister', 'method' => 'POST'],
+
+    [
+        'route' => '/ajax/get-review/{attemptId}',
+        'controller' => MockTestQuestionController::class,
+        'action' => 'getReview',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/review/{id}',
         'controller' => QuizController::class,
         'action' => 'getReview',
         'method' => 'GET'
     ],
-
     [
-        'route' => '/review/{id}',
-        'controller' => 'MVC\Controllers\QuizController',
-        'action' => 'getReview',
+        'route' => '/ajax/save-progress',
+        'controller' => MockTestController::class,
+        'action' => 'saveProgress',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/ajax/load-progress/{mockTestId}',
+        'controller' => MockTestController::class,
+        'action' => 'loadProgress',
         'method' => 'GET'
     ],
     [
-    'route' => '/ajax/save-progress',
-    'controller' => MockTestController::class,
-    'action' => 'saveProgress',
-    'method' => 'POST'
-],
-[
-    'route' => '/ajax/load-progress/{mockTestId}',
-    'controller' => MockTestController::class,
-    'action' => 'loadProgress',
-    'method' => 'GET'
-],
-[
-    'route' => '/ajax/save-progress',
-    'controller' => MockTestController::class,
-    'action' => 'saveProgress',
-    'method' => 'POST'
-],
-[
-    'route' => '/ajax/load-progress/{mockTestId}',
-    'controller' => MockTestController::class,
-    'action' => 'loadProgress',
-    'method' => 'GET'
-],
-['route' => '/mocktest/register/{mocktestId}', 'controller' => MockTestController::class, 'action' => 'register', 'method' => 'POST'],
-    // Quiz routes in correct order - from most specific to least specific
+        'route' => '/ajax/save-progress',
+        'controller' => MockTestController::class,
+        'action' => 'saveProgress',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/ajax/load-progress/{mockTestId}',
+        'controller' => MockTestController::class,
+        'action' => 'loadProgress',
+        'method' => 'GET'
+    ],
     ['route' => '/quiz/configure', 'controller' => QuizController::class, 'action' => 'configureQuiz', 'method' => 'GET'],
     ['route' => '/quiz/custom', 'controller' => QuizController::class, 'action' => 'startCustomQuiz', 'method' => 'POST'],
     ['route' => '/quiz/submit', 'controller' => QuizController::class, 'action' => 'submitQuiz', 'method' => 'POST'],
@@ -79,6 +102,7 @@ return [
     ['route' => '/quiz/{slug}/start/{count}', 'controller' => QuizController::class, 'action' => 'startQuiz', 'method' => 'GET'],
     ['route' => '/quiz/{slug}', 'controller' => QuizController::class, 'action' => 'showQuizDetail', 'method' => 'GET'],
     ['route' => '/quiz', 'controller' => QuizController::class, 'action' => 'showQuiz', 'method' => 'GET'],
+    ['route' => '/quiz/real-exam/{slug}', 'controller' => QuizController::class, 'action' => 'startRealExam', 'method' => 'GET'],
 
     ['route' => '/ajax/quiz-answer', 'controller' => QuizController::class, 'action' => 'checkAnswer', 'method' => 'POST'],
 
@@ -118,11 +142,65 @@ return [
     ['route' => '/admin/level/delete/{id}', 'controller' => LevelController::class, 'action' => 'delete', 'method' => 'GET'],
 
     ['route' => '/admin/quiz/list', 'controller' => QuizController::class, 'action' => 'index', 'method' => 'GET'],
-    ['route' => '/admin/quiz/add', 'controller' => QuizController::class, 'action' => 'showAddForm', 'method' => 'GET'],
+    ['route' => '/admin/quiz/add', 'controller' => QuizController::class, 'action' => 'showForm', 'method' => 'GET'],
     ['route' => '/admin/quiz/add', 'controller' => QuizController::class, 'action' => 'add', 'method' => 'POST'],
+    [
+        'route' => '/admin/quiz/questions/{id}',
+        'controller' => QuizController::class,
+        'action' => 'previousYearQuizQuestions',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/quiz/{id}/sets',
+        'controller' => QuizController::class,
+        'action' => 'showSet',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/quiz/{id}/sets/create',
+        'controller' => QuizController::class,
+        'action' => 'createSet',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/admin/quiz/sets/{id}/delete',
+        'controller' => QuizController::class,
+        'action' => 'deleteSet',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/quiz/sets/{id}/publish',
+        'controller' => QuizController::class,
+        'action' => 'publishSet',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/quiz/sets/{id}/toggle-status',
+        'controller' => QuizController::class,
+        'action' => 'toggleSetStatus',
+        'method' => 'POST'
+    ],
+    ['route' => '/admin/quiz/configure-mock/{id}', 'controller' => QuizController::class, 'action' => 'showMockConfig', 'method' => 'GET'],
+    ['route' => '/admin/quiz/create-real-exam', 'controller' => QuizController::class, 'action' => 'createRealExam', 'method' => 'POST'],
+    ['route' => '/admin/quiz/configure-mock/{id}', 'controller' => QuizController::class, 'action' => 'saveMockConfig', 'method' => 'POST'],
+    ['route' => '/admin/quiz/update-config', 'controller' => QuizController::class, 'action' => 'updateConfig', 'method' => 'POST'],
+
+    ['route' => '/admin/create/quiz', 'controller' => QuizController::class, 'action' => 'quizList', 'method' => 'GET'],
+    ['route' => '/admin/create/mocktest', 'controller' => QuizController::class, 'action' => 'mockTestList', 'method' => 'GET'],
+    ['route' => '/admin/create/previous', 'controller' => QuizController::class, 'action' => 'previousList', 'method' => 'GET'],
+    ['route' => '/admin/create/real_exam', 'controller' => QuizController::class, 'action' => 'realExamList', 'method' => 'GET'],
+    ['route' => '/admin/real_exam/question/{id}', 'controller' => QuestionImportController::class, 'action' => 'indexword', 'method' => 'GET'],
+    [
+        'route' => '/admin/realexam/add/{id}',
+        'controller' => MockTestQuestionController::class,
+        'action' => 'showAddForm',
+        'method' => 'GET'
+    ],
     ['route' => '/admin/quiz/edit/{id}', 'controller' => QuizController::class, 'action' => 'edit', 'method' => 'GET'],
     ['route' => '/admin/quiz/edit/{id}', 'controller' => QuizController::class, 'action' => 'edit', 'method' => 'POST'],
     ['route' => '/admin/quiz/delete/{id}', 'controller' => QuizController::class, 'action' => 'delete', 'method' => 'GET'],
+    ['route' => '/admin/quiz/updateYear/{id}', 'controller' => QuizController::class, 'action' => 'updateYear', 'method' => 'POST'],
+    ['route' => '/admin/quiz/updateStudent/{id}', 'controller' => QuizController::class, 'action' => 'updateStudent', 'method' => 'POST'],
 
     ['route' => '/admin/question/list', 'controller' => QuestionController::class, 'action' => 'index', 'method' => 'GET'],
     ['route' => '/admin/question/import', 'controller' => QuestionImportController::class, 'action' => 'import', 'method' => 'POST'],
@@ -143,12 +221,41 @@ return [
     ['route' => '/admin/answer/edit/{id}', 'controller' => AnswerController::class, 'action' => 'edit', 'method' => 'POST'],
     ['route' => '/admin/answer/delete/{id}', 'controller' => AnswerController::class, 'action' => 'delete', 'method' => 'GET'],
 
-    ['route' => '/admin/mocktest/list/{id}', 'controller' => MockTestController::class, 'action' => 'index', 'method' => 'GET'],
+    [
+        'route' => '/admin/mocktest/list',
+        'controller' => MockTestController::class,
+        'action' => 'index',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/mocktest/list/{id}',
+        'controller' => MockTestController::class,
+        'action' => 'index',
+        'method' => 'GET'
+    ],
     ['route' => '/admin/mocktest/add/{id}', 'controller' => MockTestController::class, 'action' => 'showAddForm', 'method' => 'GET'],
     ['route' => '/admin/mocktest/add/{id}', 'controller' => MockTestController::class, 'action' => 'add', 'method' => 'POST'],
     ['route' => '/admin/mocktest/edit/{id}', 'controller' => MockTestController::class, 'action' => 'edit', 'method' => 'GET'],
     ['route' => '/admin/mocktest/edit/{id}', 'controller' => MockTestController::class, 'action' => 'edit', 'method' => 'POST'],
     ['route' => '/admin/mocktest/delete/{id}', 'controller' => MockTestController::class, 'action' => 'delete', 'method' => 'GET'],
+    [
+        'route' => '/mocktest/set/{id}',
+        'controller' => MockTestController::class,
+        'action' => 'startSet',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/previous-year-quizzes',
+        'controller' => QuizController::class,
+        'action' => 'previousYearQuizzes',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/previous-year-quiz/{id}',
+        'controller' => QuizController::class,
+        'action' => 'previousYearQuiz',
+        'method' => 'GET'
+    ],
 
     ['route' => '/admin/mocktestquestion/list/{id}', 'controller' => MockTestQuestionController::class, 'action' => 'index', 'method' => 'GET'],
     ['route' => '/admin/mocktestquestion/add/{id}', 'controller' => MockTestQuestionController::class, 'action' => 'showAddForm', 'method' => 'GET'],
@@ -171,11 +278,23 @@ return [
     ['route' => '/admin/program/add', 'controller' => ProgramController::class, 'action' => 'add', 'method' => 'POST'],
     ['route' => '/admin/program/delete/{id}', 'controller' => ProgramController::class, 'action' => 'delete', 'method' => 'GET'],
     ['route' => '/admin/mocktest/attempts', 'controller' => MockTestController::class, 'action' => 'showAttempts', 'method' => 'GET'],
-
+    // Add these routes
+    ['route' => '/admin/tag/list', 'controller' => TagController::class, 'action' => 'index', 'method' => 'GET'],
+    ['route' => '/admin/tag/add', 'controller' => TagController::class, 'action' => 'showAddForm', 'method' => 'GET'],
+    ['route' => '/admin/tag/add', 'controller' => TagController::class, 'action' => 'add', 'method' => 'POST'],
+    ['route' => '/admin/tag/edit/{id}', 'controller' => TagController::class, 'action' => 'edit', 'method' => 'GET'],
+    ['route' => '/admin/tag/edit/{id}', 'controller' => TagController::class, 'action' => 'edit', 'method' => 'POST'],
+    ['route' => '/admin/tag/delete/{id}', 'controller' => TagController::class, 'action' => 'delete', 'method' => 'GET'],
     [
         'route' => '/question/report',
         'controller' => QuestionReportController::class,
         'action' => 'submitReport',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/previous_question/report',
+        'controller' => QuestionReportController::class,
+        'action' => 'submitPreviousReport',
         'method' => 'POST'
     ],
     [
@@ -190,9 +309,45 @@ return [
         'action' => 'updateReportStatus',
         'method' => 'POST'
     ],
-
+    [
+        'route' => '/admin/category-type/list',
+        'controller' => CategoryTypeController::class,
+        'action' => 'index',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/category-type/add',
+        'controller' => CategoryTypeController::class,
+        'action' => 'showAddForm',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/category-type/add',
+        'controller' => CategoryTypeController::class,
+        'action' => 'add',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/admin/category-type/edit/{id}',
+        'controller' => CategoryTypeController::class,
+        'action' => 'edit',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/category-type/edit/{id}',
+        'controller' => CategoryTypeController::class,
+        'action' => 'edit',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/admin/category-type/delete/{id}',
+        'controller' => CategoryTypeController::class,
+        'action' => 'delete',
+        'method' => 'GET'
+    ],
     ['route' => '/ajax/filter-questions/{id}', 'controller' => QuestionController::class, 'action' => 'filterQuestion', 'method' => 'GET'],
     ['route' => '/ajax/toggle-question/{action}/{id}/{mocktestid}', 'controller' => MockTestQuestionController::class, 'action' => 'toggleQuestion', 'method' => 'GET'],
+    ['route' => '/ajax/update-category-allocation', 'controller' => QuizController::class, 'action' => 'updateCategoryAllocation', 'method' => 'POST'],
     [
         'route' => '/ajax/submit-answer/{answerid}/{questionid}/{mocktestid}',
         'controller' => MockTestQuestionController::class,
@@ -206,7 +361,18 @@ return [
         'action' => 'restartTest',
         'method' => 'GET'
     ],
-
+    [
+        'route' => '/ajax/submit-test',
+        'controller' => MockTestQuestionController::class,
+        'action' => 'submitTest',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/ajax/save-answer',
+        'controller' => MockTestQuestionController::class,
+        'action' => 'saveAnswer',
+        'method' => 'POST'
+    ],
     // New route for clearing test session
     [
         'route' => '/ajax/clear-test-session/{mocktestid}',

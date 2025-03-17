@@ -1,15 +1,20 @@
 <?php
 
 namespace MVC;
+use MVC\Config\App;
 use MVC\Middleware\AuthMiddleware;
 
 class Router {
     protected $routes = [];
     protected $pdo;
     protected $middleware = [];
+    protected $baseUrl;
+
 
     public function __construct($pdo = null) {
         $this->pdo = $pdo;
+        $this->baseUrl = App::getBaseUrl();
+
     }
 
     public function loadRoutes($routes) {
@@ -35,7 +40,10 @@ class Router {
     public function dispatch($uri) {
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
         $uri = strtok($uri, '?');
-
+        error_log("Attempting to match URI: $uri with method: $method");
+        if (!empty($this->baseUrl) && strpos($uri, $this->baseUrl) === 0) {
+            $uri = substr($uri, strlen($this->baseUrl));
+        }
         // Apply middleware
         $request = ['uri' => $uri, 'method' => $method];
         foreach ($this->middleware as $middlewareClass) {
@@ -53,6 +61,7 @@ class Router {
             error_log("Checking route pattern: $pattern against URI: $uri");
             
             if (preg_match($pattern, $uri, $matches) && $route['method'] === $method) {
+                error_log("Route matched! Controller: {$route['controller']}, Action: {$route['action']}");
                 array_shift($matches); // Remove the full match
                 $controllerClass = $route['controller'];
                 $action = $route['action'];
@@ -81,7 +90,14 @@ class Router {
         include 'src/404.php';
         exit();
     }
-
+    public function generateUrl($path) {
+        // Make sure path starts with a slash
+        if (substr($path, 0, 1) !== '/') {
+            $path = '/' . $path;
+        }
+        
+        return $this->baseUrl . $path;
+    }
     private function convertRouteToRegex($route) {
         return '#^' . preg_replace('/\{([a-z]+)\}/', '([^/]+)', $route) . '$#';
     }

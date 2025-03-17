@@ -9,10 +9,10 @@
  unset($_SESSION['message']);
  unset($_SESSION['status']);
 endif; ?>
-<form action="/admin/level/add" method="POST" class="form-group">
+<form action="<?= $url('admin/level/add') ?>" method="POST" class="form-group">
 <h2>Add Level</h2>
 <div class="breadcrumb">
-        <a href="/admin/level/list">Level</a>
+        <a href="<?= $url('admin/level/list') ?>">Level</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Create</a>
     </div>

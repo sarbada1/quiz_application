@@ -11,6 +11,7 @@
                 <th>Description</th>
                 <th>Status</th>
                 <th>Date</th>
+                <th>Source</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -33,8 +34,9 @@
 </select>
                     </td>
                     <td><?= date('Y-m-d H:i', strtotime($report['created_at'])) ?></td>
+                    <td><?= $report['source'] === 'normal' ? 'Normal' : 'Previous Year' ?></td>
                     <td>
-                        <button><a href="/admin/answer/list/<?=$report['question_id'] ?>">View Details</a></button>
+                        <button><a href="<?= $url('admin/answer/list/<?=$report[') ?>"question_id'] ?>">View Details</a></button>
                     </td>
                 </tr>
             <?php endforeach; ?>

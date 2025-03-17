@@ -13,12 +13,12 @@ endif;
 <h1>List Question Type</h1>
 <div class="row">
     <div class="breadcrumb">
-        <a href="/admin/questiontype/list">Question Type</a>
+        <a href="<?= $url('admin/questiontype/list') ?>">Question Type</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">List</a>
     </div>
     <div>
-        <button class='success mb-5'><a href='/admin/questiontype/add'>Add Question Type</a></button>
+        <button class='success mb-5'><a href="<?= $url('admin/questiontype/add') ?>">Add Question Type</a></button>
     </div>
 </div>
 <table>
@@ -41,8 +41,8 @@ endif;
                 <td><?= $teacher['slug'] ?></td>
                 <td><?= $teacher['time_per_question'] ?></td>
                 <td>
-                    <button class="primary"> <a href="/admin/questiontype/edit/<?= $teacher['id'] ?>">Edit</a></button>
-                    <button class="danger"> <a href="/admin/questiontype/delete/<?= $teacher['id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+                    <button class="primary"> <a href="<?= $url('admin/questiontype/edit/<?= $teacher[') ?>"id'] ?>">Edit</a></button>
+                    <button class="danger"> <a href="<?= $url('admin/questiontype/delete/<?= $teacher[') ?>"id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
                 </td>
             </tr>
         <?php endforeach; ?>

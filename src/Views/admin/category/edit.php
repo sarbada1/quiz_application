@@ -14,12 +14,12 @@ endif;
     <h1>Edit Category</h1>
     <div class="row">
         <div class="breadcrumb">
-            <a href="/admin/category/list">Category</a>
+            <a href="<?= $url('admin/category/list') ?>">Category</a>
             <i class="fas fa-chevron-right"></i>
             <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
         </div>
         <div>
-            <button class='danger mb-5'><a href='/admin/category/delete/<?=$category['id']?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+            <button class='danger mb-5'><a href="<?= $url('admin/category/delete/<?=$category[') ?>"id']?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
         </div>
     </div>
     <label for="name">Name:</label>
@@ -37,6 +37,15 @@ endif;
                     <?= htmlspecialchars($cat['name']) ?>
                 </option>
             <?php endif; ?>
+        <?php endforeach; ?>
+    </select>
+    <label for="category_type_id"> Category Type:</label>
+    <select id="category_type_id" name="category_type_id">
+        <option value="0">Top Level</option>
+        <?php foreach ($categorytypes as $categorytype): ?>
+                <option value="<?= $cat['id'] ?>" <?= $categorytype['id'] == $category['category_type_id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($categorytype['name']) ?>
+                </option>
         <?php endforeach; ?>
     </select>
 

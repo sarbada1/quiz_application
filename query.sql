@@ -1,13 +1,17 @@
--- Active: 1731304931591@@localhost@3306
+-- Active: 1741512521136@@127.0.0.1@3306@quiz_system
 create DATABASE quiz_system;
 
 use quiz_system;
 
+SELECT COUNT(*) FROM mocktest_registrations 
+            WHERE user_id = :user_id AND mocktest_id = :mocktest_id;
 CREATE TABLE `usertype` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `role` VARCHAR(255) NOT NULL
 );
-
+SHOW CREATE TABLE questions;
+SHOW CREATE TABLE question_tags;
+SHOW CREATE TABLE tags;
 CREATE TABLE `users` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(255) NOT NULL,
@@ -25,6 +29,8 @@ ALTER TABLE users
 ADD COLUMN is_verified TINYINT(1) DEFAULT 0;
 ALTER TABLE users 
 ADD COLUMN last_otp_sent TIMESTAMP NULL;
+SELECT COUNT(*) FROM mock_test_attempts 
+                WHERE user_id = :user_id AND mock_test_id = :mocktest_id;
 CREATE TABLE `user_info` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT UNSIGNED NOT NULL,
@@ -34,7 +40,16 @@ CREATE TABLE `user_info` (
     `address` VARCHAR(255) NULL,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
+CREATE TABLE tags (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
+ALTER TABLE `question_tags` 
+ADD UNIQUE INDEX `question_tag_unique` (`question_id`, `tag_id`);
 CREATE TABLE `question_type` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `type` VARCHAR(255) NOT NULL
@@ -75,7 +90,33 @@ CREATE TABLE `programmes_mock_test` (
     `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`program_id`) REFERENCES `programmes` (`id`) -- Foreign Key Constraint
 );
+ALTER TABLE programmes_mock_test 
+MODIFY COLUMN no_of_student INT DEFAULT NULL,
+ADD COLUMN current_students INT DEFAULT 0;
 
+drop table questions;
+
+DELIMITER //
+CREATE TRIGGER after_mocktest_registration
+AFTER INSERT ON mocktest_registrations
+FOR EACH ROW
+BEGIN
+    UPDATE programmes_mock_test 
+    SET current_students = current_students + 1
+    WHERE id = NEW.mocktest_id;
+END//
+DELIMITER ;
+
+ALTER TABLE mocktest_registrations
+ADD CONSTRAINT check_student_limit 
+CHECK (
+    (SELECT current_students 
+     FROM programmes_mock_test 
+     WHERE id = mocktest_id) < 
+    (SELECT no_of_student 
+     FROM programmes_mock_test 
+     WHERE id = mocktest_id)
+);
 drop table programmes_mock_test_questions;
 
 drop table programmes_mock_test_answers;
@@ -83,11 +124,12 @@ drop table programmes_mock_test_answers;
 CREATE TABLE `programmes_mock_test_questions` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `qid` BIGINT UNSIGNED NULL,
-    `programmes_mock_test_id` BIGINT UNSIGNED NOT NULL,
-    `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`programmes_mock_test_id`) REFERENCES `programmes_mock_test` (`id`), -- Foreign Key Constraint
+    `quiz_id` BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`), -- Foreign Key Constraint
     FOREIGN KEY (`qid`) REFERENCES `questions` (`id`) -- Foreign Key Constraint
 );
+drop table programmes_mock_test_questions;
+TRUNCATE TABLE answers;
 
 CREATE TABLE `programmes_chapter` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -108,34 +150,165 @@ ALTER TABLE programmes_mock_test add COLUMN no_of_student VARCHAR(255) null;
 ALTER TABLE programmes_mock_test add COLUMN date DATE null;
 ALTER TABLE programmes_mock_test add COLUMN exam_time TIME null;
 
-CREATE TABLE `quizzes` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `title` VARCHAR(255) NOT NULL,
-    `description` TEXT NOT NULL,
-    `category_id` BIGINT UNSIGNED NOT NULL, -- Ensure UNSIGNED here
-    `user_id` BIGINT UNSIGNED NOT NULL, -- Ensure UNSIGNED here
-    FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`), -- Foreign Key Constraint
-    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) -- Foreign Key Constraint
+
+
+
+SET FOREIGN_KEY_CHECKS = 0;
+truncate table answers;
+CREATE TABLE questions (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    question_text TEXT NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    difficulty_level int NULL,
+    marks INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (category_id) REFERENCES categories(id)
 );
-
-ALTER TABLE quizzes add COLUMN slug VARCHAR(255) null;
-
-CREATE TABLE `questions` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `quiz_id` BIGINT UNSIGNED NULL,
-    `question_text` TEXT NOT NULL,
-    `question_type` BIGINT UNSIGNED NOT NULL,
-    FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`),
-    FOREIGN KEY (`question_type`) REFERENCES `question_type` (`id`)
+CREATE TABLE previous_year_questions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    quiz_id BIGINT UNSIGNED NOT NULL,
+    question_text TEXT NOT NULL,
+    year INT NULL,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
 );
+CREATE TABLE previous_year_answers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    question_id INT NOT NULL,
+    answer TEXT NOT NULL,
+    isCorrect BOOLEAN NOT NULL,
+    FOREIGN KEY (question_id) REFERENCES previous_year_questions(id)
+);
+CREATE TABLE question_tags (
+    question_id BIGINT UNSIGNED NOT NULL,
+    tag_id int  NOT NULL,
+    PRIMARY KEY (question_id, tag_id),
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+CREATE TABLE quiz_questions (
+    quiz_id BIGINT UNSIGNED NOT NULL,
+    question_id BIGINT UNSIGNED NOT NULL,
+    question_order INT NOT NULL,
+    PRIMARY KEY (quiz_id, question_id),
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id),
+    FOREIGN KEY (question_id) REFERENCES questions(id)
+);
+CREATE TABLE quizzes (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    description TEXT,
+    type ENUM('mock', 'previous_year', 'quiz', 'real_exam') NOT NULL,
+    total_marks INT NOT NULL,
+    duration INT NOT NULL, -- in minutes
+    status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE quizzes
+ADD COLUMN no_of_student INT NULL;
+CREATE TABLE quiz_sets (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    quiz_id BIGINT UNSIGNED NOT NULL,
+    set_name VARCHAR(255) NOT NULL,
+    status ENUM('draft', 'published') DEFAULT 'draft',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+);
+ SELECT * FROM questions 
+            WHERE quiz_id =9 AND year = 2019
 
+drop table quiz_sets;
+ALTER TABLE quizzes 
+MODIFY COLUMN status ENUM('draft', 'published', 'archived') DEFAULT 'draft';
+CREATE TABLE quiz_tags (
+    quiz_id BIGINT UNSIGNED NOT NULL,
+    tag_id int  NOT NULL,
+    PRIMARY KEY (quiz_id, tag_id),
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+SELECT 
+    q.*,
+    c.name AS category_name,
+    l.level AS difficulty_name,
+    COUNT(DISTINCT qu.id) AS question_count
+FROM quizzes q
+JOIN quiz_categories qc ON q.id = qc.quiz_id
+JOIN categories c ON qc.category_id = c.id
+LEFT JOIN questions qu ON c.id = qu.category_id
+LEFT JOIN level l ON qu.difficulty_level = l.id
+WHERE q.slug = :slug
+AND q.type = 'quiz'
+GROUP BY q.id, c.id, l.id;
+
+SELECT 
+                    q.id,
+                    q.title,
+                    q.slug,
+                    q.description,
+                    q.type,
+                    q.total_marks,
+                    q.duration,
+                    q.status,
+                    GROUP_CONCAT(DISTINCT t.name) as tags,
+                    GROUP_CONCAT(DISTINCT c.name) as categories
+                FROM quizzes q
+                LEFT JOIN quiz_tags qt ON q.id = qt.quiz_id
+                LEFT JOIN tags t ON qt.tag_id = t.id
+                LEFT JOIN quiz_categories qc ON q.id = qc.quiz_id
+                LEFT JOIN categories c ON qc.category_id = c.id
+                GROUP BY q.id
+                ORDER BY q.created_at DESC;
+
+                SELECT qc.*, c.name 
+            FROM quiz_categories qc
+            JOIN categories c ON qc.category_id = c.id
+            WHERE qc.quiz_id = :quiz_id;
+
+SELECT 
+                    q.id,
+                    q.title,
+                    q.slug,
+                    q.description,
+                    q.type,
+                    q.total_marks,
+                    q.duration,
+                    q.status,
+                    GROUP_CONCAT(DISTINCT t.name) as tags,
+                    GROUP_CONCAT(DISTINCT c.name) as categories
+                FROM quizzes q
+                LEFT JOIN quiz_tags qt ON q.id = qt.quiz_id
+                LEFT JOIN tags t ON qt.tag_id = t.id
+                LEFT JOIN quiz_categories qc ON q.id = qc.quiz_id
+                LEFT JOIN categories c ON qc.category_id = c.id
+                where q.type = 'mock'
+                GROUP BY q.id
+                ORDER BY q.created_at DESC
+
+CREATE TABLE quiz_categories (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    quiz_id BIGINT UNSIGNED NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    marks_allocated INT NOT NULL,
+    number_of_questions INT NOT NULL,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+SELECT * FROM category_types ORDER BY id DESC;
+TRUNCATE table answers;
+CREATE TABLE `category_types` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL
+);
+ALTER TABLE categories 
+ADD COLUMN category_type_id BIGINT UNSIGNED NULL,
+ADD FOREIGN KEY (category_type_id) REFERENCES category_types(id);
 CREATE TABLE `answers` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `question_id` BIGINT UNSIGNED NOT NULL,
     `answer` TEXT NOT NULL,
     `reason` TEXT NULL,
     `isCorrect` BOOLEAN NOT NULL,
-    FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`)
+    FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) on DELETE CASCADE
 );
 
 CREATE TABLE `user_quizzes` (
@@ -182,39 +355,67 @@ CREATE TABLE exams (
     student_count INT NULL DEFAULT 0,
     FOREIGN KEY (created_by) REFERENCES users (id)
 );
-
+ALTER TABLE questions
+ADD COLUMN question_type ENUM('quiz', 'mock', 'previous_year', 'real_exam') NOT NULL DEFAULT 'quiz',
+ADD COLUMN year INT NULL;
+drop table mock_test_answers;
+ALTER TABLE mock_test_attempts 
+ADD COLUMN correct_answers INT DEFAULT 0,
+ADD COLUMN wrong_answers INT DEFAULT 0,
+ADD COLUMN attempted_questions INT DEFAULT 0,
+ADD COLUMN total_questions INT DEFAULT 0;
 CREATE TABLE mock_test_attempts (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
-    mock_test_id BIGINT UNSIGNED NOT NULL,
-    total_questions INT NOT NULL,
-    correct_answers INT NOT NULL,
-    wrong_answers INT NOT NULL,
-    unattempted INT NOT NULL,
-    score DECIMAL(5, 2) NOT NULL,
-    time_taken INT NOT NULL, -- in seconds
-    completion_status ENUM('completed', 'incomplete') NOT NULL,
-    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL,
-    INDEX idx_user_mock (user_id, mock_test_id),
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (mock_test_id) REFERENCES programmes_mock_test (id)
+    set_id BIGINT UNSIGNED NOT NULL,
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP NULL,
+    total_marks DECIMAL(10,2) DEFAULT 0,
+    obtained_marks DECIMAL(10,2) DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (set_id) REFERENCES quiz_sets(id)
 );
-
+SELECT 
+                mta.question_id,
+                mta.answer_id as selected_answer_id,
+                q.question_text,
+                q.marks,
+                a.id as answer_id,
+                a.answer as answer_text,
+                a.isCorrect as is_correct,
+                a.reason,
+                CASE WHEN a.id = mta.answer_id THEN true ELSE false END as is_selected
+            FROM mock_test_answers mta
+            JOIN questions q ON mta.question_id = q.id 
+            JOIN answers a ON q.id = a.question_id
+            WHERE mta.attempt_id = 42
+            ORDER BY mta.question_id, a.id;
 CREATE TABLE mock_test_answers (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    attempt_id INT NOT NULL,
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    attempt_id BIGINT UNSIGNED NOT NULL,
     question_id BIGINT UNSIGNED NOT NULL,
     answer_id BIGINT UNSIGNED NOT NULL,
-    is_correct BOOLEAN NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (attempt_id) REFERENCES mock_test_attempts (id),
-    FOREIGN KEY (question_id) REFERENCES questions (id),
-    FOREIGN KEY (answer_id) REFERENCES answers (id)
+    is_correct BOOLEAN DEFAULT FALSE,
+    marks_obtained DECIMAL(10,2) DEFAULT 0,
+    FOREIGN KEY (attempt_id) REFERENCES mock_test_attempts(id),
+    FOREIGN KEY (question_id) REFERENCES questions(id),
+    FOREIGN KEY (answer_id) REFERENCES answers(id)
 );
 
+SELECT 
+                    mta.id as attempt_id,
+                    mt.set_name as name,
+                    mta.start_time,
+                    mta.end_time,
+                    mta.total_marks,
+                    mta.obtained_marks,
+                    ((mta.obtained_marks / NULLIF(mta.total_marks, 0)) * 100) as score
+                FROM mock_test_attempts mta
+                JOIN quiz_sets mt ON mta.set_id = mt.id
+                join quizzes as q on q.id=mt.quiz_id
+                WHERE mta.user_id = :user_id and q.`type`='mock' ;
 -- Create reports table
-CREATE TABLE question_reports (
+CREATE TABLE previous_question_reports (
     id INT PRIMARY KEY AUTO_INCREMENT,
     question_id BIGINT UNSIGNED NOT NULL,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -235,6 +436,27 @@ CREATE TABLE question_reports (
     FOREIGN KEY (question_id) REFERENCES questions (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
+SELECT 
+    q.id,
+    q.title,
+    q.type,
+    q.status,
+    c.name AS category_name,
+    l.level AS difficulty_name,
+    COUNT(DISTINCT qu.id) AS question_count
+FROM quizzes q
+JOIN quiz_categories qc ON q.id = qc.quiz_id
+JOIN categories c ON qc.category_id = c.id
+LEFT JOIN questions qu ON c.id = qu.category_id
+LEFT JOIN level l ON qu.difficulty_level = l.id
+WHERE c.id = 4
+GROUP BY 
+    q.id,
+    q.title,
+    q.type,
+    q.status,
+    c.name,
+    l.level;
 -- Create saved_mock_test_progress table
 CREATE TABLE saved_mock_test_progress (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -252,36 +474,95 @@ CREATE TABLE saved_mock_test_progress (
 );
 
 -- Drop existing table if exists
-DROP TABLE IF EXISTS quiz_attempts;
+DROP TABLE IF EXISTS user_quiz_history;
 
 -- Create quiz_attempts table with nullable columns
 CREATE TABLE quiz_attempts (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
     quiz_id BIGINT UNSIGNED NOT NULL,
-    total_questions INT NOT NULL,
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP NULL,
+    total_marks INT DEFAULT 0,
+    obtained_marks DECIMAL(5,2) DEFAULT 0,
+    total_questions INT DEFAULT 0,  
+    attempted_questions INT DEFAULT 0,
     correct_answers INT DEFAULT 0,
-    wrong_answers INT DEFAULT 0,
-    score DECIMAL(5, 2) DEFAULT 0.00,
-    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (quiz_id) REFERENCES quizzes (id)
+    status ENUM('started', 'in_progress', 'completed', 'abandoned') DEFAULT 'started',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 );
-
-CREATE TABLE quiz_answers (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    attempt_id INT NOT NULL,
+SELECT 
+                    mta.id as attempt_id,
+                    mt.title as name,
+                    mta.start_time,
+                    mta.end_time,
+                    mta.total_marks,
+                    mta.obtained_marks,
+                    mta.total_questions,
+                    mta.attempted_questions,
+                    mta.correct_answers,
+                    (mta.attempted_questions - mta.correct_answers) as wrong_answers,
+                    (mta.total_questions - mta.attempted_questions) as unattempted,
+                    mta.status,
+                    ((mta.obtained_marks / NULLIF(mta.total_marks, 0)) * 100) as score
+                FROM mock_test_attempts mta
+                JOIN quizzes mt ON mta.quiz_id = mt.id
+                WHERE mta.user_id = :user_id 
+                AND mt.type = 'mock'
+                AND mta.status = 'completed'
+                ORDER BY mta.start_time DESC;
+CREATE TABLE user_answers (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
     question_id BIGINT UNSIGNED NOT NULL,
     answer_id BIGINT UNSIGNED NOT NULL,
-    is_correct BOOLEAN NOT NULL,
-    question_order INT NOT NULL, -- Add this to track question sequence
+    is_correct BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (attempt_id) REFERENCES quiz_attempts (id),
-    FOREIGN KEY (question_id) REFERENCES questions (id),
-    FOREIGN KEY (answer_id) REFERENCES answers (id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (question_id) REFERENCES questions(id),
+    FOREIGN KEY (answer_id) REFERENCES answers(id)
 );
 
+    CREATE TABLE quiz_attempt_answers (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    attempt_id BIGINT UNSIGNED NOT NULL,
+    question_id BIGINT UNSIGNED NOT NULL,
+    category_id BIGINT UNSIGNED NULL,
+    selected_option_id BIGINT UNSIGNED NULL,
+    is_correct BOOLEAN DEFAULT FALSE,
+    marks_obtained DECIMAL(5,2) DEFAULT 0,
+    time_taken INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (selected_option_id) REFERENCES question_options(id) ON DELETE SET NULL
+);
+CREATE TABLE test_reviews (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    attempt_id BIGINT UNSIGNED NOT NULL,
+    question_id BIGINT UNSIGNED NOT NULL,
+    user_answer_id BIGINT UNSIGNED NOT NULL,
+    correct_answer_id BIGINT UNSIGNED NOT NULL,
+    marks_obtained DECIMAL(10,2) DEFAULT 0,
+    FOREIGN KEY (attempt_id) REFERENCES mock_test_attempts(id),
+    FOREIGN KEY (question_id) REFERENCES questions(id),
+    FOREIGN KEY (user_answer_id) REFERENCES answers(id),
+    FOREIGN KEY (correct_answer_id) REFERENCES answers(id)
+);
+CREATE TABLE category_performance (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    attempt_id BIGINT UNSIGNED NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    total_questions INT DEFAULT 0,
+    attempted_questions INT DEFAULT 0,
+    correct_answers INT DEFAULT 0,
+    total_marks DECIMAL(5,2) DEFAULT 0,
+    obtained_marks DECIMAL(5,2) DEFAULT 0,
+    FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
 CREATE TABLE user_quiz_history (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT UNSIGNED NOT NULL,
@@ -302,8 +583,48 @@ CREATE TABLE mocktest_registrations (
     FOREIGN KEY (mocktest_id) REFERENCES programmes_mock_test(id),
     UNIQUE KEY (user_id, mocktest_id)
 );
-DROP Table quiz_answers;
+CREATE TABLE `subject_tests` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `program_id` BIGINT UNSIGNED NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `description` TEXT NULL,
+    `time` INT NOT NULL,
+    `slug` VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`program_id`) REFERENCES `programmes` (`id`)
+);
 
+WITH RECURSIVE category_tree AS (
+        -- Get subjects (first level children)
+        SELECT c.*, 0 as level
+        FROM categories c 
+        WHERE c.parent_id = :categoryId
+        
+        UNION ALL
+        SELECT c2.*, ct.level + 1
+        FROM categories c2
+        INNER JOIN category_tree ct ON c2.parent_id = ct.id
+        WHERE ct.level < 1
+    )
+    SELECT ct.*, 
+        (SELECT COUNT(*) FROM questions q 
+         JOIN quizzes qz ON q.quiz_id = qz.id 
+         WHERE qz.category_id = ct.id) as question_count
+    FROM category_tree ct
+    ORDER BY level, name;
+DROP Table quiz_answers;
+SELECT 
+                    q.id, 
+                    q.question_text,
+                    GROUP_CONCAT(DISTINCT a.id) as answer_ids,
+                    GROUP_CONCAT(DISTINCT a.answer) as answers,
+                    GROUP_CONCAT(DISTINCT a.isCorrect) as correct_answers
+                FROM questions q
+                JOIN quiz_categories qc ON q.category_id = qc.category_id
+                JOIN answers a ON q.id = a.question_id
+                WHERE qc.quiz_id = 8
+                GROUP BY q.id
+                ORDER BY RAND();
 DROP Table user_quiz_history;
 
 select c.id, c.name, c.parent_id, IFNULL(pp.name, 'Top Category') as category_name
@@ -318,11 +639,60 @@ SELECT questions.*, question_type.`type`, quizzes.title
 from
     questions
     join quizzes on quizzes.id = questions.quiz_id
-    join question_type on question_type.id = questions.question_type
+    join question_type on question_type.id = questions.question_type;
 
-select * from quizzes;
+    select * from quizzes;
 
+select qu.* from quizzes q join categories as c on c.id =q.category_id join questions qu on qu.quiz_id=q.id join answers a on a.question_id=qu.id where q.category_id=5;
+SELECT q.id, q.title, q.description, q.slug ,                       
+(SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) AS question_count
+FROM quizzes q
+WHERE q.category_id = :category_id;
+
+SELECT 
+ q.id,
+q.question_text,
+JSON_ARRAYAGG(
+ JSON_OBJECT(
+'id', a.id,
+'text', a.answer,
+ 'correct_answer', a.isCorrect,
+  'reason', COALESCE(a.reason, '')
+                        )
+                    ) as answers
+                FROM questions q
+                LEFT JOIN answers a ON q.id = a.question_id
+                WHERE q.quiz_id = 7
+                GROUP BY q.id
+                ORDER BY RAND()
+                LIMIT 5;
+
+                SELECT 
+                    qa.question_id,
+                    qa.answer_id as selected_answer_id,
+                    qa.is_correct as question_correct,
+                    q.question_text,
+                    q.id as qid,
+                    a.id as aid,
+                    a.answer as answer_text,
+                    a.isCorrect as is_correct,
+                    a.reason
+                FROM quiz_answers qa
+                JOIN questions q ON qa.question_id = q.id
+                JOIN answers a ON q.id = a.question_id
+                WHERE qa.attempt_id = 234
+                ORDER BY qa.question_order;
 ALTER TABLE quizzes ADD COLUMN difficulty_level BIGINT UNSIGNED;
+WITH user_rank AS (
+    SELECT count(*)+1 as user_rank
+    FROM mock_test_attempts mta
+    WHERE mta.mock_test_id = 1 
+    AND mta.score > 42.69
+    AND mta.completion_status = 'completed'
+    group by mta.user_id
+)
+SELECT min(user_rank) 
+FROM user_rank;
 
 ALTER TABLE quizzes
 ADD FOREIGN KEY (difficulty_level) REFERENCES level (id);
@@ -1097,4 +1467,120 @@ WHERE
              FROM categories c2 
              WHERE c2.category_id = c1.id) as children
         FROM categories c1
-        WHERE c1.category_id = 0
+        WHERE c1.category_id = 0;
+
+   SELECT 
+    q.id,
+    q.title,
+    q.slug,
+    q.description,
+    q.type,
+    q.total_marks,
+    q.duration,
+    q.status,
+    GROUP_CONCAT(DISTINCT t.name) as tags,
+    GROUP_CONCAT(DISTINCT c.name) as categories,
+    (SELECT COUNT(*) FROM quiz_sets WHERE quiz_id = q.id) as set_count
+FROM quizzes q
+LEFT JOIN quiz_tags qt ON q.id = qt.quiz_id
+LEFT JOIN tags t ON qt.tag_id = t.id
+LEFT JOIN quiz_categories qc ON q.id = qc.quiz_id
+LEFT JOIN categories c ON qc.category_id = c.id
+WHERE q.type = :type
+GROUP BY q.id
+ORDER BY q.created_at DESC;
+
+SELECT 
+                q.question_text,
+                mta.answer_id as selected_answer_id,
+                mta.is_correct,
+                GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'id', a.id,
+                        'answer_text', a.answer,
+                        'is_correct', a.isCorrect
+                    )
+                ) as answers
+            FROM mock_test_answers mta
+            JOIN questions q ON mta.question_id = q.id
+            JOIN answers a ON q.id = a.question_id
+            WHERE mta.attempt_id = :attempt_id
+            GROUP BY q.id, mta.answer_id, mta.is_correct
+            ORDER BY q.id;
+
+            truncate table mock_test_attempts;
+CREATE TABLE activity_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    action_type VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    icon VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+
+select * from previous_year_questions  pyq join quizzes q on q.id=pyq.quiz_id where q.id=9;
+
+SELECT 
+    q.id,
+    q.title,
+    q.slug,
+    q.description,
+    q.type,
+    q.total_marks,
+    q.duration,
+    q.status,
+    q.year,
+    q.no_of_student,
+    GROUP_CONCAT(DISTINCT t.name) as tags,
+    GROUP_CONCAT(DISTINCT c.name) as categories,
+    (SELECT COUNT(*) FROM quiz_sets WHERE quiz_id = q.id) as set_count,
+    (SELECT COUNT(*) FROM previous_year_questions pyq WHERE pyq.quiz_id = q.id) AS question_count
+FROM quizzes q
+LEFT JOIN quiz_tags qt ON q.id = qt.quiz_id
+LEFT JOIN tags t ON qt.tag_id = t.id
+LEFT JOIN quiz_categories qc ON q.id = qc.quiz_id
+LEFT JOIN categories c ON qc.category_id = c.id
+WHERE q.type = 'real_exam' and q.id=10
+GROUP BY q.id
+ORDER BY q.created_at DESC;
+
+
+select c.id,c.name from quizzes q join quiz_categories qc on qc.quiz_id=q.id join categories c on c.id=qc.category_id where q.id=10;
+
+ SELECT pyq.*, pya.answer, pya.isCorrect
+            FROM previous_year_questions pyq
+            LEFT JOIN previous_year_answers pya ON pyq.id = pya.question_id
+            WHERE pyq.quiz_id = 9;
+
+
+
+            SELECT q.*, c.name as category_name
+                FROM questions q
+                LEFT JOIN categories c ON q.category_id = c.id
+
+                join programmes_mock_test_questions pmtq on pmtq.qid=q.id
+                join quizzes qz on qz.id=pmtq.quiz_id
+                WHERE qz.id = 9
+                ;
+SELECT q.*, c.name as category_name
+            FROM questions q
+            LEFT JOIN categories c ON q.category_id = c.id
+            JOIN programmes_mock_test_questions pmtq ON pmtq.qid = q.id
+            JOIN quizzes qz ON qz.id = pmtq.quiz_id
+            WHERE qz.id = 10;
+select count(*) from questions q join categories c on c.id=q.category_id join quizzes qz join quiz_categories qc on qc.category_id=c.id where qc.quiz_id=10 and qc.category_id=6;
+
+select q.*,c.name as category_name from questions q join categories c on c.id=q.category_id join quizzes qz join quiz_categories qc on qc.category_id=c.id where qc.quiz_id=10 LIMIT 0, 10;
+
+
+SELECT count(*) as total from questions q join categories c on c.id=q.category_id join quiz_categories qc on qc.category_id=c.id join quizzes qz on qz.id=qc.quiz_id where qc.quiz_id=:quiz_id and qc.category_id=6;
+
+SELECT count(*) as total from questions q join categories c on c.id=q.category_id join quiz_categories qc on qc.category_id=c.id join quizzes qz on qz.id=qc.quiz_id where qc.quiz_id=:quiz_id
+
+SELECT q.category_id, COUNT(*) as count
+            FROM programmes_mock_test_questions mtq
+            JOIN questions q ON q.id = mtq.qid
+            WHERE mtq.quiz_id = 10
+            GROUP BY q.category_id;

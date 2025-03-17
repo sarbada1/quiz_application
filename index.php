@@ -14,6 +14,9 @@ require 'vendor/autoload.php';
 use MVC\Config\Database;
 use MVC\Middleware\AuthMiddleware;
 use MVC\Router;
+use MVC\Config\App;
+
+App::init();
 
 // Database connection setup
 $dsn = 'mysql:host=localhost;dbname=quiz_system';

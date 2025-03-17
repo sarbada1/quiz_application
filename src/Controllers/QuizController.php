@@ -3,13 +3,17 @@
 namespace MVC\Controllers;
 
 use PDO;
+use Exception;
 use MVC\Controller;
+use MVC\Models\User;
 use MVC\Models\QuizModel;
 use MVC\Models\LevelModel;
 use MVC\Models\ProgramModel;
 use MVC\Models\CategoryModel;
+use MVC\Models\MockTestQuestionModel;
+use MVC\Models\QuestionModel;
 use MVC\Models\QuizAttemptModel;
-
+use MVC\Models\TagModel;
 
 class QuizController extends Controller
 {
@@ -23,15 +27,24 @@ class QuizController extends Controller
     public $categoryModel;
     public $programModel;
     private $quizAttemptModel;
+    private $mockTestQuestionModel;
+    private $userModel;
+    private $tagModel;
+    private $questionModel;
 
 
 
     public function __construct(PDO $pdo)
     {
+        $this->pdo = $pdo;
         $this->quizModel = new QuizModel($pdo);
         $this->levelModel = new LevelModel($pdo);
         $this->categoryModel = new CategoryModel($pdo);
         $this->programModel = new ProgramModel($pdo);
+        $this->userModel = new User($pdo);
+        $this->tagModel = new TagModel($pdo);
+        $this->mockTestQuestionModel = new MockTestQuestionModel($pdo);
+        $this->questionModel = new QuestionModel($pdo);
         $this->quizAttemptModel = new QuizAttemptModel($pdo); // Add this line
 
     }
@@ -40,6 +53,75 @@ class QuizController extends Controller
     {
         $quizzes = $this->quizModel->getAll();
         $content = $this->render('admin/quiz/view', ['quizzes' => $quizzes]);
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+    public function previousYearQuizzes()
+    {
+        $quizzes = $this->quizModel->getQuiz('previous_year');
+        $content = $this->render('user/previous_year_quizzes', ['quizzes' => $quizzes]);
+        echo $this->render('user/layout', ['content' => $content]);
+    }
+
+    public function previousYearQuiz($id)
+    {
+        $quiz = $this->quizModel->getById($id);
+        $questions = $this->questionModel->getPreviousYearQuestions($id);
+
+        $content = $this->render('user/previous_year_quiz', ['quiz' => $quiz, 'questions' => $questions]);
+        echo $this->render('user/layout', ['content' => $content]);
+    }
+    public function previousYearQuizQuestions($quizId)
+    {
+        $quiz = $this->quizModel->getById($quizId);
+        $questions = $this->questionModel->getPreviousYearQuestions($quizId);
+
+        $content = $this->render('admin/exam/previous_year_quiz_questions', ['quiz' => $quiz, 'questions' => $questions]);
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+    public function quizList()
+    {
+        $quizzes = $this->quizModel->getQuiz('quiz');
+        $programs = $this->programModel->getAll();
+        $content = $this->render('admin/exam/quiz', ['quizzes' => $quizzes, 'program' => $programs]);
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+    public function mockTestList()
+    {
+        $mocktests = $this->quizModel->getQuiz('mock'); // Get mock type quizzes
+        $programs = $this->programModel->getAll(); // Get all programs
+
+
+        $content = $this->render('admin/exam/mocktest', [
+            'mocktests' => $mocktests,
+            'program' => $programs
+        ]);
+
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+    public function previousList()
+    {
+        $mocktests = $this->quizModel->getQuiz('previous_year'); // Get mock type quizzes
+        $programs = $this->programModel->getAll(); // Get all programs
+
+
+        $content = $this->render('admin/exam/previous', [
+            'mocktests' => $mocktests,
+            'program' => $programs
+        ]);
+
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+    public function realExamList()
+    {
+        $mocktests = $this->quizModel->getQuiz('real_exam'); // Get mock type quizzes
+        $programs = $this->programModel->getAll(); // Get all programs
+
+
+        $content = $this->render('admin/exam/realexam', [
+            'mocktests' => $mocktests,
+            'program' => $programs
+        ]);
+
         echo $this->render('admin/layout', ['content' => $content]);
     }
     public function showQuizDetail($slug)
@@ -56,8 +138,8 @@ class QuizController extends Controller
         }
 
 
-        $isLoggedIn =isset($_SESSION['user_id']) && isset($_SESSION['usertype_id']) 
-        && $_SESSION['usertype_id'] == self::STUDENT_TYPE;
+        $isLoggedIn = isset($_SESSION['user_id']) && isset($_SESSION['usertype_id'])
+            && $_SESSION['usertype_id'] == self::STUDENT_TYPE;
         $content = $this->uirender('user/quiz_info', [
             'quiz' => $quiz,
             'isLoggedIn' => $isLoggedIn,
@@ -67,11 +149,8 @@ class QuizController extends Controller
         echo $this->uirender('user/layout', ['content' => $content]);
     }
 
-
     public function startQuiz($slug, $count = 10)
     {
-        error_log("Starting quiz with slug: $slug and count: $count"); // Debug log
-
         try {
             if (!isset($_SESSION['user_id'])) {
                 $_SESSION['message'] = 'Please login to start the quiz';
@@ -79,7 +158,7 @@ class QuizController extends Controller
                 exit;
             }
 
-            $quiz = $this->quizModel->getBySlug($slug);
+            $quiz = $this->quizModel->getQuizQuestionBySlug($slug);
             if (!$quiz) {
                 $_SESSION['message'] = 'Quiz not found';
                 header('Location: /quiz');
@@ -89,13 +168,8 @@ class QuizController extends Controller
             error_log("Found quiz: " . json_encode($quiz)); // Debug log
 
             $questionCount = min((int)$count, 50);
-
             // Debug log attempt data
-            error_log("Attempting to create quiz attempt with data: " . json_encode([
-                'user_id' => $_SESSION['user_id'],
-                'quiz_id' => $quiz['id'],
-                'total_questions' => $questionCount
-            ]));
+
 
             // Create attempt
             $attemptData = [
@@ -113,14 +187,18 @@ class QuizController extends Controller
 
             error_log("Created attempt with ID: $attemptId"); // Debug log
 
-            $questions = $this->quizModel->getRandomQuestions($quiz['id'], $questionCount);
+            $questions = $this->quizModel->getQuizQuestions($quiz['id'], $questionCount);
+
+
             if (empty($questions)) {
                 throw new \Exception('No questions found for this quiz');
             }
-
+            $id = $_SESSION['user_id'];
+            $user = $this->userModel->getById($id);
             $content = $this->uirender('user/quiz/play', [
                 'quiz' => $quiz,
                 'questions' => $questions,
+                'user' => $user,
                 'attemptId' => $attemptId
             ]);
 
@@ -139,26 +217,34 @@ class QuizController extends Controller
         try {
             $data = json_decode(file_get_contents('php://input'), true);
 
+
             if (!$data || !isset($data['attemptId']) || !isset($data['answers'])) {
                 throw new \Exception('Invalid request data');
             }
 
+            error_log("Received answers: " . json_encode($data['answers'])); // Debug log
+
             // Save each answer with question order
-            foreach ($data['answers'] as $questionId => $answer) {
-                $this->quizAttemptModel->saveAnswer(
+            foreach ($data['answers'] as $index => $answer) {
+                $success = $this->quizAttemptModel->saveAnswer(
                     $data['attemptId'],
-                    $questionId,
+                    $answer['questionId'], // Changed from using array key
                     $answer['answerId'],
                     $answer['isCorrect'],
-                    $answer['questionOrder'] ?? 0
+                    $index // Use index as order
                 );
+
+                if (!$success) {
+                    error_log("Failed to save answer for question: " . $answer['questionId']);
+                }
             }
 
             // Complete the attempt
             $success = $this->quizAttemptModel->completeAttempt($data['attemptId'], [
                 'correct_answers' => $data['correctCount'],
                 'wrong_answers' => $data['wrongCount'],
-                'score' => $data['score']
+                'score' => $data['score'],
+                'completed_at' => date('Y-m-d H:i:s')
             ]);
 
             if (!$success) {
@@ -175,6 +261,7 @@ class QuizController extends Controller
                 'totalQuestions' => (int)$data['totalQuestions']
             ]);
         } catch (\Exception $e) {
+            error_log("Error in submitQuiz: " . $e->getMessage());
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
@@ -184,11 +271,11 @@ class QuizController extends Controller
     }
     public function showQuiz()
     {
-        $quiz = $this->quizModel->getAll();
+        $quiz = $this->quizModel->getQuiz('quiz');
         $programs = $this->programModel->getWithCategory();
 
-        $isLoggedIn =isset($_SESSION['user_id']) && isset($_SESSION['usertype_id']) 
-        && $_SESSION['usertype_id'] == self::STUDENT_TYPE;
+        $isLoggedIn = isset($_SESSION['user_id']) && isset($_SESSION['usertype_id'])
+            && $_SESSION['usertype_id'] == self::STUDENT_TYPE;
 
         $content = $this->uirender('user/quiz', [
             'quiz' => $quiz,
@@ -200,102 +287,394 @@ class QuizController extends Controller
         echo $this->uirender('user/layout', ['content' => $content]);
     }
 
-    public function showAddForm()
-    {
-        $categories = $this->categoryModel->getAllCategories();
-        $levels = $this->levelModel->getAll();
-        $content = $this->render('admin/quiz/add', [
-            'categories' => $categories,
-            'levels' => $levels,
-        ]);
-        echo $this->render('admin/layout', ['content' => $content]);
-    }
-
     public function add()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $title = $_POST['title'] ?? '';
-            $slug = $_POST['slug'] ?? '';
-            $description = $_POST['description'] ?? '';
-            $category_id = $_POST['category_id'] ?? '';
-            $difficulty_level = $_POST['difficulty_level'] ?? '';
-            $user_id = $_SESSION['user_id'] ?? '';
+            try {
+                // Create quiz
+                $quizData = [
+                    'title' => $_POST['title'],
+                    'slug' => $_POST['slug'],
+                    'description' => $_POST['description'],
+                    'type' => $_POST['type'],
+                    'total_marks' => $_POST['total_marks'] ?? 1,
+                    'duration' => $_POST['duration'] ?? '',
+                    'status' => $_POST['status'] ?? 'draft',
+                    'year' => $_POST['year'] ?? null,
+                    'categories' => !empty($_POST['categories']) && is_array($_POST['categories']) ? $_POST['categories'] : [],
+                    'tags' => !empty($_POST['tags']) && is_array($_POST['tags']) ? $_POST['tags'] : []
+                ];
 
-            if (empty($title)) {
-                echo "Title is required.";
-                return;
-            }
-            if (empty($title)) {
-                echo "Slug is required.";
-                return;
-            }
-            if (empty($description)) {
-                echo "Description is required.";
-                return;
-            }
+                $quizId = $this->quizModel->createQuizWithTags($quizData);
 
-
-            $result = $this->quizModel->createQuiz($title, $slug, $description, $category_id, $user_id, $difficulty_level);
-
-            if ($result) {
                 $_SESSION['message'] = "Quiz added successfully!";
                 $_SESSION['status'] = "success";
                 header('Location: /admin/quiz/add');
-            } else {
-                $_SESSION['message'] = "Error adding Quiz";
-                $_SESSION['status'] = "danger";
+                exit;
+            } catch (Exception $e) {
+                $_SESSION['message'] = $e->getMessage();
+                $_SESSION['status'] = "error";
+                header('Location: /admin/quiz/add');
+                exit;
             }
         }
+    }
+    public function updateYear($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $year = $_POST['year'] ?? null;
+
+            if ($year === null || !is_numeric($year)) {
+                $_SESSION['message'] = "Invalid year.";
+                $_SESSION['status'] = "danger";
+                header("Location: /admin/exam/previous");
+                exit;
+            }
+
+            try {
+                $this->quizModel->updateQuizYear($id, $year);
+                $_SESSION['message'] = "Year updated successfully!";
+                $_SESSION['status'] = "success";
+            } catch (Exception $e) {
+                $_SESSION['message'] = "Error updating year: " . $e->getMessage();
+                $_SESSION['status'] = "danger";
+            }
+
+            header("Location: /admin/create/previous");
+            exit;
+        }
+    }
+    public function updateStudent($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $no_of_student = $_POST['no_of_student'] ?? null;
+
+            if ($no_of_student === null) {
+                $_SESSION['message'] = "Invalid year.";
+                $_SESSION['status'] = "danger";
+                header("Location: /admin/exam/previous");
+                exit;
+            }
+
+            try {
+                $this->quizModel->updateStudent($id, $no_of_student);
+                $_SESSION['message'] = "No of Student updated successfully!";
+                $_SESSION['status'] = "success";
+            } catch (Exception $e) {
+                $_SESSION['message'] = "Error updating student: " . $e->getMessage();
+                $_SESSION['status'] = "danger";
+            }
+
+            header("Location: /admin/create/real_exam");
+            exit;
+        }
+    }
+    public function showForm()
+    {
+        $categories = $this->categoryModel->getAllCategories();
+        $levels = $this->levelModel->getAll();
+        $tags = $this->tagModel->getAllTags();
+
+        $content = $this->render('admin/quiz/add', [
+            'categories' => $categories,
+            'levels' => $levels,
+            'tags' => $tags
+        ]);
+
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+    public function configureMock($quizId)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                foreach ($_POST['categories'] as $categoryId => $config) {
+                    $this->quizModel->addQuizCategory($quizId, [
+                        'category_id' => $categoryId,
+                        'marks_allocated' => $config['marks'],
+                        'number_of_questions' => $config['questions']
+                    ]);
+                }
+
+                // Generate random questions for each category
+                $this->quizModel->generateMockQuestions($quizId);
+
+                $_SESSION['message'] = "Mock test configured successfully!";
+                header('Location: /admin/quiz/list');
+                exit;
+            } catch (Exception $e) {
+                $_SESSION['message'] = $e->getMessage();
+            }
+        }
+
+        $quiz = $this->quizModel->getById($quizId);
+        $categories = $this->categoryModel->getAllCategories();
+
+        return $this->render('admin/quiz/configure_mock', [
+            'quiz_id' => $quizId,
+            'total_marks' => $quiz['total_marks'],
+            'categories' => $categories
+        ]);
+    }
+    public function showMockConfig($id)
+    {
+        try {
+            $quiz = $this->quizModel->getById($id);
+
+
+            // Get all categories
+            $categories = $this->categoryModel->getAllCategories();
+
+            // Get existing configuration
+            $quiz_categories = $this->quizModel->getQuizCategories($id);
+
+            // Format existing config for easy access in view
+            $existing_config = [];
+            foreach ($quiz_categories as $qc) {
+                $existing_config[$qc['category_id']] = [
+                    'marks_allocated' => $qc['marks_allocated'],
+                    'number_of_questions' => $qc['number_of_questions']
+                ];
+            }
+
+            $content = $this->render('admin/quiz/config', [
+                'quiz' => $quiz,
+                'categories' => $categories,
+                'quiz_categories' => $quiz_categories,
+                'existing_config' => $existing_config
+            ]);
+
+            echo $this->render('admin/layout', ['content' => $content]);
+        } catch (Exception $e) {
+            $_SESSION['message'] = $e->getMessage();
+            $_SESSION['status'] = 'error';
+            header('Location: /admin/quiz/configure-mock/$id');
+            exit;
+        }
+    }
+
+    public function saveMockConfig($id)
+    {
+        try {
+
+            $configData = [
+                'quiz_id' => $id,
+                'categories' => $_POST['categories'] ?? []
+            ];
+
+            // Model handles all DB operations including transactions
+            $this->quizModel->saveMockConfiguration($configData);
+
+            $_SESSION['message'] = 'Mock test configured successfully';
+            $_SESSION['status'] = 'success';
+            header('Location: /admin/quiz/configure-mock/' . $id);
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['message'] = $e->getMessage();
+            $_SESSION['status'] = 'error';
+            header("Location: /admin/quiz/configure-mock/" . $id);
+            exit;
+        }
+    }
+
+    public function updateConfig()
+    {
+        try {
+            $quizId = $_POST['quiz_id'] ?? null;
+            if (!$quizId) {
+                throw new Exception('Quiz ID is required');
+            }
+
+            // Process form data and update configuration
+            $success = $this->quizModel->updateConfiguration($quizId, $_POST);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Mock test configuration updated successfully',
+                'config' => [
+                    'remaining_marks' => $this->quizModel->getRemainingMarks($quizId)
+                ]
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+ * Update category allocation for a quiz
+ */
+public function updateCategoryAllocation()
+{
+    try {
+        // Check if user is logged in and has admin privileges
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
+            throw new Exception('Unauthorized access');
+        }
+
+        $categoryId = $_POST['category_id'] ?? null;
+        $quizId = $_POST['quiz_id'] ?? null;
+        $numberQuestions = $_POST['number_of_questions'] ?? null;
+        $marksAllocated = $_POST['marks_allocated'] ?? null;
+        
+        // Validate inputs
+        if (!$categoryId || !$quizId || !$numberQuestions || !$marksAllocated) {
+            throw new Exception('Missing required parameters');
+        }
+        
+        if (!is_numeric($numberQuestions) || $numberQuestions < 1 || 
+            !is_numeric($marksAllocated) || $marksAllocated < 1) {
+            throw new Exception('Invalid question count or marks value');
+        }
+        
+        // Check if the current questions exceed the new allocation
+        $existingCount = $this->mockTestQuestionModel->getQuestionCountForCategory($quizId, $categoryId);
+        if ($existingCount > $numberQuestions) {
+            throw new Exception('Cannot reduce allocation below current question count (' . $existingCount . ')');
+        }
+        
+        // Update the allocation in the database
+        $success = $this->quizModel->updateCategoryAllocation(
+            $quizId, 
+            $categoryId, 
+            $numberQuestions, 
+            $marksAllocated
+        );
+        
+        if (!$success) {
+            throw new Exception('Failed to update allocation');
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Category allocation updated successfully'
+        ]);
+        
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+    public function showSet($quizId)
+    {
+        $quiz = $this->quizModel->getById($quizId);
+        $sets = $this->quizModel->getSets($quizId);
+
+        $content = $this->render('admin/quiz/sets', [
+            'quiz' => $quiz,
+            'sets' => $sets ?? ''
+        ]);
+
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+
+    public function createSet($quizId)
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
+            }
+
+            $data = [
+                'set_name' => $_POST['set_name'],
+                'status' => $_POST['status']
+            ];
+
+            $setId = $this->quizModel->createSet($quizId, $data);
+
+            $_SESSION['message'] = 'Set created successfully';
+            $_SESSION['status'] = 'success';
+
+            header("Location: /admin/quiz/$quizId/sets");
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['message'] = $e->getMessage();
+            $_SESSION['status'] = 'error';
+            header("Location: /admin/quiz/$quizId/sets");
+            exit;
+        }
+    }
+
+    public function deleteSet($setId)
+    {
+        try {
+            $this->quizModel->deleteSet($setId);
+            $_SESSION['message'] = 'Set deleted successfully';
+            $_SESSION['status'] = 'success';
+        } catch (Exception $e) {
+            $_SESSION['message'] = $e->getMessage();
+            $_SESSION['status'] = 'error';
+        }
+        header('Location: ' . $_SERVER['HTTP_REFERER']);
+        exit;
+    }
+
+    public function publishSet($setId)
+    {
+        try {
+            $this->quizModel->publishSet($setId);
+            $_SESSION['message'] = 'Set published successfully';
+            $_SESSION['status'] = 'success';
+        } catch (Exception $e) {
+            $_SESSION['message'] = $e->getMessage();
+            $_SESSION['status'] = 'error';
+        }
+        header('Location: ' . $_SERVER['HTTP_REFERER']);
+        exit;
     }
 
     public function edit($id)
     {
-        $category = $this->quizModel->getById($id);
-        if (!$category) {
-            echo "Quiz not found.";
-            return;
-        }
-        $categories = $this->categoryModel->getAllCategories();
-
+        $quiz = $this->quizModel->getById($id);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $title = $_POST['title'] ?? '';
-            $slug = $_POST['slug'] ?? '';
-            $description = $_POST['description'] ?? '';
-            $category_id = $_POST['category_id'] ?? '';
-            $difficulty_level = $_POST['difficulty_level'] ?? '';
-            $user_id = $_SESSION['user_id'] ?? '';
+            try {
+                $data = [
+                    'id' => $id,
+                    'title' => $_POST['title'],
+                    'slug' => $_POST['slug'],
+                    'description' => $_POST['description'],
+                    'type' => $_POST['type'],
+                    'status' => $_POST['status'],
+                    'year' => $_POST['year'] ?? null,
+                    'total_marks' => $_POST['total_marks'] ?? 1,
+                    'duration' => $_POST['duration'] ?? '',
+                    'categories' => array_map(function ($categoryId) {
+                        return [
+                            'category_id' => $categoryId,
+                            'marks_allocated' => 0,
+                            'number_of_questions' => 0
+                        ];
+                    }, $_POST['categories'] ?? []),
+                    'tags' => $_POST['tags'] ?? []
+                ];
 
+                $this->quizModel->updateQuiz($data);
 
-            if (empty($title)) {
-                echo "Title is required.";
-                return;
-            }
-            if (empty($description)) {
-                echo "Description is required.";
-                return;
-            }
-
-            $result = $this->quizModel->updateQuiz($id, $title, $slug, $description, $category_id, $user_id, $difficulty_level);
-
-            if ($result) {
-                $_SESSION['message'] = "Quiz edited successfully!";
-                $_SESSION['status'] = "success";
+                $_SESSION['message'] = 'Quiz updated successfully';
+                $_SESSION['status'] = 'success';
                 header('Location: /admin/quiz/edit/' . $id);
                 exit;
-            } else {
-                $_SESSION['message'] = "Error updating Quiz.";
-                $_SESSION['status'] = "danger";
-                header('Location: /admin/quiz/edit/' . $id);
-                exit;
+            } catch (Exception $e) {
+                $_SESSION['message'] = $e->getMessage();
+                $_SESSION['status'] = 'error';
             }
         }
-        $levels = $this->levelModel->getAll();
+
+        $categories = $this->categoryModel->getAllCategories();
+        $tags = $this->tagModel->getAllTags();
+        $selectedCategories = $this->quizModel->getQuizCategoryIds($id);
+        $selectedTags = $this->quizModel->getQuizTagIds($id);
 
         $content = $this->render('admin/quiz/edit', [
-            'category' => $category,
+            'quiz' => $quiz,
             'categories' => $categories,
-            'levels' => $levels,
+            'tags' => $tags,
+            'selectedCategories' => $selectedCategories,
+            'selectedTags' => $selectedTags
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
@@ -375,11 +754,11 @@ class QuizController extends Controller
             header('Location: /quiz/configure');
             exit;
         }
-    
+
         $categoryId = $_POST['category_id'] ?? null;
         $levelId = $_POST['level_id'] ?? null;
         $questionCount = min((int)($_POST['question_count'] ?? 10), 50);
-    
+
         // Get questions based on selected criteria
         $questions = $this->quizModel->getCustomQuestions($categoryId, $levelId, $questionCount);
         // print_r($questions);    
@@ -389,7 +768,7 @@ class QuizController extends Controller
             header('Location: /quiz/configure');
             exit;
         }
-    
+
         // Create attempt record
         $attemptData = [
             'user_id' => $_SESSION['user_id'],
@@ -397,22 +776,61 @@ class QuizController extends Controller
             'total_questions' => $questionCount,
             'started_at' => date('Y-m-d H:i:s')
         ];
-    
+
         $attemptId = $this->quizAttemptModel->createAttempt($attemptData);
-        
+
         if (!$attemptId) {
             $_SESSION['message'] = 'Failed to create quiz attempt';
             $_SESSION['status'] = 'error';
             header('Location: /quiz/configure');
             exit;
         }
-    
+
         // Render custom quiz play view
         $content = $this->uirender('user/quiz/custom_play', [
             'questions' => $questions,
             'attemptId' => $attemptId
         ]);
-        
+
         echo $this->uirender('user/layout', ['content' => $content]);
+    }
+    public function createRealExam()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'title' => $_POST['title'],
+                'slug' => $_POST['slug'],
+                'description' => $_POST['description'],
+                'type' => 'real_exam',
+                'total_marks' => $_POST['total_marks'],
+                'duration' => $_POST['duration'],
+                'status' => 'draft',
+                'year' => $_POST['year'],
+                'categories' => $_POST['categories'] ?? [],
+                'tags' => $_POST['tags'] ?? []
+            ];
+            $this->quizModel->createQuizWithTags($data);
+            $_SESSION['message'] = "Real Exam created successfully!";
+            $_SESSION['status'] = "success";
+            header('Location: /admin/quiz/list');
+            exit;
+        }
+        $categories = $this->categoryModel->getAllCategories();
+        $tags = $this->tagModel->getAllTags();
+        $content = $this->render('admin/quiz/add', [
+            'categories' => $categories,
+            'tags' => $tags
+        ]);
+        echo $this->render('admin/layout', ['content' => $content]);
+    }
+    public function startRealExam($slug)
+    {
+        $quiz = $this->quizModel->getQuizBySlug($slug);
+        $questions = $this->quizModel->getRealExamQuestions('bca');
+        $content = $this->render('user/real_exam', [
+            'quiz' => $quiz,
+            'questions' => $questions
+        ]);
+        echo $this->render('user/layout', ['content' => $content]);
     }
 }

@@ -12,19 +12,31 @@ class User extends BaseModel {
         parent::__construct($pdo, 'users');
     }
 
-    public function validateUser($username, $password) {
+    public function validateUser($username, $password, $usertype = null) {
         try {
-            $conditions = [
-                ['field' => 'username', 'operator' => '=', 'value' => $username]
-            ];
+            $sql = "SELECT * FROM users WHERE 
+                    (username = :username OR email = :username OR phone = :username)
+                    AND is_verified = 1";
+                    
+            // Add usertype condition if specified
+            if ($usertype !== null) {
+                $sql .= " AND usertype_id = :usertype";
+            }
+            $sql .= " LIMIT 1";
+                    
+            $stmt = $this->pdo->prepare($sql);
+            $params = ['username' => $username];
             
-            $users = $this->get($conditions);
+            if ($usertype !== null) {
+                $params['usertype'] = $usertype;
+            }
             
-            if (!empty($users)) {
-                $user = $users[0];
-                if (password_verify($password, $user['password'])) {
-                    return $user;
-                }
+            $stmt->execute($params);
+            
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user && password_verify($password, $user['password'])) {
+                return $user;
             }
             
             return false;

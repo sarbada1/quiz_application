@@ -2,7 +2,7 @@
 <h1>Mock Test Attempts History</h1>
 <div class="row">
     <div class="breadcrumb">
-        <a href="/admin/mocktest/attempts">Mock Tests</a>
+        <a href="<?= $url('admin/mocktest/attempts') ?>">Mock Tests</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Attempts History</a>
     </div>

@@ -1,66 +1,67 @@
-<!-- Main content container -->
-<?php if (isset($_SESSION['message'])): ?>
-    <div class="alert alert-<?= $_SESSION['status'] ?>">
-        <?= $_SESSION['message'] ?>
-    </div>
-    <?php 
-    unset($_SESSION['message']);
-    unset($_SESSION['status']);
-    endif; 
-?>
 <div class="test-mock-container">
-    <?php if (!empty($mocktests)) : ?>
-        <div class="programs-grid">
-            <?php foreach ($mocktests as $mocktest) : ?>
-                <div class="program-card">
-                    <a href="/mocktest/<?=$mocktest['slug']?>"><h2><?= htmlspecialchars($mocktest['name']) ?></h2></a>
-                    <?php
-                    $examDate = !empty($mocktest['date']) ? DateTime::createFromFormat('Y-m-d', $mocktest['date'])->format('d F, Y') : 'N/A';
-                    ?>
-                    <p>Exam Date: <?= htmlspecialchars($examDate) ?> at <?= htmlspecialchars($mocktest['exam_time'] ?? 'N/A') ?></p>
-                    <p>Available Seats: <?= htmlspecialchars($mocktest['available_seats'] ?? 'N/A') ?></p>
-                    <?php if (!empty($mocktest['available_seats']) && $mocktest['available_seats'] > 0): ?>
-                        <?php if (isset($isLoggedIn) && $isLoggedIn): ?>
-                            <button type="button" class="btn btn-primary" onclick="registerForExam(<?= $mocktest['id'] ?>)">Register for this Exam</button>
-                        <?php else: ?>
-                            <div id="quizModal" class="modal">
-                                <div class="modal-content">
-                                    <span class="close" data-modal="quizModal">&times;</span>
-                                    <h2><?= htmlspecialchars($mocktest['name']) ?></h2>
-                                    <p>Please log in to register for the exam.</p>
-                                    <button class="login-btn" id="startQuizzing">Login</button>
-                                </div>
+    <?php if (!empty($mocktest)) : ?>
+        <div class="test-details">
+            <h2><?= htmlspecialchars($mocktest['title']) ?></h2>
+
+            <?php if (!empty($sets)): ?>
+                <div class="sets-container">
+                    <h3>Available Sets</h3>
+                    <div class="sets-grid">
+                        <?php foreach ($sets as $set): ?>
+                            <div class="set-card">
+                                <h4><?= htmlspecialchars($set['set_name']) ?></h4>
+                                <?php if ($isLoggedIn): ?>
+                                    <?php if ($set['status'] === 'published'): ?>
+                                        <a href="<?= $url('mocktest/' . $set['id']) ?>"                                            class="start-exam-btn"
+                                            onclick="return confirm('Are you sure to start this set?')">
+                                            Start Set
+                                        </a>
+                                    <?php else: ?>
+                                        <p class="set-status">Set not published yet</p>
+                                    <?php endif; ?>
+
+                                <?php else: ?>
+                                    <button class="login-required-btn" id="startQuiz">Login Required</button>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <p class="no-seats">No available seats</p>
-                    <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-            <?php endforeach; ?>
+
+            <?php endif; ?>
         </div>
-    <?php else : ?>
-        <p class="no-programs">No test programs available.</p>
+    <?php else: ?>
+        <p class="no-test">Test not found.</p>
     <?php endif; ?>
 </div>
-
-<script>
-function registerForExam(mocktestId) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/mocktest/register/" + mocktestId, true);
-    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            alert("Successfully registered for the exam.");
-            location.reload();
-        }
-    };
-    xhr.send();
-}
-
-document.getElementById('startQuizzing').addEventListener('click', function() {
-    window.location.href = '/login';
-});
-</script>
-
 <?php include __DIR__ . '/auth/login.php'; ?>
 <?php include __DIR__ . '/auth/register.php'; ?>
+<style>
+    .sets-container {
+        margin-top: 20px;
+    }
+
+    .sets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 15px;
+    }
+
+    .set-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .set-card h4 {
+        margin-bottom: 15px;
+        color: #2c3e50;
+    }
+
+    .set-status {
+        color: #7f8c8d;
+        font-style: italic;
+    }
+</style>

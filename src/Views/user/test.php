@@ -4,12 +4,14 @@
         <div class="programs-grid">
             <?php foreach ($programs as $program) : ?>
                 <div class="program-card">
-                    <h2><?php echo $program['name']; ?></h2>
-                    <p class="description"><?php echo $program['description']; ?></p>
-                    <div class="button-group">
-                      <button class="primary w-100"> <a href="/test/<?php echo $program['slug']; ?>" >Mock Test</a>
-                      </button> 
+                    <h2><?php echo $program['title']; ?></h2>
+              
+                    <div class="button-group flex">
 
+                      </button> 
+                      <button class="primary w-50 ml-5"> 
+                        <a href="<?= $url('test/<?php echo $program[') ?>"slug']; ?>">Mock Test</a>
+                      </button> 
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -19,4 +21,5 @@
     <?php endif; ?>
 </div>
 
-  
+<?php include __DIR__ . '/auth/login.php'; ?>
+<?php include __DIR__ . '/auth/register.php'; ?>

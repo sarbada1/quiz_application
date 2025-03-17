@@ -13,12 +13,12 @@ endif; ?>
     <h2>Edit Question Type</h2>
     <div class="row">
         <div class="breadcrumb">
-            <a href="/admin/questiontype/list">Question Type</a>
+            <a href="<?= $url('admin/questiontype/list') ?>">Question Type</a>
             <i class="fas fa-chevron-right"></i>
             <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
         </div>
         <div>
-            <button class='danger mb-5'><a href='/admin/questiontype/delete/<?= $category['id'] ?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+            <button class='danger mb-5'><a href="<?= $url('admin/questiontype/delete/<?= $category[') ?>"id'] ?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
         </div>
     </div>
     <label for="name">Type:</label>

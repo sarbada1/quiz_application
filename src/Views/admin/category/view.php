@@ -13,12 +13,12 @@
 <h1>List Category</h1>
 <div class="row">
     <div class="breadcrumb">
-        <a href="/admin/category/list">Category</a>
+        <a href="<?= $url('admin/category/list') ?>">Category</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">List</a>
     </div>
     <div>
-        <button class='success mb-5'><a href='/admin/category/add'>Add category</a></button>
+        <button class='success mb-5'><a href="<?= $url('admin/category/add') ?>">Add category</a></button>
     </div>
 </div>
 
@@ -41,8 +41,8 @@
                 <td><?= $category['name'] ?></td>
                 <td><?= $category['parent_name'] ?></td>
                 <td>
-                    <button class="primary"><a href="/admin/category/edit/<?= $category['id'] ?>">Edit</a></button>
-                    <button class="danger"><a href="/admin/category/delete/<?= $category['id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+                    <button class="primary"><a href="<?= $url('admin/category/edit/<?= $category[') ?>"id'] ?>">Edit</a></button>
+                    <button class="danger"><a href="<?= $url('admin/category/delete/<?= $category[') ?>"id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
                 </td>
             </tr>
         <?php }

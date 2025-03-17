@@ -14,20 +14,18 @@ class UserInfoModel extends BaseModel {
         return $result[0] ?? null;
     }
 
-    public function createUserInfo($age, $phone, $address, $college, $userId) {
+    public function createUserInfo($age, $address, $college, $userId) {
         return $this->insert([
             'age' => $age,
-            'phone' => $phone,
             'address' => $address,
             'college' => $college,
             'user_id' => $userId,
         ]);
     }
 
-    public function updateUserInfo($age, $phone, $address, $college, $userId) {
+    public function updateUserInfo($age, $address, $college, $userId) {
         return $this->update([
             'age' => $age,
-            'phone' => $phone,
             'address' => $address,
             'college' => $college,
         ], [

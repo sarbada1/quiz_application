@@ -2,9 +2,10 @@
 
 namespace MVC\Controllers;
 
+use PDO;
 use MVC\Controller;
 use MVC\Models\User;
-use PDO;
+use MVC\Validators\Validator;
 
 class TeacherController extends Controller
 {
@@ -35,46 +36,66 @@ class TeacherController extends Controller
     public function addTeacher()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
-            $email = $_POST['email'] ?? '';
-            $password = $_POST['password'] ?? '';
-            $confirmPassword = $_POST['cpassword'] ?? '';
+            try {
+                $data = [
+                    'username' => trim($_POST['username'] ?? ''),
+                    'email' => trim($_POST['email'] ?? ''),
+                    'password' => $_POST['password'] ?? '',
+                    'cpassword' => $_POST['cpassword'] ?? ''
+                ];
+    
+                // Validate data
+                $this->validateTeacherData($data);
+    
+                // Check if email already exists
+                $user = new User($this->pdo);
+                if ($user->isEmailExists($data['email'])) {
+                    throw new \Exception('Email already registered');
+                }
+    
+                // Password hashing
+                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+    
+                // Insert teacher data
+                $result = $user->insert([
+                    'username' => $data['username'],
+                    'email' => $data['email'],
+                    'password' => $hashedPassword,
+                    'usertype_id' => 2,
+                    'is_verified' => 1,
+                ]);
+    
+                if ($result) {
+                    $_SESSION['message'] = "Teacher added successfully!";
+                    $_SESSION['status'] = "success";
+                    header('Location: /admin/teacher/list');
+                    exit();
+                }
+    
+            } catch (\Exception $e) {
+                $_SESSION['message'] = $e->getMessage();
+                $_SESSION['status'] = "danger";
 
-            // Basic validation
-            if (empty($username) || empty($email) || empty($password) || empty($confirmPassword)) {
-                // Handle error, e.g., display an error message
-                echo "All fields are required.";
-                return;
-            }
-
-            if ($password !== $confirmPassword) {
-                // Handle error, e.g., display an error message
-                echo "Passwords do not match.";
-                return;
-            }
-
-            // Password hashing
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-            // Prepare SQL statement
-            $user = new User($this->pdo);
-            $data = [
-                'username' => $username,
-                'email' => $email,
-                'password' => $hashedPassword,
-                'usertype_id' => 2
-            ];
-
-            $result = $user->insert($data);
-
-            if ($result) {
-                $_SESSION['message'] = "Teacher added successfully!";
-                $_SESSION['status'] = "success";
                 header('Location: /admin/teacher/add');
-            } else {
-                // Handle error, e.g., display an error message or redirect with error message
-                return $this->render('admin/teacher/addTeacher', ['error' => 'Error adding teacher.']);
+                exit();
             }
+        }
+    
+        // Show the form
+        echo $this->render('admin/teacher/add');
+    }
+    
+    private function validateTeacherData($data)
+    {
+        $validator = new Validator($data, [
+            'username' => ['required', 'min:3', 'alpha_space'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'min:8'],
+            'cpassword' => ['required', 'same:password']
+        ]);
+    
+        if (!$validator->validate()) {
+            throw new \Exception($validator->getFirstError());
         }
     }
 
@@ -88,7 +109,11 @@ class TeacherController extends Controller
     public function listStudent()
     {
         $userModel = new User($this->pdo);
-        $teachers = $userModel->get([['field' => 'usertype_id', 'operator' => '=', 'value' => 3]]);
+        $teachers = $userModel->get([
+            ['field' => 'usertype_id', 'operator' => '=', 'value' => 3],
+            ['field' => 'is_verified', 'operator' => '=', 'value' => 1]
+
+        ]);
         $content = $this->render('admin/student/view', ['teachers' => $teachers]);
         echo $this->render('admin/layout', ['content' => $content]);
     }

@@ -13,7 +13,7 @@ endif;
 <h1>List Student</h1>
 <div class="row">
     <div class="breadcrumb">
-        <a href="/admin/student/list">Student</a>
+        <a href="<?= $url('admin/student/list') ?>">Student</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">List</a>
     </div>
@@ -24,7 +24,7 @@ endif;
         <tr>
             <th>SN</th>
             <th>Username</th>
-            <th>Email</th>
+            <th>Phone</th>
         </tr>
     </thead>
     <tbody>
@@ -34,7 +34,7 @@ endif;
             <tr>
                 <td><?php echo $i++; ?></td>
                 <td><?= $teacher['username'] ?></td>
-                <td><?= $teacher['email'] ?></td>
+                <td><?= $teacher['phone'] ?></td>
               
             </tr>
         <?php endforeach; ?>

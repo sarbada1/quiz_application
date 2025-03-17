@@ -66,3 +66,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+const closeButtons = document.querySelectorAll('.close'); // Select all close buttons
+
+closeButtons.forEach(closeButton => {
+  closeButton.addEventListener('click', () => {
+    const successAlert = closeButton.parentElement; // Get the parent alert element
+    successAlert.style.display = 'none';
+  });
+});

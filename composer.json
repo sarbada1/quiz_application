@@ -6,5 +6,8 @@
             "MVC\\": "src/"
         }
     },
-    "require": {}
+    "require": {
+        "phpmailer/phpmailer": "^6.9",
+        "cboden/ratchet": "^0.4.4"
+    }
 }

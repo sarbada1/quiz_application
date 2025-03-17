@@ -2,10 +2,11 @@
 
 namespace MVC;
 
-use MVC\Models\CategoryModel;
-use MVC\Models\ProgramModel;
-use MVC\Models\QuizModel;
 use PDO;
+use MVC\Models\QuizModel;
+use MVC\Helpers\UrlHelper;
+use MVC\Models\ProgramModel;
+use MVC\Models\CategoryModel;
 
 class Controller {
     protected $pdo;
@@ -20,7 +21,9 @@ class Controller {
         $this->programModel = new ProgramModel($pdo);
     }
     protected function render($view, $data = []) {
-
+        $data['url'] = function($path = '') {
+            return UrlHelper::url($path);
+        };
         extract($data);
         ob_start();
         $viewPath = __DIR__ . '/Views/' . $view . '.php';
@@ -33,9 +36,11 @@ class Controller {
     }
     protected function uirender($view, $data = []) {
      
-        
-        $data['quizzes'] = $this->quizModel->getAll(); 
-        $data['programs'] = $this->programModel->getWithCategory(); 
+        $data['url'] = function($path = '') {
+            return UrlHelper::url($path);
+        };
+        $data['quizzes'] = $this->quizModel->getQuiz('quiz'); 
+        $data['programs'] = $this->quizModel->getQuiz('mock'); 
         // $programs = $this->programModel->getWithCategory();
         // $data['categories'] = $this->categoryModel->getTopCategories();
 

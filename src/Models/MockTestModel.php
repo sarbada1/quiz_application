@@ -36,15 +36,15 @@ class MockTestModel extends BaseModel
         $result = $this->get([['field' => 'id', 'operator' => '=', 'value' => $id]]);
         return $result[0] ?? null;
     }
-    public function getBySlug($slug)
-    {
+    public function getBySlug($slug) {
         try {
-            $stmt = $this->pdo->prepare("SELECT * FROM programmes_mock_test WHERE slug = ?");
-            $stmt->execute([$slug]);
+            $sql = "SELECT * FROM quizzes WHERE slug = :slug";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['slug' => $slug]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (\PDOException $e) {
-            error_log("Database error in getBySlug: " . $e->getMessage());
-            return null;
+        } catch (PDOException $e) {
+            error_log("Error in getBySlug: " . $e->getMessage());
+            throw new Exception("Error getting mock test");
         }
     }
 
@@ -76,7 +76,18 @@ class MockTestModel extends BaseModel
             [['field' => 'id', 'operator' => '=', 'value' => $id]]
         );
     }
-
+    public function hasAttempted($userId, $mocktestId) {
+        $sql = "SELECT COUNT(*) FROM mock_test_attempts 
+                WHERE user_id = :user_id AND mock_test_id = :mocktest_id";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':mocktest_id' => $mocktestId
+        ]);
+        
+        return $stmt->fetchColumn() > 0;
+    }
     public function deleteMockTest($id)
     {
         return $this->delete([['field' => 'id', 'operator' => '=', 'value' => $id]]);
@@ -128,34 +139,88 @@ public function getAllMockTests($programId)
     $stmt->execute([':program_id' => $programId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-public function getAvailableSeats($mocktestId)
+
+
+public function isUserRegistered($userId, $mocktestId) 
 {
-    $sql = "SELECT no_of_student - COUNT(mr.id) as available_seats
-            FROM programmes_mock_test pmt
-            LEFT JOIN mocktest_registrations mr ON pmt.id = mr.mocktest_id
-            WHERE pmt.id = :mocktest_id
-            GROUP BY pmt.id";
-
-    $stmt = $this->pdo->prepare($sql);
-    $stmt->execute([':mocktest_id' => $mocktestId]);
-    return $stmt->fetchColumn();
+    try {
+        $sql = "SELECT COUNT(*) FROM mocktest_registrations 
+                WHERE user_id = :user_id AND mocktest_id = :mocktest_id";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':mocktest_id' => $mocktestId
+        ]);
+        return $stmt->fetchColumn() > 0;
+    } catch (\PDOException $e) {
+        error_log($e->getMessage());
+        throw $e;
+    }
 }
-public function isUserRegistered($userId, $mocktestId)
-{
-    $sql = "SELECT COUNT(*) FROM mocktest_registrations
-            WHERE user_id = :user_id AND mocktest_id = :mocktest_id";
-
+public function getRegisteredCount($mocktestId) {
+    $sql = "SELECT COUNT(*) FROM mocktest_registrations WHERE mocktest_id = :mocktest_id";
     $stmt = $this->pdo->prepare($sql);
-    $stmt->execute([':user_id' => $userId, ':mocktest_id' => $mocktestId]);
-    return $stmt->fetchColumn() > 0;
+    $stmt->execute(['mocktest_id' => $mocktestId]);
+    return (int)$stmt->fetchColumn();
 }
-
 public function registerUser($userId, $mocktestId)
 {
-    $sql = "INSERT INTO mocktest_registrations (user_id, mocktest_id)
-            VALUES (:user_id, :mocktest_id)";
+    try {
+        $sql = "INSERT INTO mocktest_registrations (user_id, mocktest_id)
+                VALUES (:user_id, :mocktest_id)";
 
-    $stmt = $this->pdo->prepare($sql);
-    return $stmt->execute([':user_id' => $userId, ':mocktest_id' => $mocktestId]);
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':user_id' => $userId,
+            ':mocktest_id' => $mocktestId
+        ]);
+    } catch (\PDOException $e) {
+        error_log($e->getMessage());
+        throw $e;
+    }
 }
+
+public function getAvailableSeats($mocktestId)
+{
+    try {
+        $sql = "SELECT 
+                    pmt.no_of_student - COUNT(mr.id) as available_seats
+                FROM programmes_mock_test pmt
+                LEFT JOIN mocktest_registrations mr ON pmt.id = mr.mocktest_id
+                WHERE pmt.id = :mocktest_id
+                GROUP BY pmt.id";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':mocktest_id' => $mocktestId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['available_seats'] ?? 0;
+    } catch (\PDOException $e) {
+        error_log($e->getMessage());
+        throw $e;
+    }
+}
+
+public function getRegistrationDetails($mocktestId) {
+    $sql = "SELECT 
+        pmt.*,
+        COUNT(mr.id) as registered_students,
+        (pmt.no_of_student - COUNT(mr.id)) as seats_left
+    FROM programmes_mock_test pmt
+    LEFT JOIN mocktest_registrations mr ON pmt.id = mr.mocktest_id
+    WHERE pmt.id = :mocktest_id
+    GROUP BY pmt.id";
+    
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute([':mocktest_id' => $mocktestId]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+public function getByCategory($categoryId) 
+{
+    $sql = "SELECT * FROM mock_tests WHERE category_id = :category_id LIMIT 1";
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute(['category_id' => $categoryId]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
 }

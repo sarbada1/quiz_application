@@ -3,16 +3,19 @@
 namespace MVC\Controllers;
 
 use MVC\Controller;
+use MVC\Models\ActivityLogModel;
 use MVC\Models\QuestionReportModel;
 use PDO;
 
 class QuestionReportController extends Controller
 {
     private $reportModel;
+    private $activityLogModel;
 
     public function __construct(PDO $pdo)
     {
         $this->reportModel = new QuestionReportModel($pdo);
+        $this->activityLogModel = new ActivityLogModel($pdo);
     }
 
     public function submitReport()
@@ -34,6 +37,50 @@ class QuestionReportController extends Controller
         ];
 
         if ($this->reportModel->createReport($data)) {
+            $this->activityLogModel->log(
+                $_SESSION['user_id'],
+                'question_report',
+                'Reported a question',
+                '⚠️'
+            );
+    
+            $_SESSION['message'] = "Question reported successfully.";
+            $_SESSION['status'] = "success";
+        } else {
+            $_SESSION['message'] = "Failed to submit report.";
+            $_SESSION['status'] = "danger";
+        }
+
+        // Redirect back to the page where report was initiated
+        header('Location: ' . $referer);
+        exit;
+    }
+    public function submitPreviousReport()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            $_SESSION['message'] = "Please login to report questions.";
+            $_SESSION['status'] = "danger";
+            header('Location: /');
+            exit;
+        }
+
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+
+        $data = [
+            'question_id' => $_POST['question_id'],
+            'user_id' => $_SESSION['user_id'],
+            'reason' => $_POST['reason'],
+            'description' => $_POST['description']
+        ];
+
+        if ($this->reportModel->createPreviousReport($data)) {
+            $this->activityLogModel->log(
+                $_SESSION['user_id'],
+                'question_report',
+                'Reported a question',
+                '⚠️'
+            );
+    
             $_SESSION['message'] = "Question reported successfully.";
             $_SESSION['status'] = "success";
         } else {

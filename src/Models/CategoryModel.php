@@ -36,22 +36,26 @@ class CategoryModel extends BaseModel
         return $result[0] ?? null;
     }
 
-    public function createCategory($name, $slug, $parentId)
+    public function createCategory($name, $slug, $parentId, $category_type_id)
     {
-        return $this->insert([
-            'name' => $name,
-            'parent_id' => $parentId,
-            'slug' => $slug,
-        ]);
+        try {
+            $sql = "INSERT INTO categories (name, slug, parent_id, category_type_id) VALUES (?, ?, ?, ?)";
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([$name, $slug, $parentId ?: null, $category_type_id ?: null]);
+        } catch (\PDOException $e) {
+            error_log("Error creating category: " . $e->getMessage());
+            return false;
+        }
     }
 
-    public function updateCategory($id, $name, $slug, $parentId)
+    public function updateCategory($id, $name, $slug, $parentId, $category_type_id)
     {
         return $this->update(
             [
                 'name' => $name,
                 'slug' => $slug,
-                'parent_id' => $parentId
+                'parent_id' => $parentId,
+                'category_type_id' => $category_type_id
             ],
             [['field' => 'id', 'operator' => '=', 'value' => $id]]
         );
@@ -78,20 +82,7 @@ class CategoryModel extends BaseModel
         }
     }
 
-    private function buildHierarchy(array $categories, $parentId = 0)
-    {
-        $hierarchy = [];
-        foreach ($categories as $category) {
-            if ($category['parent_id'] == $parentId) {
-                $children = $this->buildHierarchy($categories, $category['id']);
-                if ($children) {
-                    $category['children'] = $children;
-                }
-                $hierarchy[] = $category;
-            }
-        }
-        return $hierarchy;
-    }
+
 
     public function getCategoryBySlug($slug)
     {
@@ -101,20 +92,54 @@ class CategoryModel extends BaseModel
 
     public function getQuizzesByCategory($categoryId)
     {
-        $sql = "SELECT q.id, q.title, q.description, q.slug 
-                FROM quizzes q
-                WHERE q.category_id = :category_id";
+        $sql = "SELECT 
+            q.id,
+            q.title,
+            q.type,
+            q.status,
+            q.slug,
+            q.description,
+            c.name AS category_name,
+            l.level AS difficulty_name,
+            COUNT(DISTINCT qu.id) AS question_count
+        FROM quizzes q
+        JOIN quiz_categories qc ON q.id = qc.quiz_id
+        JOIN categories c ON qc.category_id = c.id
+        LEFT JOIN questions qu ON c.id = qu.category_id
+        LEFT JOIN level l ON qu.difficulty_level = l.id
+        WHERE c.id = :categoryId
+        GROUP BY 
+            q.id,
+            q.title,
+            q.type,
+            q.status,
+            c.name,
+            l.level";
 
         try {
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute(['category_id' => $categoryId]);
+            $stmt->execute(['categoryId' => $categoryId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             throw new Exception("Error fetching quizzes by category: " . $e->getMessage());
         }
     }
 
-    public function getParentCategoriesWithChildren() {
+    public function getCategoryByQuiz($quizId)
+    {
+        $sql = "select c.id,c.name from quizzes q join quiz_categories qc on qc.quiz_id=q.id join categories c on c.id=qc.category_id where q.id=:quizId";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['quizId' => $quizId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Error fetching quizzes by category: " . $e->getMessage());
+        }
+    }
+
+    public function getParentCategoriesWithChildren()
+    {
         $sql = "
             SELECT 
                 c1.*, 
@@ -124,11 +149,11 @@ class CategoryModel extends BaseModel
             FROM categories c1
             WHERE c1.parent_id IS NULL
         ";
-        
+
         try {
             $stmt = $this->pdo->query($sql);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             foreach ($results as &$category) {
                 if ($category['children']) {
                     $children = [];
@@ -145,7 +170,7 @@ class CategoryModel extends BaseModel
                     $category['children'] = [];
                 }
             }
-            
+
             return $results;
         } catch (\PDOException $e) {
             error_log("Error in getParentCategoriesWithChildren: " . $e->getMessage());
@@ -154,20 +179,54 @@ class CategoryModel extends BaseModel
     }
 
     public function getAllCategoriesWithParent()
-{
-    $sql = "
+    {
+        $sql = "
         SELECT c1.id, c1.name, c2.name as parent_name
         FROM categories c1
         LEFT JOIN categories c2 ON c1.parent_id = c2.id
         ORDER BY c1.name
     ";
 
-    try {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        throw new Exception("Error fetching categories: " . $e->getMessage());
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Error fetching categories: " . $e->getMessage());
+        }
     }
-}
+    public function getSubjectsWithChapters($categoryId)
+    {
+        $sql = "WITH RECURSIVE category_tree AS (
+        -- Get subjects (first level children)
+        SELECT c.*, 0 as level
+        FROM categories c 
+        WHERE c.parent_id = :categoryId
+        
+        UNION ALL
+        
+        -- Get chapters (second level children)
+        SELECT c2.*, ct.level + 1
+        FROM categories c2
+        INNER JOIN category_tree ct ON c2.parent_id = ct.id
+        WHERE ct.level < 1
+    )
+    SELECT ct.*, 
+        (SELECT COUNT(*) FROM questions q 
+         JOIN quizzes qz ON q.quiz_id = qz.id 
+         WHERE qz.category_id = ct.id) as question_count
+    FROM category_tree ct
+    ORDER BY level, name";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['categoryId' => $categoryId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function getById($id)
+    {
+        $sql = "SELECT * FROM categories WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }
