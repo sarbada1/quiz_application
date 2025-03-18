@@ -37,9 +37,9 @@ endif;
                 <td><?php echo $i++; ?></td>
                 <td><?= $teacher['level'] ?></td>
                 <td>
-                    <button class="primary"> <a href="<?= $url('admin/level/edit/<?= $teacher[') ?>"id'] ?>">Edit</a></button>
-                    <button class="danger"> <a href="<?= $url('admin/level/delete/<?= $teacher[') ?>"id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
-                </td>
+    <button class="primary"> <a href="<?= $url('admin/level/edit/' . $teacher['id']) ?>">Edit</a></button>
+    <button class="danger"> <a href="<?= $url('admin/level/delete/' . $teacher['id']) ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+</td>
             </tr>
         <?php endforeach; ?>
     </tbody>

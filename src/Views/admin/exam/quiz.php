@@ -49,7 +49,7 @@ endif;
                                 </span>
                             </td>
                             <td>
-                                <a href="<?= $url('admin/quiz/<?= $quiz[') ?>"id'] ?>/sets"
+                                <a href="<?= $url('admin/quiz/' . $quiz['id'] . '/sets') ?>"
                                     class="btn btn-info btn-sm">
                                     <i class="fas fa-layer-group"></i> Sets (<?= $quiz['set_count'] ?? 0 ?>)
                                 </a>

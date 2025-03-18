@@ -43,10 +43,10 @@ endif;
                             <td><?= $quiz['duration'] ?></td>
                             <td><?= $quiz['total_marks'] ?></td>
                             <td>
-                            <a href="<?= $url('admin/realexam/add/<?= $quiz[') ?>"id'] ?>"
-                                        class="btn btn-info btn-sm">
-                                        Add Questions
-                                    </a>
+                                <a href="<?= $url('admin/realexam/add/' . $quiz['id']) ?>"
+                                    class="btn btn-info btn-sm">
+                                    Add Questions
+                                </a>
                             </td>
                             <td>
                                 <span class="badge badge-<?= $quiz['status'] ?>">
@@ -54,8 +54,8 @@ endif;
                                 </span>
                             </td>
                             <td>
-                                <form action="<?= $url('admin/quiz/updateStudent/<?= $quiz[') ?>"id'] ?>" method="POST">
-                                    <input type="number" name="no_of_student" value="<?= ($quiz['no_of_student'] ?? '') ?>" min="0" >
+                                <form action="<?= $url('admin/quiz/updateStudent/' . $quiz['id']) ?>" method="POST">
+                                    <input type="number" name="no_of_student" value="<?= htmlspecialchars($quiz['no_of_student'] ?? '') ?>" min="0">
                                     <button type="submit" class="btn btn-primary btn-sm mt-5">Update</button>
                                 </form>
                             </td>

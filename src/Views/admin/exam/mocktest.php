@@ -45,13 +45,13 @@ endif;
                             <td><?= $quiz['total_marks'] ?></td>
                             <td>
                                 <?php if (empty($quiz['categories'])): ?>
-                                    <a href="<?= $url('admin/quiz/configure-mock/<?= $quiz[') ?>"id'] ?>"
+                                    <a href="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>"
                                         class="btn btn-info btn-sm">
                                         Configure Categories
                                     </a>
                                 <?php else: ?>
                                     <?= htmlspecialchars($quiz['categories']) ?>
-                                    <a href="<?= $url('admin/quiz/configure-mock/<?= $quiz[') ?>"id'] ?>"
+                                    <a href="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>"
                                         class="btn btn-warning btn-sm">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -63,17 +63,17 @@ endif;
                                 </span>
                             </td>
                             <td>
-                                <a href="<?= $url('admin/quiz/<?= $quiz[') ?>"id'] ?>/sets"
+                                <a href="<?= $url('admin/quiz/' . $quiz['id'] . '/sets') ?>"
                                     class="btn btn-info btn-sm">
                                     <i class="fas fa-layer-group"></i> Sets (<?= $quiz['set_count'] ?? 0 ?>)
                                 </a>
                             </td>
                             <!-- <td>
-                                <a href="<?= $url('admin/quiz/edit/<?= $quiz[') ?>"id'] ?>"
+                                <a href="<?= $url('admin/quiz/edit/' . $quiz['id']) ?>"
                                     class="btn btn-primary btn-sm">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="<?= $url('admin/quiz/delete/<?= $quiz[') ?>"id'] ?>"
+                                <a href="<?= $url('admin/quiz/delete/' . $quiz['id']) ?>"
                                     class="btn btn-danger btn-sm"
                                     onclick="return confirm('Are you sure you want to delete this quiz?')">
                                     <i class="fas fa-trash"></i>

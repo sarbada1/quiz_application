@@ -41,8 +41,8 @@
                 <td><?= $category['name'] ?></td>
                 <td><?= $category['parent_name'] ?></td>
                 <td>
-                    <button class="primary"><a href="<?= $url('admin/category/edit/<?= $category[') ?>"id'] ?>">Edit</a></button>
-                    <button class="danger"><a href="<?= $url('admin/category/delete/<?= $category[') ?>"id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+                    <button class="primary"><a href="<?= $url('admin/category/edit/' . $category['id']) ?>">Edit</a></button>
+                    <button class="danger"><a href="<?= $url('admin/category/delete/' . $category['id']) ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
                 </td>
             </tr>
         <?php }

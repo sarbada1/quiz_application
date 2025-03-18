@@ -6,7 +6,7 @@
             </button>
             <?= $_SESSION['message'] ?>
         </div>
-    <?php 
+    <?php
         unset($_SESSION['message']);
         unset($_SESSION['status']);
     endif; ?>
@@ -36,7 +36,8 @@
                 </tr>
             </thead>
             <tbody>
-                <?php $i = 1; foreach ($quizzes as $quiz): ?>
+                <?php $i = 1;
+                foreach ($quizzes as $quiz): ?>
                     <tr>
                         <td><?= $i++ ?></td>
                         <td><?= htmlspecialchars($quiz['title']) ?></td>
@@ -55,16 +56,14 @@
                             </span>
                         </td>
                         <td class="actions">
-
-                            
-                            <a href="<?= $url('admin/quiz/edit/<?= $quiz[') ?>"id'] ?>" 
-                               class="btn btn-primary btn-sm">
+                            <a href="<?= $url('admin/quiz/edit/' . $quiz['id']) ?>"
+                                class="btn btn-primary btn-sm">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            
-                            <a href="<?= $url('admin/quiz/delete/<?= $quiz[') ?>"id'] ?>" 
-                               class="btn btn-danger btn-sm"
-                               onclick="return confirm('Are you sure you want to delete this quiz?')">
+
+                            <a href="<?= $url('admin/quiz/delete/' . $quiz['id']) ?>"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm('Are you sure you want to delete this quiz?')">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </td>
@@ -76,61 +75,83 @@
 </div>
 
 <style>
-.content-wrapper {
-    padding: 20px;
-}
+    .content-wrapper {
+        padding: 20px;
+    }
 
-.content-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
 
-.quiz-list-container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+    .quiz-list-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
-.table {
-    width: 100%;
-    border-collapse: collapse;
-}
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-.table th {
-    background: #f8f9fa;
-    padding: 12px;
-    text-align: left;
-}
+    .table th {
+        background: #f8f9fa;
+        padding: 12px;
+        text-align: left;
+    }
 
-.table td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-}
+    .table td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+    }
 
-.badge {
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-}
+    .badge {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
 
-.badge-mock { background: #17a2b8; color: white; }
-.badge-quiz { background: #28a745; color: white; }
-.badge-previous_year { background: #ffc107; color: black; }
-.badge-real_exam { background: #dc3545; color: white; }
+    .badge-mock {
+        background: #17a2b8;
+        color: white;
+    }
 
-.badge-draft { background: #6c757d; color: white; }
-.badge-published { background: #28a745; color: white; }
+    .badge-quiz {
+        background: #28a745;
+        color: white;
+    }
 
-.actions {
-    display: flex;
-    gap: 5px;
-}
+    .badge-previous_year {
+        background: #ffc107;
+        color: black;
+    }
 
-.btn-sm {
-    padding: 5px 10px;
-    font-size: 12px;
-}
+    .badge-real_exam {
+        background: #dc3545;
+        color: white;
+    }
+
+    .badge-draft {
+        background: #6c757d;
+        color: white;
+    }
+
+    .badge-published {
+        background: #28a745;
+        color: white;
+    }
+
+    .actions {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
 </style>

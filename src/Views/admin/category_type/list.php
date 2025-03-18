@@ -2,14 +2,14 @@
     <div id="alert" class="alert alert-<?= $_SESSION['status'] ?>" role="alert">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>
-        </button> 
-        <?= $_SESSION['message'] ?>   
+        </button>
+        <?= $_SESSION['message'] ?>
     </div>
-    <?php 
+<?php
     unset($_SESSION['message']);
     unset($_SESSION['status']);
-    endif; 
-    ?>
+endif;
+?>
 <h1>Category Types</h1>
 <div class="row">
     <div class="breadcrumb">
@@ -34,10 +34,10 @@
         <?php foreach ($types as $type): ?>
             <tr>
                 <td><?= htmlspecialchars($type['id']) ?></td>
-                <td><?= htmlspecialchars($type['name']) ?></td>  
+                <td><?= htmlspecialchars($type['name']) ?></td>
                 <td>
-                    <button class="primary"><a href="<?= $url('admin/category-type/edit/<?= $type[') ?>"id'] ?>">Edit</a></button>
-                    <button class="danger"><a href="<?= $url('admin/category-type/delete/<?= $type[') ?>"id'] ?>" onclick="return confirm('Are you sure?')">Delete</a></button>
+                    <button class="primary"><a href="<?= $url('admin/category-type/edit/' . $type['id']) ?>">Edit</a></button>
+                    <button class="danger"><a href="<?= $url('admin/category-type/delete/' . $type['id']) ?>" onclick="return confirm('Are you sure?')">Delete</a></button>
                 </td>
             </tr>
         <?php endforeach; ?>

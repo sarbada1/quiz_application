@@ -41,8 +41,8 @@ endif;
                 <td><?= $teacher['slug'] ?></td>
                 <td><?= $teacher['time_per_question'] ?></td>
                 <td>
-                    <button class="primary"> <a href="<?= $url('admin/questiontype/edit/<?= $teacher[') ?>"id'] ?>">Edit</a></button>
-                    <button class="danger"> <a href="<?= $url('admin/questiontype/delete/<?= $teacher[') ?>"id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+                    <button class="primary"> <a href="<?= $url('admin/questiontype/edit/' . $teacher['id']) ?>">Edit</a></button>
+                    <button class="danger"> <a href="<?= $url('admin/questiontype/delete/' . $teacher['id']) ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
                 </td>
             </tr>
         <?php endforeach; ?>

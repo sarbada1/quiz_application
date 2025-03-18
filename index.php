@@ -16,12 +16,11 @@ use MVC\Middleware\AuthMiddleware;
 use MVC\Router;
 use MVC\Config\App;
 
-App::init();
 
 // Database connection setup
-$dsn = 'mysql:host=localhost;dbname=ybqxhkxdav';
-$username = 'ybqxhkxdav';
-$password = 'tzSukN5Jzu';
+$dsn = 'mysql:host=localhost;dbname=quiz_system';
+$username = 'root';
+$password = 'Root@1234';
 
 try {
     $database = new Database($dsn, $username, $password);

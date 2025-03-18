@@ -10,8 +10,8 @@
     unset($_SESSION['status']);
 endif;
 ?>
-<form action="<?= $url('admin/quiz/edit/<?= $quiz[') ?>"id'] ?>" method="POST" class="form-group">
-    <h2>Edit Quiz</h2>
+<form action="<?= $url('admin/quiz/edit/' . $quiz['id']) ?>" method="POST" class="form-group">
+<h2>Edit Quiz</h2>
     <div class="breadcrumb">
         <a href="<?= $url('admin/quiz/list') ?>">Quiz</a>
         <i class="fas fa-chevron-right"></i>
@@ -72,6 +72,14 @@ endif;
         <label>Duration (minutes)</label>
         <input type="number" name="duration" value="<?= $quiz['duration'] ?>" required>
     </div>
-
+    <div class="form-group">
+        <label>Status</label>
+        <select name="status" >
+            <option selected disabled>--Status--</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published </option>
+            <option value="archived"> Archived</option>
+        </select>
+    </div>
     <button type="submit" class="btn btn-primary">Update Quiz</button>
 </form>

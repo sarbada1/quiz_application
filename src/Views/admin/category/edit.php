@@ -19,7 +19,7 @@ endif;
             <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
         </div>
         <div>
-            <button class='danger mb-5'><a href="<?= $url('admin/category/delete/<?=$category[') ?>"id']?>' onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+        <button class='danger mb-5'><a href="<?= $url('admin/category/delete/' . $category['id']) ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
         </div>
     </div>
     <label for="name">Name:</label>

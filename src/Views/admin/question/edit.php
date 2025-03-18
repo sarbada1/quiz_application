@@ -10,27 +10,27 @@
     unset($_SESSION['status']);
 endif;
 ?>
-<form action="<?= $url('admin/question/edit/<?= $question[') ?>"id'] ?>" method="POST" class="form-group">
+<form action="<?= $url('admin/question/edit/' . $question['id']) ?>" method="POST" class="form-group">
     <h2>Edit Question</h2>
     <div class="breadcrumb">
         <a href="<?= $url('admin/question/list') ?>">Question</a>
         <i class="fas fa-chevron-right"></i>
         <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
     </div>
-    
+
     <label for="question_text">Question:</label>
     <input type="text" id="question_text" name="question_text" value="<?= htmlspecialchars($question['question_text']) ?>" required>
 
     <div class="form-group">
-    <label>Question Type</label>
-    <select name="question_type" required>
-        <option disabled>--Select question type--</option>
-        <option value="mock" <?= $question['question_type'] == 'mock' ? 'selected' : '' ?>>Mock Test</option>
-        <option value="previous_year" <?= $question['question_type'] == 'previous_year' ? 'selected' : '' ?>>Previous Year</option>
-        <option value="quiz" <?= $question['question_type'] == 'quiz' ? 'selected' : '' ?>>Quiz</option>
-        <option value="real_exam" <?= $question['question_type'] == 'real_exam' ? 'selected' : '' ?>>Real Exam</option>
-    </select>
-</div>
+        <label>Question Type</label>
+        <select name="question_type" required>
+            <option disabled>--Select question type--</option>
+            <option value="mock" <?= $question['question_type'] == 'mock' ? 'selected' : '' ?>>Mock Test</option>
+            <option value="previous_year" <?= $question['question_type'] == 'previous_year' ? 'selected' : '' ?>>Previous Year</option>
+            <option value="quiz" <?= $question['question_type'] == 'quiz' ? 'selected' : '' ?>>Quiz</option>
+            <option value="real_exam" <?= $question['question_type'] == 'real_exam' ? 'selected' : '' ?>>Real Exam</option>
+        </select>
+    </div>
 
 
 

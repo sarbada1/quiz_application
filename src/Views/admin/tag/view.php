@@ -5,7 +5,8 @@
         </button>
         <?= $_SESSION['message'] ?>
     </div>
-    <?php unset($_SESSION['message']); unset($_SESSION['status']); ?>
+    <?php unset($_SESSION['message']);
+    unset($_SESSION['status']); ?>
 <?php endif; ?>
 
 <h1>List Tags</h1>
@@ -30,14 +31,15 @@
         </tr>
     </thead>
     <tbody>
-        <?php $i = 1; foreach ($tags as $tag): ?>
+        <?php $i = 1;
+        foreach ($tags as $tag): ?>
             <tr>
                 <td><?= $i++ ?></td>
                 <td><?= htmlspecialchars($tag['name']) ?></td>
                 <td><?= htmlspecialchars($tag['slug']) ?></td>
                 <td>
-                    <button class="primary"><a href="<?= $url('admin/tag/edit/<?= $tag[') ?>"id'] ?>">Edit</a></button>
-                    <button class="danger"><a href="<?= $url('admin/tag/delete/<?= $tag[') ?>"id'] ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
+                    <button class="primary"><a href="<?= $url('admin/tag/edit/' . $tag['id']) ?>">Edit</a></button>
+                    <button class="danger"><a href="<?= $url('admin/tag/delete/' . $tag['id']) ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
                 </td>
             </tr>
         <?php endforeach; ?>

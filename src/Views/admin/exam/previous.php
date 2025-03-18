@@ -45,14 +45,13 @@ endif;
                             <td><?= $quiz['duration'] ?></td>
                             <td><?= $quiz['total_marks'] ?></td>
                             <td>
-                                <a href="<?= $url('admin/real_exam/question/<?= $quiz[') ?>"id'] ?>"
+                                <a href="<?= $url('admin/real_exam/question/' . $quiz['id']) ?>"
                                     class="btn btn-info btn-sm">
                                     Add Questions
                                 </a>
-                                <a href="<?= $url('admin/quiz/questions/<?= $quiz[') ?>"id'] ?>" class="btn btn-info btn-sm">
+                                <a href="<?= $url('admin/quiz/questions/' . $quiz['id']) ?>" class="btn btn-info btn-sm">
                                     View Questions (<?= $quiz['question_count'] ?>)
                                 </a>
-
                             </td>
                             <td>
                                 <span class="badge badge-<?= $quiz['status'] ?>">
@@ -60,7 +59,7 @@ endif;
                                 </span>
                             </td>
                             <td>
-                                <form action="<?= $url('admin/quiz/updateYear/<?= $quiz[') ?>"id'] ?>" method="POST">
+                                <form action="<?= $url('admin/quiz/updateYear/' . $quiz['id']) ?>" method="POST">
                                     <input type="number" name="year" value="<?= htmlspecialchars($quiz['year'] ?? '') ?>" min="2000" max="<?= date('Y') ?>" required>
                                     <button type="submit" class="btn btn-primary btn-sm mt-5">Update</button>
                                 </form>

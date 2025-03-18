@@ -20,7 +20,7 @@ endif;
         </div>
     </div>
 
-    <form id="mockConfigForm" action="<?= $url('admin/quiz/configure-mock/<?= $quiz[') ?>"id'] ?>" method="POST">
+    <form id="mockConfigForm" action="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>" method="POST">
         <div class="category-grid">
             <?php foreach ($categories as $category): ?>
                 <div class="category-card">
