@@ -29,8 +29,8 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
             <li><a href="#profile" class="active">Profile</a></li>
             <li><a href="#quiz-history">Quiz History</a></li>
             <li><a href="#mocktest-history">Mock Test History</a></li>
-            <li><a href="#notifications" id="notification">Question Reports & Notifications 
-                <?php if ($unreadReportsCount > 0): ?>
+            <li><a href="#notifications" id="notification">Question Reports & Notifications
+                    <?php if ($unreadReportsCount > 0): ?>
                         <span class="badge"><?= $unreadReportsCount ?></span>
                     <?php endif; ?></a></li>
         </ul>
@@ -223,6 +223,7 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
         const editBtn = document.getElementById('editBtn');
         const editForm = document.getElementById('editForm');
         const closeBtn = document.getElementById('closeBtn');
+        const notificationTab = document.getElementById('notification');
 
         tabs.forEach(tab => {
             tab.addEventListener('click', function(e) {
@@ -231,8 +232,36 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
                 tabContents.forEach(content => content.classList.remove('active'));
                 this.classList.add('active');
                 document.querySelector(this.getAttribute('href')).classList.add('active');
+
+                // If notifications tab is clicked, clear the badge
+                if (this.getAttribute('href') === '#notifications') {
+                    clearNotificationBadge();
+                }
             });
         });
+
+        // Function to clear notification badge
+        function clearNotificationBadge() {
+            const badge = notificationTab.querySelector('.badge');
+            if (badge) {
+                badge.style.display = 'none';
+
+                // Make AJAX request to update session
+                fetch('<?= $url('ajax/clear-notifications') ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Notifications marked as read');
+                    })
+                    .catch(error => {
+                        console.error('Error clearing notifications:', error);
+                    });
+            }
+        }
 
         editBtn.addEventListener('click', function() {
             editForm.classList.add('active');
@@ -306,10 +335,12 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
         background: #e8f5e9;
         color: #2e7d32;
     }
+
     #notification {
         position: relative;
         display: inline-block;
     }
+
     .badge {
         position: absolute;
         top: 0;

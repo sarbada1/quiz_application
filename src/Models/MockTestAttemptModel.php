@@ -188,7 +188,7 @@ class MockTestAttemptModel extends BaseModel
                 FROM mock_test_attempts mta
                 JOIN quiz_sets mt ON mta.set_id = mt.id
                 join quizzes as q on q.id=mt.quiz_id
-                WHERE mta.user_id = :user_id and q.`type`='mock'";
+                WHERE mta.user_id = :user_id and q.`type`='mock' order by mta.id desc";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute(['user_id' => $userId]);

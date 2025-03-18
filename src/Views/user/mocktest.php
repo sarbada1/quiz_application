@@ -220,13 +220,14 @@
         width: 90%;
         max-width: 800px;
         border-radius: 8px;
+        position: relative;
     }
 
     .review-modal-content .close {
         position: absolute;
-        top: 46px;
-        right: 143px;
-        font-size: 24px;
+        top: 0;
+        right: 30px;
+        font-size: 50px;
         cursor: pointer;
     }
 
@@ -523,13 +524,14 @@
                                                 <input type="radio"
                                                     name="question_<?= $question['id'] ?>"
                                                     value="<?= $answer['id'] ?>"
+                                                    data-correct="<?= $answer['isCorrect'] ? 'true' : 'false' ?>"
                                                     onclick="submitAnswer(<?= $answer['id'] ?>, <?= $question['id'] ?>, <?= $globalIndex ?>)">
                                                 <?= htmlspecialchars($answer['answer']) ?>
                                             </label>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
-                                <?php $globalIndex++; // Increment global counter 
+                                <?php $globalIndex++;
                                 ?>
                             <?php endforeach; ?>
                         </div>
@@ -782,50 +784,53 @@
         }, 1000);
     }
 
-function showReviewModal() {
+    function showReviewModal() {
     const modal = document.createElement('div');
     modal.className = 'review-modal';
     console.log(userAnswers);
 
     const reviewHTML = `
-    <div class="review-modal-content">
-        <span class="close" onclick="closeReviewModal()">&times;</span>
-        <h2>Review Answers</h2>
-        <div class="review-questions">
-            ${Object.keys(userAnswers).map((questionId, index) => {
-                const question = document.querySelector(`[data-question-id="${questionId}"]`);
-                const questionText = question.querySelector('.question-text').innerHTML;
-                const options = Array.from(question.querySelectorAll('.option'));
-                console.log(options);
-                
-                const userAnswerId = userAnswers[questionId];
-                const correctAnswer = options.find(opt => opt.querySelector('input').dataset.correct === "true");
-                
-                return `
-                    <div class="review-question">
-                        <div class="question-text">
-                            <strong>Q${index + 1}.</strong> ${questionText}
+        <div class="review-modal-content">
+            <span class="close" onclick="closeReviewModal()">&times;</span>
+            <h2>Review Answers</h2>
+            <div class="review-questions">
+                ${Object.keys(userAnswers).map((questionId, index) => {
+                    const question = document.querySelector(`[data-question-id="${questionId}"]`);
+                    const questionText = question.querySelector('.question-text').innerHTML;
+                    const options = Array.from(question.querySelectorAll('.option'));
+                    
+                    const userAnswerId = userAnswers[questionId];
+                    
+                    return `
+                        <div class="review-question">
+                            <div class="question-text">
+                                <strong>Q${index + 1}.</strong> ${questionText}
+                            </div>
+                            <div class="answers">
+                                ${options.map(option => {
+                                    const input = option.querySelector('input');
+                                    const isUserAnswer = input.value == userAnswerId;
+                                    const isCorrect = input.getAttribute('data-correct') === "true";
+                                    
+                                    let optionClass = '';
+                                    if (isUserAnswer) {
+                                        optionClass = isCorrect ? 'user-answer-correct' : 'user-answer-wrong';
+                                    } else if (isCorrect) {
+                                        optionClass = 'correct-answer';
+                                    }
+                                    
+                                    return `
+                                        <div class="option ${optionClass}">
+                                            ${option.innerHTML}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
                         </div>
-                        <div class="answers">
-                            ${options.map(option => {
-                                const input = option.querySelector('input');
-                                const isUserAnswer = input.value == userAnswerId;
-                                const isCorrect = input.dataset.correct === "true";
-                                console.log(isUserAnswer);
-                                // console.log(isCorrect);
-                                
-                                return `
-                                    <div class="option ${isUserAnswer ? (isCorrect ? 'user-answer-correct' : 'user-answer-wrong') : ''} ${isCorrect ? 'correct-answer' : ''}">
-                                        ${option.innerHTML}
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('')}
+                    `;
+                }).join('')}
+            </div>
         </div>
-    </div>
     `;
 
     modal.innerHTML = reviewHTML;
@@ -833,12 +838,12 @@ function showReviewModal() {
     modal.style.display = 'block';
 }
 
-function closeReviewModal() {
-    const modal = document.querySelector('.review-modal');
-    if (modal) {
-        modal.remove();
+    function closeReviewModal() {
+        const modal = document.querySelector('.review-modal');
+        if (modal) {
+            modal.remove();
+        }
     }
-}
 
     function toggleExplanation(index) {
         const content = document.getElementById(`explanation-${index}`);

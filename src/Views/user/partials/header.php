@@ -52,14 +52,7 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
             </ul>
         </nav>
         <?php if (isset($_SESSION['name'])) { ?>
-            <div class="notification-icon">
-                <a href="<?= $url('profile#notifications') ?>">
-                    <i class="fas fa-bell" style="font-size: 35px;"></i>
-                    <?php if ($unreadReportsCount > 0): ?>
-                        <span class="badge"><?= $unreadReportsCount ?></span>
-                    <?php endif; ?>
-                </a>
-            </div>
+        
             <div class="user flex align-center">
                 <nav class="sidebar-nav mr-5 ">
                     <ul>
