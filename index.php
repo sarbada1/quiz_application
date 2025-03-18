@@ -16,11 +16,26 @@ use MVC\Middleware\AuthMiddleware;
 use MVC\Router;
 use MVC\Config\App;
 
+// Initialize App config
+App::init();
 
-// Database connection setup
-$dsn = 'mysql:host=localhost;dbname=quiz_system';
-$username = 'root';
-$password = 'Root@1234';
+// Set database credentials based on environment
+$serverName = $_SERVER['SERVER_NAME'] ?? '';
+$serverPort = $_SERVER['SERVER_PORT'] ?? '';
+$isLocalhost = in_array($serverName, ['localhost', '127.0.0.1']);
+$isDevelopmentPort = ($serverPort == '3500');
+
+if ($isLocalhost && $isDevelopmentPort) {
+    // Local development environment
+    $dsn = 'mysql:host=localhost;dbname=quiz_system';
+    $username = 'root';
+    $password = 'Root@1234';
+} else {
+    // Production environment
+    $dsn = 'mysql:host=localhost;dbname=ybqxhkxdav';
+    $username = 'ybqxhkxdav';
+    $password = 'tzSukN5Jzu';
+}
 
 try {
     $database = new Database($dsn, $username, $password);
