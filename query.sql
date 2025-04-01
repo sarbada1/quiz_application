@@ -1,4 +1,4 @@
--- Active: 1741512521136@@127.0.0.1@3306@quiz_system
+-- Active: 1742854236555@@127.0.0.1@3306@quiz_system
 create DATABASE quiz_system;
 
 use quiz_system;
@@ -1584,3 +1584,72 @@ SELECT q.category_id, COUNT(*) as count
             JOIN questions q ON q.id = mtq.qid
             WHERE mtq.quiz_id = 10
             GROUP BY q.category_id;
+
+UPDATE quiz_categories 
+SET number_of_questions = 20, marks_allocated = 20 
+WHERE quiz_id = 10 AND category_id = 4;
+        SELECT COUNT(*) as count
+            FROM programmes_mock_test_questions mtq
+            JOIN questions q ON q.id = mtq.qid
+            WHERE mtq.quiz_id = 10 AND q.category_id = 6;
+
+
+            CREATE TABLE IF NOT EXISTS exam_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    exam_id BIGINT UNSIGNED  NOT NULL,
+    score INT DEFAULT 0,
+    correct_answers INT DEFAULT 0,
+    wrong_answers INT DEFAULT 0,
+    completed_at DATETIME,
+    UNIQUE KEY (user_id, exam_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (exam_id) REFERENCES quizzes(id)
+);
+-- Add attempt_id column to user_answers table
+ALTER TABLE user_answers
+ADD COLUMN attempt_id INT AFTER user_id,
+ADD CONSTRAINT fk_attempt_id FOREIGN KEY (attempt_id) REFERENCES exam_attempts(id);
+SELECT ua.question_id, ua.answer_id, 
+            CASE WHEN a.isCorrect = 1 THEN 1 ELSE 0 END as is_correct
+            FROM user_answers ua
+            JOIN answers a ON ua.answer_id = a.id
+            WHERE ua.attempt_id = 2;
+ALTER TABLE exam_attempts ADD COLUMN is_published TINYINT(1) DEFAULT 0;
+CREATE TABLE exam_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    exam_id BIGINT UNSIGNED  NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    status ENUM('pending', 'in_progress', 'ended') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (exam_id) REFERENCES quizzes(id)
+);
+
+CREATE TABLE exam_activity_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED  NOT NULL,
+    exam_id BIGINT UNSIGNED  NOT NULL,
+    activity_type VARCHAR(50) NOT NULL,
+    details TEXT,
+    occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (exam_id) REFERENCES quizzes(id)
+);
+
+      SELECT 
+                pmtq.id AS mock_test_question_id,
+                q.id AS question_id,
+                q.question_text,
+                a.id AS answer_id,
+                a.answer,
+                a.isCorrect,
+                a.reason
+            FROM programmes_mock_test_questions pmtq
+            JOIN questions q ON pmtq.qid = q.id
+            JOIN answers a ON q.id = a.question_id
+            WHERE pmtq.quiz_id = 14;
+
+
+          
+       

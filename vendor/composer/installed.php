@@ -3,7 +3,7 @@
         'name' => 'sarbada/quiz-application',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '060a9bc582480473dd336bb16ecd7e1938f3aa12',
+        'reference' => '6dbdf0404faaed9a24cb0fe126e219c27b7a86fe',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -151,7 +151,7 @@
         'sarbada/quiz-application' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '060a9bc582480473dd336bb16ecd7e1938f3aa12',
+            'reference' => '6dbdf0404faaed9a24cb0fe126e219c27b7a86fe',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -40,7 +40,7 @@
             </div>
             <div class="modal-body">
                 <form id="editAllocationForm">
-                    <input type="hidden" id="edit_category_id" name="category_id">
+                    <input type="hidden" id="edit_category_id" name="category_id" value="">
                     <input type="hidden" id="edit_quiz_id" name="quiz_id" value="<?= $quiz['id'] ?>">
 
                     <div class="form-group">
@@ -60,7 +60,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveAllocationBtn">Save Changes</button>
             </div>
         </div>
@@ -76,8 +76,7 @@
         <div class="breadcrumb">
             <a href="<?= $url('admin/quiz/list') ?>">Real Exam</a>
             <i class="fas fa-chevron-right"></i>
-            <a href="<?= $url('admin/realexam/add/<?= $quiz[') ?>"id'] ?>" style="margin-left: 7px;cursor:default">Questions</a>
-            <i class="fas fa-chevron-right"></i>
+            <a href="<?= $url('admin/realexam/add/' . $quiz['id']) ?>" style="margin-left: 7px;cursor:default">Questions</a> <i class="fas fa-chevron-right"></i>
             <a href="#" style="margin-left: 7px;cursor:default">Add</a>
         </div>
     </div>
@@ -107,7 +106,7 @@
         </form>
     </div>
 
-    <form method="post" action="<?= $url('admin/realexam/add/<?= $quiz[') ?>"id'] ?>">
+    <form method="post" action="<?= $url('admin/realexam/add/' . $quiz['id']) ?>">
         <table class="table">
             <thead>
                 <tr>
@@ -172,6 +171,7 @@
         xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 var response = JSON.parse(this.responseText);
+console.log(this.responseText);
 
                 if (!response.success) {
                     alert(response.message);
@@ -183,7 +183,7 @@
                 }
             }
         };
-        xmlhttp.open("/", "<?= $url('ajax/toggle-question/') ?>" + action + "/" + questionId + "/" + quizId, true);
+        xmlhttp.open("POST", "<?= $url('ajax/toggle-question/') ?>" + action + "/" + questionId + "/" + quizId, true);
         xmlhttp.send();
     }
 
@@ -232,56 +232,69 @@
 
         // Save allocation button click handler
         document.getElementById('saveAllocationBtn').addEventListener('click', function() {
-            const formData = new FormData(document.getElementById('editAllocationForm'));
-            const categoryId = formData.get('category_id');
-            const quizId = formData.get('quiz_id');
-            const numQuestions = formData.get('number_of_questions');
-            const marksAllocated = formData.get('marks_allocated');
+            // Get the form values directly rather than using FormData
+            const categoryId = document.getElementById('edit_category_id').value;
+            const quizId = document.getElementById('edit_quiz_id').value;
+            const numQuestions = document.getElementById('edit_number_of_questions').value;
+            const marksAllocated = document.getElementById('edit_marks_allocated').value;
+
+            // Debug
+            console.log("Values:", {
+                categoryId,
+                quizId,
+                numQuestions,
+                marksAllocated
+            });
 
             if (!numQuestions || !marksAllocated) {
                 alert('Please fill in all required fields');
                 return;
             }
 
+            // Create the form data for sending
+            const formData = new FormData();
+            formData.append('category_id', categoryId);
+            formData.append('quiz_id', quizId);
+            formData.append('number_of_questions', numQuestions);
+            formData.append('marks_allocated', marksAllocated);
+
+
             // Send AJAX request to update allocation
             const xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function() {
                 if (this.readyState == 4) {
                     if (this.status == 200) {
-                        try {
-                            const response = JSON.parse(this.responseText);
-                            if (response.success) {
-                                // Update the UI
-                                const counterElement = document.getElementById('category_counter_' + categoryId);
-                                const currentQuestions = parseInt(counterElement.innerText.split('/')[0]);
-                                counterElement.innerText = currentQuestions + '/' + numQuestions;
+                        const response = JSON.parse(this.responseText);
+                        console.log(response);
 
-                                // Update the data attributes
-                                const editButton = document.querySelector('.edit-allocation[data-category-id="' + categoryId + '"]');
-                                editButton.setAttribute('data-current-questions', numQuestions);
-                                editButton.setAttribute('data-current-marks', marksAllocated);
+                        if (response.success) {
+                            // Update the UI
+                            const counterElement = document.getElementById('category_counter_' + categoryId);
+                            const currentQuestions = parseInt(counterElement.innerText.split('/')[0]);
+                            counterElement.innerText = currentQuestions + '/' + numQuestions;
 
-                                // Update marks display
-                                editButton.closest('.card-body').querySelector('p.card-text:last-child').innerText = 'Total marks: ' + marksAllocated;
+                            // Update the data attributes
+                            const editButton = document.querySelector('.edit-allocation[data-category-id="' + categoryId + '"]');
+                            editButton.setAttribute('data-current-questions', numQuestions);
+                            editButton.setAttribute('data-current-marks', marksAllocated);
 
-                                // Hide the modal
-                                $('#editAllocationModal').modal('hide');
+                            // Update marks display
+                            editButton.closest('.card-body').querySelector('p.card-text:last-child').innerText = 'Total marks: ' + marksAllocated;
 
-                                // Show success message
-                                alert('Category allocation updated successfully');
-                            } else {
-                                alert(response.message || 'Failed to update allocation');
-                            }
-                        } catch (e) {
-                            alert('Error processing response');
+                            alert('Category allocation updated successfully');
+                            document.getElementById('editAllocationModal').style('display', 'none');
+                            // Show success message
+                        } else {
+                            alert(response.message || 'Failed to update allocation');
                         }
+
                     } else {
                         alert('Error updating allocation');
                     }
                 }
             };
 
-            xhr.open('POST', '/ajax/update-category-allocation', true);
+            xhr.open('POST', "<?= $url('ajax/update-category-allocation') ?>", true);
             xhr.send(formData);
         });
     });

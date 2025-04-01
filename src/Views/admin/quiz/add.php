@@ -46,7 +46,7 @@ endif;
     </div>
     <div class="form-group">
         <label>Tags</label>
-        <select name="tags[]" multiple >
+        <select name="tags[]" multiple>
             <?php foreach ($tags as $tag): ?>
                 <option value="<?= $tag['id'] ?>"><?= htmlspecialchars($tag['name']) ?></option>
             <?php endforeach; ?>
@@ -56,22 +56,80 @@ endif;
     </div>
     <div class="form-group">
         <label>Total Marks</label>
-        <input type="number" min="0" name="total_marks" >
+        <input type="number" min="0" name="total_marks">
     </div>
 
     <div class="form-group">
         <label>Duration (minutes)</label>
-        <input type="number" min="0" name="duration" >
+        <input type="number" min="0" name="duration">
     </div>
     <div class="form-group">
         <label>Status</label>
-        <select name="status" >
+        <select name="status">
             <option selected disabled>--Status--</option>
             <option value="draft">Draft</option>
             <option value="published">Published </option>
             <option value="archived"> Archived</option>
         </select>
     </div>
+    <div class="form-group quiz-type-fields" id="real_exam_fields" style="display: none;">
+        <h5>Schedule Exam</h5>
 
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Start Date & Time</label>
+                    <input type="datetime-local" name="exam_start_time" class="form-control">
+                    <small class="form-text text-muted">When students can begin taking the exam</small>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>End Date & Time</label>
+                    <input type="datetime-local" name="exam_end_time" class="form-control">
+                    <small class="form-text text-muted">When the exam will close</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mt-2">
+            <input type="checkbox" class="form-check-input" id="schedule_later" name="schedule_later"
+                style="margin-top: 5px; margin-right: 8px;">
+            <div>
+                <label class="form-check-label" for="schedule_later" style="margin-bottom: 0;">
+                    Schedule later
+                </label>
+                <small class="form-text text-muted" style="display: block;">
+                    Check this if you want to schedule the exam later
+                </small>
+            </div>
+        </div>
+    </div>
     <button class="success mt-5" type="submit">Create</button>
 </form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide fields based on quiz type selection
+        const typeSelect = document.querySelector('select[name="type"]');
+        const realExamFields = document.getElementById('real_exam_fields');
+
+        typeSelect.addEventListener('change', function() {
+            if (this.value === 'real_exam') {
+                realExamFields.style.display = 'block';
+            } else {
+                realExamFields.style.display = 'none';
+            }
+        });
+
+        const titleInput = document.getElementById('title');
+        const slugInput = document.getElementById('slug');
+
+        titleInput.addEventListener('input', function() {
+            slugInput.value = this.value.toLowerCase()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/\s+/g, '-');
+        });
+    });
+</script>

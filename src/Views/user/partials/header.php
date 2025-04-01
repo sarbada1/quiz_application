@@ -63,6 +63,7 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
                             </a>
                             <ul class="dropdown mr-5   ">
                                 <li><a href="<?= $url('profile') ?>"> Profile</a></li>
+                                <li><a href="<?= $url('student/dashboard') ?>"> Dashboard</a></li>
                                 <li><a href="<?= $url('user/logout') ?>"> Logout</a></li>
                             </ul>
                         </li>

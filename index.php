@@ -18,8 +18,7 @@ use MVC\Config\App;
 
 // Initialize App config
 App::init();
-
-// Set database credentials based on environment
+date_default_timezone_set('Asia/Kathmandu');
 $serverName = $_SERVER['SERVER_NAME'] ?? '';
 $serverPort = $_SERVER['SERVER_PORT'] ?? '';
 $isLocalhost = in_array($serverName, ['localhost', '127.0.0.1']);
@@ -29,7 +28,7 @@ if ($isLocalhost && $isDevelopmentPort) {
     // Local development environment
     $dsn = 'mysql:host=localhost;dbname=quiz_system';
     $username = 'root';
-    $password = 'Root@1234';
+    $password = '';
 } else {
     // Production environment
     $dsn = 'mysql:host=localhost;dbname=ybqxhkxdav';

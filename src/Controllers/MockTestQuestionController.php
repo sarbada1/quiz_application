@@ -374,6 +374,7 @@ class MockTestQuestionController extends Controller
     }
     public function toggleQuestion($action, $questionId, $mockTestId)
     {
+
         try {
             if ($action === 'add') {
                 // Get question details to determine its category

@@ -33,7 +33,20 @@ class MockTestAttemptModel extends BaseModel
         $data['attempt_id'] = $attemptId;
         $stmt->execute($data);
     }
-
+    public function hasAttempted($userId, $examId)
+    {
+        $sql = "SELECT COUNT(*) FROM mock_test_attempts 
+                WHERE user_id = :user_id AND mock_test_id = :mock_test_id";
+                
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':mock_test_id' => $examId
+        ]);
+        
+        return $stmt->fetchColumn() > 0;
+    }
+    
     public function saveAnswer($data)
     {
         $stmt = $this->pdo->prepare("

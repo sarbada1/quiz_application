@@ -323,6 +323,9 @@ button.success {
 button.danger {
   background-color: red;
 }
+button.secondary {
+  background-color: rgb(73, 71, 71);
+}
 
 button.warning {
   background-color: rgb(251 191 36);

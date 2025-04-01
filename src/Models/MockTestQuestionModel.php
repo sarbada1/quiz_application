@@ -157,7 +157,7 @@ class MockTestQuestionModel extends BaseModel
             FROM programmes_mock_test_questions pmtq
             JOIN questions q ON pmtq.qid = q.id
             JOIN answers a ON q.id = a.question_id
-            WHERE pmtq.programmes_mock_test_id = :mockTestId
+            WHERE pmtq.quiz_id = :mockTestId
         ";
         
         // Exclude answered questions from the query

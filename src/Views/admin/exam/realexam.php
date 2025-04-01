@@ -29,6 +29,7 @@ endif;
                     <th>Time (minutes)</th>
                     <th>Total Marks</th>
                     <th>Questions</th>
+                    <th>View Result</th>
                     <th>Status</th>
                     <th>No of Students</th>
                 </tr>
@@ -47,6 +48,13 @@ endif;
                                     class="btn btn-info btn-sm">
                                     Add Questions
                                 </a>
+                            </td>
+                            <td>
+                            <a href="<?= $url('admin/exam/results/' . $quiz['id']) ?>"
+                                class="btn btn-success btn-sm"
+                              >
+                                <i class="fas fa-eye">View</i>
+                            </a>
                             </td>
                             <td>
                                 <span class="badge badge-<?= $quiz['status'] ?>">

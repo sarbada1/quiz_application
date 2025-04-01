@@ -6,14 +6,15 @@ use PDO;
 use Exception;
 use MVC\Controller;
 use MVC\Models\User;
+use MVC\Models\TagModel;
 use MVC\Models\QuizModel;
 use MVC\Models\LevelModel;
 use MVC\Models\ProgramModel;
 use MVC\Models\CategoryModel;
-use MVC\Models\MockTestQuestionModel;
 use MVC\Models\QuestionModel;
+use MVC\Models\ExamSessionModel;
 use MVC\Models\QuizAttemptModel;
-use MVC\Models\TagModel;
+use MVC\Models\MockTestQuestionModel;
 
 class QuizController extends Controller
 {
@@ -319,7 +320,16 @@ class QuizController extends Controller
                 ];
 
                 $quizId = $this->quizModel->createQuizWithTags($quizData);
-
+                if ($_POST['type'] === 'real_exam' && !isset($_POST['schedule_later'])) {
+                    // Create a session for this exam
+                    $examSessionModel = new ExamSessionModel($this->pdo);
+                    $startTime = $_POST['exam_start_time'] ?? null;
+                    $endTime = $_POST['exam_end_time'] ?? null;
+                    
+                    if ($startTime && $endTime) {
+                        $examSessionModel->createSession($quizId, $startTime, $endTime);
+                    }
+                }
                 $_SESSION['message'] = "Quiz added successfully!";
                 $_SESSION['status'] = "success";
                 header('Location: /admin/quiz/add');
@@ -521,16 +531,13 @@ class QuizController extends Controller
 public function updateCategoryAllocation()
 {
     try {
-        // Check if user is logged in and has admin privileges
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
-            throw new Exception('Unauthorized access');
-        }
+ 
 
         $categoryId = $_POST['category_id'] ?? null;
         $quizId = $_POST['quiz_id'] ?? null;
         $numberQuestions = $_POST['number_of_questions'] ?? null;
         $marksAllocated = $_POST['marks_allocated'] ?? null;
-        
+    
         // Validate inputs
         if (!$categoryId || !$quizId || !$numberQuestions || !$marksAllocated) {
             throw new Exception('Missing required parameters');
@@ -642,7 +649,11 @@ public function updateCategoryAllocation()
     public function edit($id)
     {
         $quiz = $this->quizModel->getById($id);
-
+        $examSession = null;
+        if ($quiz['type'] === 'real_exam') {
+            $examSessionModel = new ExamSessionModel($this->pdo);
+            $examSession = $examSessionModel->getLatestSessionForExam($id);
+        }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $data = [
@@ -667,6 +678,21 @@ public function updateCategoryAllocation()
 
                 $this->quizModel->updateQuiz($data);
 
+                if ($_POST['type'] === 'real_exam' && !isset($_POST['schedule_later'])) {
+                    $examSessionModel = new ExamSessionModel($this->pdo);
+                    $startTime = $_POST['exam_start_time'] ?? null;
+                    $endTime = $_POST['exam_end_time'] ?? null;
+                    
+                    if ($startTime && $endTime) {
+                        // If there's an existing session, update it
+                        if ($examSession) {
+                            $examSessionModel->updateSession($examSession['id'], $startTime, $endTime);
+                        } else {
+                            // Otherwise create a new one
+                            $examSessionModel->createSession($id, $startTime, $endTime);
+                        }
+                    }
+                }
                 $_SESSION['message'] = 'Quiz updated successfully';
                 $_SESSION['status'] = 'success';
                 header('Location: /admin/quiz/edit/' . $id);
@@ -687,7 +713,9 @@ public function updateCategoryAllocation()
             'categories' => $categories,
             'tags' => $tags,
             'selectedCategories' => $selectedCategories,
-            'selectedTags' => $selectedTags
+            'selectedTags' => $selectedTags,
+            'examSession' => $examSession
+
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }

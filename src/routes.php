@@ -12,6 +12,7 @@ use MVC\Controllers\TeacherController;
 use MVC\Controllers\CategoryController;
 use MVC\Controllers\MockTestController;
 use MVC\Controllers\QuestionController;
+use MVC\Controllers\RealExamController;
 use MVC\Controllers\SubjectTestController;
 use MVC\Controllers\CategoryTypeController;
 use MVC\Controllers\QuestionTypeController;
@@ -102,6 +103,21 @@ return [
     ['route' => '/quiz/{slug}/start/{count}', 'controller' => QuizController::class, 'action' => 'startQuiz', 'method' => 'GET'],
     ['route' => '/quiz/{slug}', 'controller' => QuizController::class, 'action' => 'showQuizDetail', 'method' => 'GET'],
     ['route' => '/quiz', 'controller' => QuizController::class, 'action' => 'showQuiz', 'method' => 'GET'],
+
+    ['route' => '/exam/list', 'controller' => RealExamController::class, 'action' => 'examList', 'method' => 'GET'],
+    ['route' => '/realexam/take/{id}', 'controller' => RealExamController::class, 'action' => 'takeExam', 'method' => 'GET'],
+    ['route' => '/api/exam/{id}/status', 'controller' => RealExamController::class, 'action' => 'checkExamStatus', 'method' => 'GET'],
+    ['route' => '/api/exam/submit', 'controller' => RealExamController::class, 'action' => 'submitExam', 'method' => 'POST'],
+    ['route' => '/api/exam/log-activity', 'controller' => RealExamController::class, 'action' => 'logSuspiciousActivity', 'method' => 'POST'],
+    ['route' => '/exam/results/{id}', 'controller' => RealExamController::class, 'action' => 'showResults', 'method' => 'GET'],
+    ['route' => '/student/dashboard', 'controller' => RealExamController::class, 'action' => 'studentDashboard', 'method' => 'GET'],
+
+    ['route' => '/api/admin/exam/schedule', 'controller' => RealExamController::class, 'action' => 'scheduleExam', 'method' => 'POST'],
+    ['route' => '/admin/exam/results/{id}', 'controller' => RealExamController::class, 'action' => 'viewExamResults', 'method' => 'GET'],
+    ['route' => '/admin/exam/student-result/{id}', 'controller' => RealExamController::class, 'action' => 'viewStudentResult', 'method' => 'GET'],
+    ['route' => '/api/admin/exam/publish-results', 'controller' => RealExamController::class, 'action' => 'publishResults', 'method' => 'POST'],
+    ['route' => '/api/admin/exam/end', 'controller' => RealExamController::class, 'action' => 'endExam', 'method' => 'POST'],
+    ['route' => '/admin/realexam/control/:id', 'controller' => RealExamController::class, 'action' => 'adminControlPanel', 'method' => 'GET'],
     ['route' => '/quiz/real-exam/{slug}', 'controller' => QuizController::class, 'action' => 'startRealExam', 'method' => 'GET'],
 
     ['route' => '/ajax/quiz-answer', 'controller' => QuizController::class, 'action' => 'checkAnswer', 'method' => 'POST'],
@@ -346,7 +362,7 @@ return [
         'method' => 'GET'
     ],
     ['route' => '/ajax/filter-questions/{id}', 'controller' => QuestionController::class, 'action' => 'filterQuestion', 'method' => 'GET'],
-    ['route' => '/ajax/toggle-question/{action}/{id}/{mocktestid}', 'controller' => MockTestQuestionController::class, 'action' => 'toggleQuestion', 'method' => 'GET'],
+    ['route' => '/ajax/toggle-question/{action}/{id}/{mocktestid}', 'controller' => MockTestQuestionController::class, 'action' => 'toggleQuestion', 'method' => 'POST'],
     ['route' => '/ajax/update-category-allocation', 'controller' => QuizController::class, 'action' => 'updateCategoryAllocation', 'method' => 'POST'],
     [
         'route' => '/ajax/submit-answer/{answerid}/{questionid}/{mocktestid}',
