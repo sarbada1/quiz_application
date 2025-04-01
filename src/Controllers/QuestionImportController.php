@@ -458,56 +458,54 @@ class QuestionImportController extends Controller
     {
         $questions = [];
         $content = preg_replace('/\r\n|\r/', "\n", $content);
-    
-        // Split content by questions
-        $questionBlocks = preg_split('/\n\s*\n(?=\d+\.)/', $content);
-    
-        foreach ($questionBlocks as $block) {
-            // Extract question number and text
-            if (preg_match('/(\d+)\.\s*(.*?)\s*(?=\s*[a-d]\.|$)/s', $block, $matches)) {
-                $number = (int)$matches[1];
-                $questionText = trim($matches[2]);
-    
-                // Extract options
+        
+        $pattern = '/(\d+)\.\s+(.*?)(?=\d+\.\s+|$)/s';
+        preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+        
+        foreach ($matches as $match) {
+            $number = (int)$match[1];
+            $questionBlock = $match[2];
+            
+            if (preg_match('/(.*?)a\)/s', $questionBlock, $textMatches)) {
+                $questionText = trim($textMatches[1]);
+                
                 $options = [];
-                preg_match_all('/([a-d])\.\s*([^\n]+)/', $block, $optionMatches, PREG_SET_ORDER);
-    
+                preg_match_all('/([a-d])\)\s*([^\n]+)/', $questionBlock, $optionMatches, PREG_SET_ORDER);
+                
                 foreach ($optionMatches as $option) {
                     $letter = strtolower($option[1]);
                     $text = trim($option[2]);
                     $options[$letter] = $text;
                 }
-    
-                if (count($options) === 4) { // Ensure all options are present
+                
+                if (count($options) === 4) { 
                     $questions[] = [
                         'number' => $number,
                         'text' => $questionText,
                         'options' => $options
                     ];
                 }
-    
-                // REMOVE or COMMENT OUT these debug lines:
-                // echo "Question Text: " . $questionText . "\n";
-                // echo "Question Number: " . $number . "\n";
             }
         }
-    
+        
+        error_log("Found " . count($questions) . " questions");
         return $questions;
     }
     
     private function parseAnswers($content)
     {
         $answers = [];
-        // Match number followed by letter
-        preg_match_all('/(\d+)\.\s*([a-d])\s*/', $content, $matches, PREG_SET_ORDER);
-
-        foreach ($matches as $match) {
-            $number = (int)$match[1];
-            $answer = strtolower(trim($match[2]));
-            $answers[$number] = $answer;
+        
+        $lines = explode("\n", $content);
+        foreach ($lines as $line) {
+            if (preg_match('/(\d+)[.\s]+([a-d])/i', $line, $match)) {
+                $number = (int)$match[1];
+                $answer = strtolower(trim($match[2]));
+                $answers[$number] = $answer;
+            }
         }
-
-        error_log("Answers parsed: " . print_r($answers, true));
+        
+        error_log("Found " . count($answers) . " answers");
         return $answers;
     }
     private function handleTags($tagIds, $questionId) {
