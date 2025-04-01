@@ -3,7 +3,7 @@
     <div class="mb-4">
         <h4>Filter Questions</h4>
         <div class="filter-container mb-4">
-            <form method="GET" class="filter-form">
+            <form id="categoryFilterForm" method="GET" class="filter-form">
                 <div class="form-group">
                     <label for="category">Category:</label>
                     <select name="category" id="category" class="form-control">
@@ -15,26 +15,20 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
-
-
                 <button type="submit" class="btn btn-primary">Filter</button>
                 <a href="<?= $url('admin/question/list') ?>" class="btn btn-secondary">Reset</a>
             </form>
         </div>
     </div>
 
-
-
-    <table class="table">
+    <table id="questionsTable" class="table table-striped table-bordered">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Question</th>
                 <th>Category</th>
-                <!-- <th>Difficulty</th> -->
                 <th>Marks</th>
                 <th>Answer</th>
-                <!-- <th>Tags</th> -->
                 <th>Actions</th>
             </tr>
         </thead>
@@ -46,107 +40,98 @@
                     <td><?= $i++ ?></td>
                     <td><?= htmlspecialchars($question['question_text']) ?></td>
                     <td><?= htmlspecialchars($question['category_name']) ?></td>
-                    <!-- <td><?= htmlspecialchars($question['difficulty_level']) ?></td> -->
                     <td><?= $question['marks'] ?></td>
-                    <!-- <td><?= htmlspecialchars($question['tags'] ?? '') ?></td> -->
                     <td>
-                        <a href="<?= $url('admin/answer/add/' . $question['id']) ?>" class="btn flex btn-primary">Add</a>
-                        <a href="<?= $url('admin/answer/list/' . $question['id']) ?>" class="btn flex btn-danger">View</a>
+                        <a href="<?= $url('admin/answer/add/' . $question['id']) ?>" class="btn-sm btn-primary"> <i class="fas fa-table"></i> </a>
+                        <a href="<?= $url('admin/answer/list/' . $question['id']) ?>" class="btn-sm btn-danger"><i class="fas fa-eye"></i></a>
                     </td>
                     <td>
-                        <a href="<?= $url('admin/question/edit/' . $question['id']) ?>" class="btn flex btn-primary">Edit</a>
-                        <a href="<?= $url('admin/question/delete/' . $question['id']) ?>" class="btn flex btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+                        <a href="<?= $url('admin/question/edit/' . $question['id']) ?>" class="btn-sm btn-primary"><i class="fas fa-pen"></i></a>
+                        <a href="<?= $url('admin/question/delete/' . $question['id']) ?>" class="btn-sm btn-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i></a>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
-
-    <?php if ($totalPages > 1): ?>
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                <!-- Previous Button -->
-                <?php if ($currentPage > 1): ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?page=<?= $currentPage - 1 ?>" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
-
-                <?php
-                $startPage = max(1, $currentPage - 2);
-                $endPage = min($totalPages, $currentPage + 2);
-
-                if ($startPage > 1) {
-                    echo '<li class="page-item"><a class="page-link" href="?page=1">1</a></li>';
-                    if ($startPage > 2) {
-                        echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                    }
-                }
-
-                for ($i = $startPage; $i <= $endPage; $i++): ?>
-                    <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
-                        <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
-                    </li>
-                <?php endfor;
-
-                if ($endPage < $totalPages) {
-                    if ($endPage < $totalPages - 1) {
-                        echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                    }
-                    echo '<li class="page-item"><a class="page-link" href="?page=' . $totalPages . '">' . $totalPages . '</a></li>';
-                }
-                ?>
-
-                <!-- Next Button -->
-                <?php if ($currentPage < $totalPages): ?>
-                    <li class="page-item">
-                        <a class="page-link" href="?page=<?= $currentPage + 1 ?>" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
-            </ul>
-        </nav>
-    <?php endif; ?>
 </div>
 
+<!-- Add DataTables CSS and JS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable with no server-side processing
+        var table = $('#questionsTable').DataTable({
+            "paging": true,
+            "pageLength": 10,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "autoWidth": false,
+            "language": {
+                "search": "Search questions:"
+            }
+        });
+        
+        // Fix for category filter
+        $('#categoryFilterForm').on('submit', function(e) {
+            var categoryId = $('#category').val();
+            // Only prevent default if no category selected
+            if (!categoryId) {
+                e.preventDefault();
+                window.location.href = '<?= $url('admin/question/list') ?>';
+            }
+            // Otherwise, let the form submit normally with GET parameters
+        });
+    });
+</script>
+
 <style>
-    .pagination {
-        gap: 5px;
-        display: flex;
-        list-style: none;
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 15px;
     }
-
-    .page-link {
+    
+    .dataTables_wrapper .dataTables_length select {
+        min-width: 60px;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 0.5em 1em;
+        margin-left: 5px;
         border-radius: 4px;
-        padding: 8px 16px;
-        color: #2c3e50;
-        border: 1px solid #ddd;
     }
-
-    .page-item.active .page-link {
-        background-color: #3498db;
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #3498db;
         border-color: #3498db;
+        color: white !important;
     }
-
-    .page-link:hover {
-        background-color: #f8f9fa;
-        color: #2c3e50;
+    
+    /* Fix icon styles */
+    .fas {
+        display: inline-block;
+        width: 16px;
+        text-align: center;
     }
-
-    .page-item.disabled .page-link {
-        color: #6c757d;
-        pointer-events: none;
-
-        background-color: #fff;
+    
+    /* Add some button styling */
+    .btn-sm {
+        display: inline-block;
+        padding: 5px 10px;
+        margin: 2px;
+        border-radius: 3px;
+        text-decoration: none;
     }
-
-    .page-item.active .page-link {
+    
+    .btn-primary {
         background-color: #3498db;
-        border-color: #3498db;
         color: white;
-        box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+    }
+    
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
     }
 </style>

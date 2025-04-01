@@ -37,25 +37,41 @@ class QuestionController extends Controller
 
     public function index()
     {
-        $page = $_GET['page'] ?? 1;
-        $selectedCategory = $_GET['category'] ?? null;
-        $selectedTag = $_GET['tag'] ?? null;
-
-        $result = $this->questionModel->getQuestionsGroupedPaginated(
-            $page,
-            10,
-            $selectedCategory,
-            $selectedTag
-        );
+        $selectedCategory = $_GET['category'] ?? '';
+    
+    // Build query conditionally
+    $conditions = [];
+    $params = [];
+    
+    if ($selectedCategory) {
+        $conditions[] = "q.category_id = :category_id";
+        $params[':category_id'] = $selectedCategory;
+    }
+    
+    $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+    
+    // Get all filtered questions - NO PAGINATION HERE
+    $query = "SELECT q.*, c.name as category_name 
+              FROM questions q
+              LEFT JOIN categories c ON q.category_id = c.id
+              $whereClause
+              ORDER BY q.id DESC";
+    
+    $stmt = $this->pdo->prepare($query);
+    
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    
+    $stmt->execute();
+    $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    
 
         $content = $this->render('admin/question/view', [
-            'questions' => $result['questions'],
-            'totalPages' => $result['pages'],
-            'currentPage' => $page,
+            'questions' => $questions,
             'selectedCategory' => $selectedCategory,
-            'selectedTag' => $selectedTag,
             'categories' => $this->categoryModel->getAllCategories(),
-            'tags' => $this->tagModel->getAllTags()
         ]);
 
         echo $this->render('admin/layout', ['content' => $content]);
