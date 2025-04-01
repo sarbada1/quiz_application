@@ -486,9 +486,9 @@ class QuestionImportController extends Controller
                     ];
                 }
     
-                // Debugging output
-                echo "Question Text: " . $questionText . "\n";
-                echo "Question Number: " . $number . "\n";
+                // REMOVE or COMMENT OUT these debug lines:
+                // echo "Question Text: " . $questionText . "\n";
+                // echo "Question Number: " . $number . "\n";
             }
         }
     
