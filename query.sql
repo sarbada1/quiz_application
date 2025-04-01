@@ -1,4 +1,4 @@
--- Active: 1742854236555@@127.0.0.1@3306@quiz_system
+-- Active: 1741512521136@@127.0.0.1@3306@quiz_system
 create DATABASE quiz_system;
 
 use quiz_system;
@@ -1652,4 +1652,15 @@ CREATE TABLE exam_activity_logs (
 
 
           
-       
+       SELECT es.*, 
+                CASE 
+                    WHEN q.status = 'draft' THEN 'draft'
+                    WHEN es.start_time > :now THEN 'waiting'
+                    WHEN es.end_time < :now THEN 'ended'
+                    ELSE 'in_progress'
+                END AS current_status,
+                q.status AS quiz_status
+                FROM exam_sessions es
+                JOIN quizzes q ON es.exam_id = q.id
+                WHERE es.exam_id = 10
+                ORDER BY es.created_at DESC LIMIT 1;

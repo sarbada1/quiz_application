@@ -65,21 +65,19 @@ class RealExamController extends Controller
 
         $userId = $_SESSION['user_id'];
 
-        // Get all exams the student is registered for
         $registeredExams = $this->mockTestModel->getExamsForUser($userId);
       
-
         $examSessionModel = new ExamSessionModel($this->pdo);
         $examData = [
             'upcoming' => [],
             'in_progress' => [],
             'past' => []
         ];
-
+        
+      
         foreach ($registeredExams as $exam) {
             $status = $examSessionModel->getExamStatus($exam['id']);
             $hasAttempted = $this->mockTestAttemptModel->hasAttempted($userId, $exam['id']);
-
             // Add attempt status to exam data
             $exam['has_attempted'] = $hasAttempted;
             $exam['status'] = $status['status'] ?? 'not_scheduled';
@@ -103,7 +101,7 @@ class RealExamController extends Controller
                 $examData['past'][] = $exam;
             }
         }
-
+      
         $content = $this->uirender('user/dashboard', [
             'examData' => $examData
         ]);

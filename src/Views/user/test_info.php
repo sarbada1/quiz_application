@@ -1,4 +1,4 @@
-11111111111
+
 <div class="test-mock-container">
     <?php if (!empty($mocktest)) : ?>
         <div class="test-details">

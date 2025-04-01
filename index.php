@@ -28,7 +28,7 @@ if ($isLocalhost && $isDevelopmentPort) {
     // Local development environment
     $dsn = 'mysql:host=localhost;dbname=quiz_system';
     $username = 'root';
-    $password = '';
+    $password = 'Root@1234';
 } else {
     // Production environment
     $dsn = 'mysql:host=localhost;dbname=ybqxhkxdav';

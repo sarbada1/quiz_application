@@ -117,7 +117,7 @@ class AuthController extends Controller
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return $this->jsonResponse(['error' => 'Invalid request method'], 405);
         }
-
+    
         try {
             $data = [
                 'username' => trim($_POST['username'] ?? ''),
@@ -126,10 +126,10 @@ class AuthController extends Controller
                 'password' => $_POST['password'] ?? '',
                 'cpassword' => $_POST['cpassword'] ?? ''
             ];
-
+    
             // Validate data
             $this->validateRegistrationData($data);
-
+    
             // Check existing email/phone
             if ($this->model->isEmailExists($data['email'])) {
                 throw new \Exception('Email already registered');
@@ -137,13 +137,26 @@ class AuthController extends Controller
             if ($this->model->isPhoneExists($data['phone'])) {
                 throw new \Exception('Phone number already registered');
             }
+            
+            // Generate OTP
             $otp = $this->smsService->generateOTP();
+            
             // Send OTP
             $result = $this->smsService->sendOTP($data['phone'], $otp);
             if ($result['status'] === 'error') {
                 throw new \Exception($result['message']);
             }
-
+            
+            // Store data in session - THIS WAS MISSING
+            $_SESSION['temp_registration'] = [
+                'username' => $data['username'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+                'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+                'otp' => $otp,
+                'expires' => time() + ($this->otpExpiryMinutes * 60)
+            ];
+    
             return $this->jsonResponse([
                 'success' => true,
                 'message' => 'OTP sent successfully'
@@ -269,45 +282,44 @@ class AuthController extends Controller
             ], 400);
         }
     }
-    // public function verifyOTP()
-    // {
-    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    //         return $this->jsonResponse(['error' => 'Invalid request method'], 405);
-    //     }
-
-    //     try {
-    //         if (!isset($_SESSION['temp_registration'])) {
-    //             throw new \Exception('Registration session expired');
-    //         }
-
-    //         $otp = $_POST['otp'] ?? '';
-    //         if ($otp != $_SESSION['temp_registration']['otp']) {
-    //             throw new \Exception('Invalid OTP');
-    //         }
-
-    //         if (time() > $_SESSION['temp_registration']['expires']) {
-    //             throw new \Exception('OTP expired');
-    //         }
-
-    //         // Register the user
-    //         $data = $_SESSION['temp_registration'];
-    //         unset($data['otp'], $data['expires']);
-    //         $this->model->insert($data);
-
-    //         // Clear the session
-    //         unset($_SESSION['temp_registration']);
-
-    //         return $this->jsonResponse([
-    //             'success' => true,
-    //             'message' => 'Registration successful'
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return $this->jsonResponse([
-    //             'success' => false,
-    //             'error' => $e->getMessage()
-    //         ], 400);
-    //     }
-    // }
+    public function resendOTP()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $this->jsonResponse(['error' => 'Invalid request method'], 405);
+        }
+    
+        try {
+            if (!isset($_SESSION['temp_registration'])) {
+                throw new \Exception('Registration session expired');
+            }
+    
+            $data = $_SESSION['temp_registration'];
+            
+            // Generate new OTP
+            $otp = $this->smsService->generateOTP();
+            
+            // Send OTP via SMS
+            $result = $this->smsService->sendOTP($data['phone'], $otp);
+            if ($result['status'] === 'error') {
+                throw new \Exception($result['message']);
+            }
+            
+            // Update session with new OTP and reset expiry time
+            $_SESSION['temp_registration']['otp'] = $otp;
+            $_SESSION['temp_registration']['expires'] = time() + ($this->otpExpiryMinutes * 60);
+            
+            return $this->jsonResponse([
+                'success' => true,
+                'message' => 'OTP resent successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
     private function validateRegistrationData(array $data): void
     {
         $validator = new Validator($data, [
