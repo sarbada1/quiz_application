@@ -467,27 +467,33 @@ class QuestionImportController extends Controller
             $number = (int)$match[1];
             $questionBlock = $match[2];
             
-            // Extract the question text (everything before options begin)
-            // Look for either a. or a) format
-            if (preg_match('/(.*?)(?:a\.|\s+a\.\s+|a\))/is', $questionBlock, $textMatches)) {
-                $questionText = trim($textMatches[1]);
-                
-                $options = [];
-                // Match options with either period or parenthesis format
-                preg_match_all('/([a-d])[\.\)]\s*([^\n]+)/', $questionBlock, $optionMatches, PREG_SET_ORDER);
-                
-                foreach ($optionMatches as $option) {
-                    $letter = strtolower($option[1]);
-                    $text = trim($option[2]);
-                    $options[$letter] = $text;
-                }
-                
-                if (count($options) === 4) { 
-                    $questions[] = [
-                        'number' => $number,
-                        'text' => $questionText,
-                        'options' => $options
-                    ];
+            // This pattern matches all three formats: (a), a), and a.
+            $optionPattern = '/(?:\(([a-d])\)|([a-d])[\.\)])\s*([^\n]+)/i';
+            preg_match_all($optionPattern, $questionBlock, $optionMatches, PREG_SET_ORDER);
+            
+            if (count($optionMatches) >= 4) {
+                // Find where the first option begins to extract question text
+                if (preg_match($optionPattern, $questionBlock, $firstOption, PREG_OFFSET_CAPTURE)) {
+                    $questionText = trim(substr($questionBlock, 0, $firstOption[0][1]));
+                    
+                    $options = [];
+                    foreach ($optionMatches as $option) {
+                        // Letter could be in group 1 (for (a) format) or group 2 (for a. or a) format)
+                        $letter = !empty($option[1]) ? strtolower($option[1]) : strtolower($option[2]);
+                        $text = trim($option[3]);
+                        $options[$letter] = $text;
+                    }
+                    
+                    // Only include if we have exactly the 4 required options (a, b, c, d)
+                    if (count($options) === 4 && 
+                        isset($options['a']) && isset($options['b']) && 
+                        isset($options['c']) && isset($options['d'])) {
+                        $questions[] = [
+                            'number' => $number,
+                            'text' => $questionText,
+                            'options' => $options
+                        ];
+                    }
                 }
             }
         }
