@@ -459,16 +459,18 @@ class QuestionImportController extends Controller
         $questions = [];
         $content = preg_replace('/\r\n|\r/', "\n", $content);
         
-        // Split by question numbers (1., 2., etc.)
-        $pattern = '/(\d+)\.\s+(.*?)(?=\d+\.\s+|$)/s';
+        // Improved pattern to better capture question numbers and their content
+        // This pattern is more robust with how it identifies question boundaries
+        $pattern = '/(\d+)\.\s+(.*?)(?=\n\s*\d+\.\s+|$)/s';
         preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
         
         foreach ($matches as $match) {
             $number = (int)$match[1];
             $questionBlock = $match[2];
             
-            // This pattern matches all three formats: (a), a), and a.
-            $optionPattern = '/(?:\(([a-d])\)|([a-d])[\.\)])\s*([^\n]+)/i';
+            // Enhanced pattern to match option formats: (a), a), and a.
+            // Made more robust to handle various spacing and line break scenarios
+            $optionPattern = '/(?:\(([a-d])\)|([a-d])[\.\)])\s*([^\n]+)(?:\n|$)/i';
             preg_match_all($optionPattern, $questionBlock, $optionMatches, PREG_SET_ORDER);
             
             if (count($optionMatches) >= 4) {
@@ -484,9 +486,8 @@ class QuestionImportController extends Controller
                         $options[$letter] = $text;
                     }
                     
-                    // Only include if we have exactly the 4 required options (a, b, c, d)
-                    if (count($options) === 4 && 
-                        isset($options['a']) && isset($options['b']) && 
+                    // Only include if we have at least options a, b, c, d (might have more than 4 matches)
+                    if (isset($options['a']) && isset($options['b']) && 
                         isset($options['c']) && isset($options['d'])) {
                         $questions[] = [
                             'number' => $number,
@@ -498,10 +499,13 @@ class QuestionImportController extends Controller
             }
         }
         
+        // Debug output to help identify problematic questions
         error_log("Found " . count($questions) . " questions");
+        $questionNumbers = array_column($questions, 'number');
+        error_log("Question numbers found: " . implode(', ', $questionNumbers));
+        
         return $questions;
     }
-    
     private function parseAnswers($content)
     {
         $answers = [];
