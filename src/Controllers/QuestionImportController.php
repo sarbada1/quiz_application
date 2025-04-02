@@ -459,6 +459,7 @@ class QuestionImportController extends Controller
         $questions = [];
         $content = preg_replace('/\r\n|\r/', "\n", $content);
         
+        // Split by question numbers (1., 2., etc.)
         $pattern = '/(\d+)\.\s+(.*?)(?=\d+\.\s+|$)/s';
         preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
         
@@ -466,11 +467,14 @@ class QuestionImportController extends Controller
             $number = (int)$match[1];
             $questionBlock = $match[2];
             
-            if (preg_match('/(.*?)a\)/s', $questionBlock, $textMatches)) {
+            // Extract the question text (everything before options begin)
+            // Look for either a. or a) format
+            if (preg_match('/(.*?)(?:a\.|\s+a\.\s+|a\))/is', $questionBlock, $textMatches)) {
                 $questionText = trim($textMatches[1]);
                 
                 $options = [];
-                preg_match_all('/([a-d])\)\s*([^\n]+)/', $questionBlock, $optionMatches, PREG_SET_ORDER);
+                // Match options with either period or parenthesis format
+                preg_match_all('/([a-d])[\.\)]\s*([^\n]+)/', $questionBlock, $optionMatches, PREG_SET_ORDER);
                 
                 foreach ($optionMatches as $option) {
                     $letter = strtolower($option[1]);
