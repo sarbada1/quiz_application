@@ -234,7 +234,7 @@ class RealExamController extends Controller
             exit;
         }
 
-        $exam = $this->quizModel->getById($examId);
+        $exam = $this->quizModel->getById($examId);                                         
         if (!$exam) {
             $_SESSION['message'] = "Exam not found.";
             $_SESSION['status'] = "danger";
@@ -498,7 +498,7 @@ public function viewStudentResult($attemptId)
     
     // Get user answers for this attempt
     $userAnswers = $this->mockTestAttemptModel->getUserAnswers($attemptId);
-    echo $attemptId; die;
+    // echo $attemptId; die;
     
     // Get all questions for this exam
     $questions = $this->mockTestQuestionModel->getQuestionsWithAnswersByMockTestId($attempt['exam_id']);

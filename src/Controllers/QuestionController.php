@@ -170,8 +170,8 @@ class QuestionController extends Controller
                     $question_type, 
                     $difficulty_level, 
                     $marks, 
-                    $year, 
-                    $category_id
+                    $category_id,
+                    $year
                 );
     
                 // Update tags
