@@ -38,6 +38,8 @@
     <?php endif; ?>
 </div>
 
+<?php include __DIR__ . '/auth/login.php'; ?>
+<?php include __DIR__ . '/auth/register.php'; ?>
 <style>
 .category-container {
     max-width: 1200px;
