@@ -158,11 +158,11 @@ class CategoryModel extends BaseModel
                 if ($category['children']) {
                     $children = [];
                     foreach (explode(',', $category['children']) as $child) {
-                        list($id, $name, $slug) = explode(':', $child);
+                        $parts = explode(':', $child);
                         $children[] = [
-                            'id' => $id,
-                            'name' => $name,
-                            'slug' => $slug
+                            'id' => $parts[0] ?? null,
+                            'name' => $parts[1] ?? null,
+                            'slug' => $parts[2] ?? null
                         ];
                     }
                     $category['children'] = $children;
