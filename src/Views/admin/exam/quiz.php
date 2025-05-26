@@ -13,10 +13,10 @@ endif;
 <?php if (isset($program)): ?>
     <div class="content-wrapper">
         <div class="content-header">
-            <h2>Mock Test</h2>
+            <h2>Quiz</h2>
             <div class="header-actions">
                 <a href="<?= $url('admin/quiz/add') ?>" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add Mock Test
+                    <i class="fas fa-plus"></i> Add Quiz
                 </a>
             </div>
         </div>
@@ -29,8 +29,7 @@ endif;
                     <th>Time (minutes)</th>
                     <th>Total Marks</th>
                     <th>Status</th>
-                    <th>Sets</th>
-                    <!-- <th>Actions</th> -->
+                
                 </tr>
             </thead>
             <tbody>
@@ -48,23 +47,8 @@ endif;
                                     <?= ucfirst($quiz['status']) ?>
                                 </span>
                             </td>
-                            <td>
-                                <a href="<?= $url('admin/quiz/' . $quiz['id'] . '/sets') ?>"
-                                    class="btn btn-info btn-sm">
-                                    <i class="fas fa-layer-group"></i> Sets (<?= $quiz['set_count'] ?? 0 ?>)
-                                </a>
-                            </td>
-                            <!-- <td>
-                                <a href="<?= $url('admin/quiz/edit/<?= $quiz[') ?>"id'] ?>"
-                                    class="btn btn-primary btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="<?= $url('admin/quiz/delete/<?= $quiz[') ?>"id'] ?>"
-                                    class="btn btn-danger btn-sm"
-                                    onclick="return confirm('Are you sure you want to delete this quiz?')">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-                            </td> -->
+                       
+                       
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

@@ -212,6 +212,72 @@ return [
         'action' => 'showAddForm',
         'method' => 'GET'
     ],
+    [
+        'route' => '/admin/tag/associate-categories',
+        'controller' => TagController::class,
+        'action' => 'associateCategories',
+        'method' => 'POST'
+    ],
+    [
+        'route' => '/admin/tag/get-categories-for-tag/{id}',
+        'controller' => TagController::class,
+        'action' => 'getCategoriesForTag',
+        'method' => 'GET'
+    ],
+    [
+        'route' => '/admin/get-categories-by-tags',
+        'controller' => CategoryController::class,
+        'action' => 'getCategoriesByTags',
+        'method' => 'POST'
+    ],
+    [
+    'route' => '/admin/category/get-by-tags',
+    'controller' => CategoryController::class,
+    'action' => 'getCategoriesByTags',
+    'method' => 'POST'
+    ],
+    [
+    'route' => '/admin/question/bulk-manage', 
+    'controller' => QuestionController::class, 
+    'action' => 'bulkManage', 
+    'method' => 'GET'
+],
+[
+    'route' => '/admin/question/bulk-update-category', 
+    'controller' => QuestionController::class, 
+    'action' => 'bulkUpdateCategory', 
+    'method' => 'POST'
+],
+[
+    'route' => '/admin/category/manage-tags/{id}',
+    'controller' => CategoryController::class,
+    'action' => 'manageTags',
+    'method' => 'GET'
+],
+[
+    'route' => '/admin/category/manage-tags/{id}',
+    'controller' => CategoryController::class,
+    'action' => 'manageTags',
+    'method' => 'POST'
+],
+[
+    'route' => '/tag/{slug}',
+    'controller' => HomeController::class,
+    'action' => 'showTagQuizzes',
+    'method' => 'GET'
+],
+[
+    'route' => '/quiz/category/{id}',
+    'controller' => QuizController::class,
+    'action' => 'categoryQuizzes',
+    'method' => 'GET'
+],
+[
+    'route' => '/quiz/category/{id}/start/{count}',
+    'controller' => QuizController::class,
+    'action' => 'startCategoryQuiz',
+    'method' => 'GET'
+],
     ['route' => '/admin/quiz/edit/{id}', 'controller' => QuizController::class, 'action' => 'edit', 'method' => 'GET'],
     ['route' => '/admin/quiz/edit/{id}', 'controller' => QuizController::class, 'action' => 'edit', 'method' => 'POST'],
     ['route' => '/admin/quiz/delete/{id}', 'controller' => QuizController::class, 'action' => 'delete', 'method' => 'GET'],

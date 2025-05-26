@@ -13,24 +13,7 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
         <nav class="sidebar-nav">
             <ul>
                 <li><a href="/">Home</a></li>
-                <li>
-                    <a href="<?= $url('quiz') ?>">
-                        <span>Quiz</span>
-                        <i class="fas fa-caret-down ml-3 arrow"></i>
-                    </a>
-                    <ul class="dropdown">
-                        <?php if (isset($quizzes) && is_array($quizzes)): ?>
-                            <?php foreach ($quizzes as $index => $category):
-                                if ($index <= 5) { ?>
-                                    <li><a href="<?= $url('quiz/' . $category['slug']) ?>"><?= htmlspecialchars($category['title']) ?></a></li>
-                                <?php  }
-                                ?>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <li>No categories found</li>
-                        <?php endif; ?>
-                    </ul>
-                </li>
+             
                 <li>
                     <a href="<?= $url('test') ?>">
                         <span>Test</span>

@@ -137,7 +137,24 @@ class CategoryModel extends BaseModel
             throw new Exception("Error fetching quizzes by category: " . $e->getMessage());
         }
     }
+    public function getCategoriesByQuizTags($quizId)
+    {
+        $sql = "SELECT DISTINCT c.* FROM categories c
+            JOIN categories c_child ON c_child.parent_id = c.id OR c_child.id = c.id
+            JOIN tags t ON t.id = c_child.tag_id OR t.id = c.tag_id
+            JOIN quiz_tags qt ON qt.tag_id = t.id
+            WHERE qt.quiz_id = :quiz_id
+            ORDER BY c.name ASC";
 
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['quiz_id' => $quizId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error fetching categories by quiz tags: " . $e->getMessage());
+            return [];
+        }
+    }
     public function getParentCategoriesWithChildren()
     {
         $sql = "
@@ -228,5 +245,248 @@ class CategoryModel extends BaseModel
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    // Replace the updateCategoryTagAssociations and getCategoriesByTagId methods
+
+
+
+    /**
+     * Get categories associated with any of the provided tag IDs
+     */
+    public function getCategoriesByTagIds($tagIds)
+    {
+        if (empty($tagIds)) {
+            return [];
+        }
+
+        // Convert to array if string is passed
+        if (!is_array($tagIds)) {
+            $tagIds = [$tagIds];
+        }
+
+        // Create placeholders for SQL query
+        $placeholders = rtrim(str_repeat('?,', count($tagIds)), ',');
+
+        // Get categories directly linked to tags via junction table
+        $sql = "SELECT DISTINCT c.* FROM categories c
+            JOIN tag_categories tc ON c.id = tc.category_id
+            WHERE tc.tag_id IN ($placeholders)
+            ORDER BY c.parent_id, c.name";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($tagIds);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error in getCategoriesByTagIds: " . $e->getMessage());
+            return [];
+        }
+    }
+    /**
+     * Get hierarchical categories for a specific tag including parent categories
+     */
+
+
+    public function getCategoriesHierarchyForTag($tagId)
+    {
+        try {
+            // Get parent categories directly associated with this tag
+            $sql = "SELECT DISTINCT c.id, c.name, c.slug, c.parent_id
+                FROM categories c
+                JOIN tag_categories tc ON c.id = tc.category_id
+                WHERE tc.tag_id = :tag_id
+                AND (c.parent_id = 0 OR c.parent_id IS NULL)"; // Only get top-level categories
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':tag_id' => $tagId]);
+            $parentCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            error_log("DEBUG: Found " . count($parentCategories) . " top-level categories from tag_categories for tag $tagId");
+
+            // If no direct parent categories found, get child categories and their parents
+            if (empty($parentCategories)) {
+                $sql = "SELECT DISTINCT p.id, p.name, p.slug, p.parent_id
+                   FROM categories p
+                   JOIN categories c ON c.parent_id = p.id
+                   JOIN tag_categories tc ON c.id = tc.category_id
+                   WHERE tc.tag_id = :tag_id
+                   AND (p.parent_id = 0 OR p.parent_id IS NULL)"; // Only get top-level parent categories
+
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([':tag_id' => $tagId]);
+                $parentCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                error_log("DEBUG: Found " . count($parentCategories) . " parent categories of associated children for tag $tagId");
+            }
+
+            // Build the hierarchy
+            $result = [];
+
+            foreach ($parentCategories as $parent) {
+                // Get child categories
+                $childSql = "SELECT c.id, c.name, c.slug, c.parent_id
+                       FROM categories c 
+                       WHERE c.parent_id = :parent_id";
+
+                $childStmt = $this->pdo->prepare($childSql);
+                $childStmt->execute([':parent_id' => $parent['id']]);
+                $children = $childStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Initialize the parent with empty children and count
+                $parent['children'] = [];
+                $parent['question_count'] = 0;
+                $parent['total_questions'] = 0;
+
+                // Get direct question count for parent
+                $parentQuestionSql = "SELECT COUNT(DISTINCT q.id) as count
+                                FROM questions q
+                                JOIN question_tags qt ON q.id = qt.question_id
+                                WHERE q.category_id = :category_id
+                                AND qt.tag_id = :tag_id";
+
+                $parentQuestionStmt = $this->pdo->prepare($parentQuestionSql);
+                $parentQuestionStmt->execute([
+                    ':category_id' => $parent['id'],
+                    ':tag_id' => $tagId
+                ]);
+
+                $parentQuestionCount = $parentQuestionStmt->fetchColumn();
+                $parent['question_count'] = (int)$parentQuestionCount;
+                $parent['total_questions'] = $parent['question_count'];
+
+                // Process each child category
+                foreach ($children as $child) {
+                    // Get question count for this child
+                    $childQuestionSql = "SELECT COUNT(DISTINCT q.id) as count
+                                   FROM questions q
+                                   JOIN question_tags qt ON q.id = qt.question_id
+                                   WHERE q.category_id = :category_id
+                                   AND qt.tag_id = :tag_id";
+
+                    $childQuestionStmt = $this->pdo->prepare($childQuestionSql);
+                    $childQuestionStmt->execute([
+                        ':category_id' => $child['id'],
+                        ':tag_id' => $tagId
+                    ]);
+
+                    $questionCount = $childQuestionStmt->fetchColumn();
+                    $child['question_count'] = (int)$questionCount;
+
+                    // Only add children that have questions
+                    if ($child['question_count'] > 0) {
+                        $parent['children'][] = $child;
+                        $parent['total_questions'] += $child['question_count'];
+                    }
+                }
+
+                // Only add parent categories that have questions (directly or via children)
+                if ($parent['total_questions'] > 0) {
+                    $result[] = $parent;
+                }
+            }
+
+            error_log("DEBUG: Final result has " . count($result) . " categories with questions for tag $tagId");
+
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Error getting categories hierarchy for tag: " . $e->getMessage());
+            return [];
+        }
+    }
+    public function getChildCategories($parentId)
+    {
+        $sql = "SELECT c.id, c.name, c.slug, c.parent_id,
+            (SELECT COUNT(*) FROM questions q WHERE q.category_id = c.id) as question_count
+            FROM categories c
+            WHERE c.parent_id = :parent_id
+            ORDER BY c.name";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':parent_id' => $parentId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting child categories: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getTopLevelCategories()
+    {
+        try {
+            $sql = "SELECT id, name, slug, parent_id 
+                FROM categories 
+                WHERE parent_id = 0 OR parent_id IS NULL 
+                ORDER BY name ASC";
+
+            $stmt = $this->pdo->query($sql);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting top-level categories: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function updateCategoryTagAssociationsWithChildren($tagId, $categoryIds)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            // First, delete all existing associations for this tag
+            $deleteSql = "DELETE FROM tag_categories WHERE tag_id = ?";
+            $deleteStmt = $this->pdo->prepare($deleteSql);
+            $deleteStmt->execute([$tagId]);
+
+            // Get all child category IDs for the selected parent categories
+            $allCategoryIds = $categoryIds;
+
+            foreach ($categoryIds as $parentId) {
+                $childrenSql = "SELECT id FROM categories WHERE parent_id = ?";
+                $childrenStmt = $this->pdo->prepare($childrenSql);
+                $childrenStmt->execute([$parentId]);
+
+                while ($row = $childrenStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $allCategoryIds[] = $row['id'];
+                }
+            }
+
+            // Remove duplicates
+            $allCategoryIds = array_unique($allCategoryIds);
+
+            // Insert new associations
+            if (!empty($allCategoryIds)) {
+                $insertSql = "INSERT INTO tag_categories (tag_id, category_id) VALUES (?, ?)";
+                $insertStmt = $this->pdo->prepare($insertSql);
+
+                foreach ($allCategoryIds as $categoryId) {
+                    $insertStmt->execute([$tagId, $categoryId]);
+                }
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            error_log("Error updating category-tag associations: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getCategoriesByTagId($tagId)
+    {
+        try {
+            $sql = "SELECT category_id FROM tag_categories WHERE tag_id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tagId]);
+
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException $e) {
+            error_log("Error getting categories by tag ID: " . $e->getMessage());
+            return [];
+        }
     }
 }

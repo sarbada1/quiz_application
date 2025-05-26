@@ -280,4 +280,84 @@ class QuestionController extends Controller
         header('Location: /quiz-play/admin/question/list');
         exit;
     }
+
+public function bulkManage()
+{
+    try {
+        // Get filters from query string
+        $selectedTag = isset($_GET['tag_filter']) ? intval($_GET['tag_filter']) : null;
+        $selectedCategory = isset($_GET['category_filter']) ? intval($_GET['category_filter']) : null;
+        
+        // Get all tags and categories for filter dropdowns
+        $tags = $this->tagModel->getAllTags();
+        $categories = $this->categoryModel->getAllCategoriesWithParent();
+        
+        // Get questions grouped by tag, with filters applied
+        $questionsByTag = $this->questionModel->getQuestionsGroupedByTag($selectedTag, $selectedCategory);
+        
+        // Get total question count
+        $totalQuestions = $this->questionModel->getCount();
+        
+        $content = $this->render('admin/question/bulk-manage', [
+            'tags' => $tags,
+            'categories' => $categories,
+            'questionsByTag' => $questionsByTag,
+            'selectedTag' => $selectedTag,
+            'selectedCategory' => $selectedCategory,
+            'totalQuestions' => $totalQuestions
+        ]);
+        
+        echo $this->render('admin/layout', ['content' => $content]);
+    } catch (Exception $e) {
+        $_SESSION['message'] = "Error: " . $e->getMessage();
+        $_SESSION['status'] = "danger";
+        header('Location: /admin/question/list');
+        exit;
+    }
+}
+
+public function bulkUpdateCategory()
+{
+    try {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception("Invalid request method");
+        }
+        
+        $tagId = isset($_POST['tag_id']) ? intval($_POST['tag_id']) : null;
+        $categoryId = isset($_POST['category_id']) ? intval($_POST['category_id']) : null;
+        
+        if (!$tagId || !$categoryId) {
+            throw new Exception("Missing required parameters");
+        }
+        
+        // Get the tag name for logging
+        $tag = $this->tagModel->getById($tagId);
+        if (!$tag) {
+            throw new Exception("Tag not found");
+        }
+        
+        // Get the category name for logging
+        $category = $this->categoryModel->getCategoryById($categoryId);
+        if (!$category) {
+            throw new Exception("Category not found");
+        }
+        
+        // Update all questions with this tag to the new category
+        $updatedCount = $this->questionModel->updateCategoryByTag($tagId, $categoryId);
+        
+        // Return success response
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'message' => "Updated {$updatedCount} questions from tag '{$tag['name']}' to category '{$category['name']}'",
+            'count' => $updatedCount
+        ]);
+    } catch (Exception $e) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+}
 }

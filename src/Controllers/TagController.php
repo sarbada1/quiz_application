@@ -18,7 +18,7 @@ class TagController extends Controller
 
     public function index()
     {
-        $tags = $this->tagModel->getAllTags();
+    $tags = $this->tagModel->getTagsWithCategoryCounts();
         $content = $this->render('admin/tag/view', ['tags' => $tags]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
@@ -100,4 +100,61 @@ class TagController extends Controller
 
         header('Location: /admin/tag/list');
     }
+public function getCategoriesForTag($id)
+{
+    try {
+        // Get only top-level categories
+        $topLevelCategories = $this->categoryModel->getTopLevelCategories();
+        
+        // Get the category IDs that are associated with this tag
+        $associatedCategoryIds = $this->categoryModel->getCategoriesByTagId($id);
+        
+        // Return the data as JSON
+        header('Content-Type: application/json');
+        echo json_encode([
+            'categories' => $topLevelCategories,
+            'associatedCategoryIds' => $associatedCategoryIds
+        ]);
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+public function associateCategories()
+{
+    try {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new \Exception('Invalid request method');
+        }
+        
+        $tagId = $_POST['tagId'] ?? null;
+        $categoryIds = $_POST['categories'] ?? [];
+        
+        if (!$tagId) {
+            throw new \Exception('Tag ID is required');
+        }
+        
+        // Update category-tag associations in the database
+        // This will associate the top-level categories and their children
+        $result = $this->categoryModel->updateCategoryTagAssociationsWithChildren($tagId, $categoryIds);
+        
+        if ($result) {
+            $_SESSION['message'] = "Category associations updated successfully!";
+            $_SESSION['status'] = "success";
+            
+            header('Content-Type: application/json');
+            echo json_encode(['message' => 'Category associations updated successfully']);
+        } else {
+            throw new \Exception('Failed to update category associations');
+        }
+    } catch (\Exception $e) {
+        $_SESSION['message'] = "Error: " . $e->getMessage();
+        $_SESSION['status'] = "danger";
+        
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
 }

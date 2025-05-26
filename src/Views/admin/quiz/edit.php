@@ -40,18 +40,6 @@ endif;
     </div>
 
     <div class="form-group">
-        <label>Categories</label>
-        <select name="categories[]" multiple required>
-            <?php foreach ($categories as $category): ?>
-                <option value="<?= $category['id'] ?>"
-                    <?= in_array($category['id'], $selectedCategories) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($category['name']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <div class="form-group">
         <label>Tags</label>
         <select name="tags[]" multiple>
             <?php foreach ($tags as $tag): ?>

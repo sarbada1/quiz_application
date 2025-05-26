@@ -10,44 +10,84 @@
     unset($_SESSION['status']);
 endif;
 ?>
-<form method="POST" class="form-group">
-    <h1>Edit Category</h1>
-    <div class="row">
-        <div class="breadcrumb">
-            <a href="<?= $url('admin/category/list') ?>">Category</a>
-            <i class="fas fa-chevron-right"></i>
-            <a href="#" style="margin-left: 7px;cursor:default">Edit</a>
-        </div>
-        <div>
-        <button class='danger mb-5'><a href="<?= $url('admin/category/delete/' . $category['id']) ?>" onclick="return confirm('Are you sure to delete?')">Delete</a></button>
-        </div>
+<div class="row mb-3">
+    <div class="col">
+        <h1>Edit Category</h1>
     </div>
-    <label for="name">Name:</label>
-    <input type="text" id="title" name="name" value="<?= htmlspecialchars($category['name']) ?>" >
+    <div class="col-auto">
+        <a href="<?= $url('admin/category/delete/' . $category['id']) ?>" 
+           class="btn btn-danger" 
+           onclick="return confirm('Are you sure you want to delete this category?')">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+    </div>
+</div>
 
-    <label for="slug">Slug:</label>
-    <input type="text" id="slug" name="slug" value="<?= htmlspecialchars($category['slug']) ?>"  readonly>
+<div class="breadcrumb mb-4">
+    <a href="<?= $url('admin/category/list') ?>">Category</a>
+    <i class="fas fa-chevron-right mx-2"></i>
+    <span>Edit</span>
+</div>
 
-    <label for="parent_id">Parent Category:</label>
-    <select id="parent_id" name="parent_id">
-        <option value="0">Top Level</option>
-        <?php foreach ($categories as $cat): ?>
-            <?php if ($cat['id'] != $category['id']): ?>
-                <option value="<?= $cat['id'] ?>" <?= $cat['id'] == $category['parent_id'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($cat['name']) ?>
-                </option>
-            <?php endif; ?>
-        <?php endforeach; ?>
-    </select>
-    <label for="category_type_id"> Category Type:</label>
-    <select id="category_type_id" name="category_type_id">
-        <option value="0">Top Level</option>
-        <?php foreach ($categorytypes as $categorytype): ?>
-                <option value="<?= $cat['id'] ?>" <?= $categorytype['id'] == $category['category_type_id'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($categorytype['name']) ?>
-                </option>
-        <?php endforeach; ?>
-    </select>
+<div class="row mb-4">
+    <div class="col">
+        <a href="<?= $url('admin/category/manage-tags/' . $category['id']) ?>" class="btn btn-info">
+            <i class="fas fa-tags"></i> Manage Tags
+        </a>
+    </div>
+</div>
 
-    <button type="submit" class="warning mt-5">Save changes</button>
+<form method="POST" class="form-group">
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" class="form-control" id="name" name="name" value="<?= htmlspecialchars($category['name']) ?>" required>
+    </div>
+
+    <div class="form-group">
+        <label for="slug">Slug:</label>
+        <input type="text" class="form-control" id="slug" name="slug" value="<?= htmlspecialchars($category['slug']) ?>" readonly>
+        <small class="text-muted">Slug is automatically generated and cannot be edited</small>
+    </div>
+
+    <div class="form-group">
+        <label for="parent_id">Parent Category:</label>
+        <select class="form-control" id="parent_id" name="parent_id">
+            <option value="0">Top Level</option>
+            <?php foreach ($categories as $cat): ?>
+                <?php if ($cat['id'] != $category['id']): ?>
+                    <option value="<?= $cat['id'] ?>" <?= $cat['id'] == $category['parent_id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($cat['name']) ?>
+                    </option>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
+
+
+
+
+    <button type="submit" class="btn btn-warning mt-4">
+        <i class="fas fa-save"></i> Save Changes
+    </button>
 </form>
+
+<script>
+// Add a script to confirm form changes before leaving the page
+let formChanged = false;
+document.querySelector('form').addEventListener('change', function() {
+    formChanged = true;
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (formChanged) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+    }
+});
+
+// Reset the flag when the form is submitted
+document.querySelector('form').addEventListener('submit', function() {
+    formChanged = false;
+});
+</script>

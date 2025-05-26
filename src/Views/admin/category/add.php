@@ -33,15 +33,9 @@
             </option>
         <?php endforeach; ?>
     </select>
-    <label for="category_type_id"> Category Type:</label>
-    <select id="category_type_id" name="category_type_id">
-        <option value="0">None </option>
-        <?php foreach ($categorytypes as $categorytype): ?>
-            <option value="<?= $categorytype['id'] ?>">
-                <?= ($categorytype['name']) ?> 
-            </option>
-        <?php endforeach; ?>
-    </select>
+
+
+
     
     <button class="success mt-5" type="submit">Create</button>
 </form>

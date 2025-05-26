@@ -27,7 +27,6 @@
                     <th>SN</th>
                     <th>Title</th>
                     <th>Type</th>
-                    <th>Categories</th>
                     <th>Tags</th>
                     <th>Marks</th>
                     <th>Duration</th>
@@ -46,7 +45,6 @@
                                 <?= ucfirst($quiz['type']) ?>
                             </span>
                         </td>
-                        <td><?= htmlspecialchars($quiz['categories'] ?? 'N/A') ?></td>
                         <td><?= htmlspecialchars($quiz['tags'] ?? 'N/A') ?></td>
                         <td><?= $quiz['total_marks'] ?></td>
                         <td><?= $quiz['duration'] ?> min</td>

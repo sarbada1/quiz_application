@@ -655,21 +655,21 @@
 <div class="quiz-layout" data-attempt-id="<?= $attemptId ?? '' ?>">
 
 
-        <div class="side-panel">
-            <div class="participant-card">
-                <div class="avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div>
-                    <h3><?= $user['username'] ?></h3>
-                    <p>Participant</p>
-                </div>
+    <div class="side-panel">
+        <div class="participant-card">
+            <div class="avatar">
+                <i class="fas fa-user"></i>
             </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: 0%"></div>
+            <div>
+                <h3><?= $user['username'] ?></h3>
+                <p>Participant</p>
             </div>
         </div>
-  
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+        </div>
+    </div>
+
     <div class="quiz-main">
         <?php if (isset($attemptId)): ?>
             <form id="quizForm" data-attempt-id="<?= $attemptId ?>" data-quiz-id="<?= $quiz['id'] ?>">
@@ -968,71 +968,85 @@
 
 
     function submitQuiz() {
-    const form = document.getElementById('quizForm');
-    const attemptId = form.dataset.attemptId;
-    const quizId = form.dataset.quizId;
-  
+        const form = document.getElementById('quizForm');
+        const attemptId = form.dataset.attemptId;
 
-    if (!attemptId) {
-        console.error('No attempt ID found');
-        return;
-    }
+        // Gather all answers
+        const answers = [];
+        let correctCount = 0;
+        let wrongCount = 0;
 
-    const answers = [];
-    let correctCount = 0;
-    let wrongCount = 0;
+        // Gather all answers
+        document.querySelectorAll('.question-card').forEach((card, index) => {
+            const selectedInput = card.querySelector('input[type="radio"]:checked');
+            const questionId = card.querySelector('input[type="radio"]').name.split('_')[1];
 
-    // Gather all answers
-    document.querySelectorAll('.question-card').forEach((card, index) => {
-        const selectedInput = card.querySelector('input[type="radio"]:checked');
-        const questionId = card.querySelector('input[type="radio"]').name.split('_')[1];
-     
-    
-        if (selectedInput) {
-            const isCorrect = selectedInput.dataset.correct === "1";
-            answers.push({
-                questionId: questionId,
-                answerId: selectedInput.value,
-                isCorrect: isCorrect,
-                questionOrder: index
-            });
+            if (selectedInput) {
+                const isCorrect = selectedInput.dataset.correct === "1";
+                answers.push({
+                    questionId: questionId,
+                    answerId: selectedInput.value,
+                    isCorrect: isCorrect,
+                    questionOrder: index
+                });
 
-            if (isCorrect) correctCount++;
-            else wrongCount++;
-        }
-    });
+                if (isCorrect) correctCount++;
+                else wrongCount++;
+            }
+        });
 
-    // Send to server
-    fetch('<?= $url('quiz/submit') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            attemptId: attemptId,
-            quizId: quizId,
+        // Calculate score percentage
+        const totalQuestions = document.querySelectorAll('.question-card').length;
+        const score = Math.round((correctCount / totalQuestions) * 100);
+
+        // Prepare data for submission
+        const submissionData = {
+            attemptId: attemptId || 0, // Use 0 if no attempt ID exists
             answers: answers,
             correctCount: correctCount,
             wrongCount: wrongCount,
             totalQuestions: totalQuestions,
-            score: (correctCount / totalQuestions) * 100
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        
-        if (data.success) {
-            showResults(data);
-        } else {
-            throw new Error(data.error || 'Failed to submit quiz');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to submit quiz: ' + error.message);
-    });
-}
+            score: score
+        };
+
+        // Send to server
+        fetch('<?= $url('quiz/submit') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(submissionData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+
+                if (data.success) {
+                    showResults(data);
+                } else {
+                    throw new Error(data.error || 'Failed to submit quiz');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Even if submission fails, show results to user
+                showResults({
+                    success: true,
+                    score: score,
+                    correctCount: correctCount,
+                    wrongCount: wrongCount,
+                    totalQuestions: totalQuestions,
+                    message: "Results shown locally only. Server submission failed."
+                });
+                // Display a message to the user about the error
+                alert('There was a problem submitting your quiz results to our server. Your score is: ' + score + '%');
+            });
+    }
 
 
 

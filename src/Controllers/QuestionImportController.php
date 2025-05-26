@@ -145,7 +145,7 @@ class QuestionImportController extends Controller
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
-    public function indexword($id=null)
+    public function indexword($id = null)
     {
         // $sampleCsv = $this->generateSampleCsv();
         $quizzes = $this->quizModel->getAll();
@@ -158,7 +158,7 @@ class QuestionImportController extends Controller
             'tags' => $tags,
             'categories' => $categories,
             'levels' => $levels,
-            'id' => $id??''
+            'id' => $id ?? ''
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
@@ -338,84 +338,85 @@ class QuestionImportController extends Controller
     {
         try {
             $content = trim($_POST['question_content']);
-            $tagIds = $_POST['tags'] ?? [];
-            $quiz_id = $_POST['quiz_id'] ?? null;
-    
+  $tagId = $_POST['tag_id'] ?? null;
+    $categoryId = $_POST['category_id'] ?? null;
+                $quiz_id = $_POST['quiz_id'] ?? null;
+    if (!$tagId || !$categoryId) {
+        $_SESSION['message'] = "Both course and category must be selected";
+        $_SESSION['status'] = "danger";
+        header('Location: ' . $_SERVER['HTTP_REFERER']);
+        exit;
+    }
             // Optional fields
-            $category_id = $_POST['category_id'] ?? '';
             $difficulty_level = $_POST['difficulty_level'] ?? '';
             $question_type = $_POST['question_type'] ?? '';
             $year = $_POST['year'] ?? '';
             $marks = $_POST['marks'] ?? 1;
-    
+
             $parts = preg_split('/\bAnswers\b/i', $content, 2);
             if (count($parts) !== 2) {
                 throw new Exception('Invalid format - missing Answers section');
             }
-            // echo '<pre>';
-            // print_r($parts);
-            // die;
-            // print_r($questions);
-            // print_r($answers);
+          
             $questions = $this->parseQuestions($parts[0]);
             $answers = $this->parseAnswers($parts[1]);
-          
-    
+
+
             if (empty($questions)) {
                 throw new Exception('No valid questions found');
             }
-    
+
             $this->pdo->beginTransaction();
             $inserted = 0;
-    
+
             foreach ($questions as $question) {
                 if (empty($question['options'])) {
                     continue;
                 }
-    
+
                 if ($quiz_id) {
                     // Insert into previous_year_questions table if quiz_id is provided
                     $stmt = $this->pdo->prepare("
                         INSERT INTO previous_year_questions (quiz_id, question_text, year) 
                         VALUES (:quiz_id, :question_text, :year)
                     ");
-    
+
                     $stmt->execute([
                         ':quiz_id' => $quiz_id,
                         ':question_text' => $question['text'],
                         ':year' => $year
                     ]);
-    
+
                     $question_id = $this->pdo->lastInsertId();
                 } else {
                     // Insert into the default questions table
                     $stmt = $this->pdo->prepare("
-                        INSERT INTO questions (question_text, category_id, difficulty_level, marks, question_type, year) 
-                        VALUES (:question_text, :category_id, :difficulty_level, :marks, :question_type, :year)
+                        INSERT INTO questions (question_text, difficulty_level,category_id,tag_id, marks, question_type, year) 
+                        VALUES (:question_text, :difficulty_level,:category_id, :marks, :question_type, :year)
                     ");
-    
+
                     $stmt->execute([
                         ':question_text' => $question['text'],
-                        ':category_id' => $category_id,
                         ':difficulty_level' => $difficulty_level,
                         ':marks' => $marks,
+                        ':category_id' => $categoryId,
                         ':question_type' => $question_type,
                         ':year' => $year
                     ]);
-    
+
                     $question_id = $this->pdo->lastInsertId();
                 }
-    
-                // Handle tags
-                if ($question_id && !empty($tagIds)) {
-                    $this->handleTags($tagIds, $question_id);
+
+              if ($question_id && !empty($tagId)) {
+                    $this->handleTags($tagId, $question_id);
                 }
     
+
                 // Insert answers
                 foreach ($question['options'] as $letter => $text) {
                     $is_correct = (isset($answers[$question['number']]) &&
                         $answers[$question['number']] === $letter) ? 1 : 0;
-    
+
                     if ($quiz_id) {
                         // Insert into previous_year_answers table if quiz_id is provided
                         $stmt = $this->pdo->prepare("
@@ -429,7 +430,7 @@ class QuestionImportController extends Controller
                             VALUES (:question_id, :answer, :is_correct)
                         ");
                     }
-    
+
                     $stmt->execute([
                         ':question_id' => $question_id,
                         ':answer' => $text,
@@ -438,7 +439,7 @@ class QuestionImportController extends Controller
                 }
                 $inserted++;
             }
-    
+
             $this->pdo->commit();
             $_SESSION['message'] = "Successfully imported $inserted questions";
             $_SESSION['status'] = "success";
@@ -449,8 +450,13 @@ class QuestionImportController extends Controller
             $_SESSION['message'] = "Error importing questions: " . $e->getMessage();
             $_SESSION['status'] = "danger";
         }
-    
-        header('Location: /admin/question/word');
+        if ($quiz_id) {
+
+            header('Location: /admin/real_exam/question/' . $quiz_id);
+        } else {
+
+            header('Location: /admin/question/word');
+        }
         exit();
     }
 
@@ -458,26 +464,26 @@ class QuestionImportController extends Controller
     {
         $questions = [];
         $content = preg_replace('/\r\n|\r/', "\n", $content);
-        
+
         // Improved pattern to better capture question numbers and their content
         // This pattern is more robust with how it identifies question boundaries
         $pattern = '/(\d+)\.\s+(.*?)(?=\n\s*\d+\.\s+|$)/s';
         preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
-        
+
         foreach ($matches as $match) {
             $number = (int)$match[1];
             $questionBlock = $match[2];
-            
+
             // Enhanced pattern to match option formats: (a), a), and a.
             // Made more robust to handle various spacing and line break scenarios
             $optionPattern = '/(?:\(([a-d])\)|([a-d])[\.\)])\s*([^\n]+)(?:\n|$)/i';
             preg_match_all($optionPattern, $questionBlock, $optionMatches, PREG_SET_ORDER);
-            
+
             if (count($optionMatches) >= 4) {
                 // Find where the first option begins to extract question text
                 if (preg_match($optionPattern, $questionBlock, $firstOption, PREG_OFFSET_CAPTURE)) {
                     $questionText = trim(substr($questionBlock, 0, $firstOption[0][1]));
-                    
+
                     $options = [];
                     foreach ($optionMatches as $option) {
                         // Letter could be in group 1 (for (a) format) or group 2 (for a. or a) format)
@@ -485,10 +491,12 @@ class QuestionImportController extends Controller
                         $text = trim($option[3]);
                         $options[$letter] = $text;
                     }
-                    
+
                     // Only include if we have at least options a, b, c, d (might have more than 4 matches)
-                    if (isset($options['a']) && isset($options['b']) && 
-                        isset($options['c']) && isset($options['d'])) {
+                    if (
+                        isset($options['a']) && isset($options['b']) &&
+                        isset($options['c']) && isset($options['d'])
+                    ) {
                         $questions[] = [
                             'number' => $number,
                             'text' => $questionText,
@@ -498,18 +506,18 @@ class QuestionImportController extends Controller
                 }
             }
         }
-        
+
         // Debug output to help identify problematic questions
         error_log("Found " . count($questions) . " questions");
         $questionNumbers = array_column($questions, 'number');
         error_log("Question numbers found: " . implode(', ', $questionNumbers));
-        
+
         return $questions;
     }
     private function parseAnswers($content)
     {
         $answers = [];
-        
+
         $lines = explode("\n", $content);
         foreach ($lines as $line) {
             if (preg_match('/(\d+)[.\s]+([a-d])/i', $line, $match)) {
@@ -518,23 +526,22 @@ class QuestionImportController extends Controller
                 $answers[$number] = $answer;
             }
         }
-        
+
         error_log("Found " . count($answers) . " answers");
         return $answers;
     }
-    private function handleTags($tagIds, $questionId) {
+    private function handleTags($tagIds, $questionId)
+    {
         // Insert question-tag relationships
         if (!empty($tagIds)) {
-            $values = array_map(function($tagId) use ($questionId) {
+            $values = array_map(function ($tagId) use ($questionId) {
                 return "($questionId, $tagId)";
             }, array_unique($tagIds));
-            
-            $sql = "INSERT IGNORE INTO question_tags (question_id, tag_id) VALUES " . 
-                   implode(',', $values);
-                   
+
+            $sql = "INSERT IGNORE INTO question_tags (question_id, tag_id) VALUES " .
+                implode(',', $values);
+
             $this->pdo->exec($sql);
         }
     }
-
-
 }

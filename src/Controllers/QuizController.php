@@ -75,11 +75,13 @@ class QuizController extends Controller
         $questions = $this->questionModel->getPreviousYearQuestions($id);
         $programs = $this->programModel->getWithCategory();
         $quizzes = $this->quizModel->getAll();
-        $content = $this->uirender('user/previous_year_quiz', [
-            'quiz' => $quiz, 
-            'questions' => $questions,
-            'quizzes' => $quizzes,
-            'programs' => $programs,
+        $content = $this->uirender(
+            'user/previous_year_quiz',
+            [
+                'quiz' => $quiz,
+                'questions' => $questions,
+                'quizzes' => $quizzes,
+                'programs' => $programs,
             ]
         );
         echo $this->uirender('user/layout', ['content' => $content]);
@@ -226,63 +228,106 @@ class QuizController extends Controller
         }
     }
 
-    public function submitQuiz()
-    {
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
+public function submitQuiz()
+{
+    try {
+        $data = json_decode(file_get_contents('php://input'), true);
 
+        if (!$data || !isset($data['attemptId']) || !isset($data['answers'])) {
+            throw new \Exception('Invalid request data');
+        }
 
-            if (!$data || !isset($data['attemptId']) || !isset($data['answers'])) {
-                throw new \Exception('Invalid request data');
+        error_log("Received quiz submission data: " . json_encode($data));
+
+        // Validate attempt ID
+        if (!$data['attemptId'] || $data['attemptId'] == 0) {
+            // Create a temporary attempt if none exists
+            $attemptData = [
+                'user_id' => $_SESSION['user_id'] ?? 0,
+                'quiz_id' => null, // No quiz ID for category quiz
+                'total_questions' => count($data['answers']),
+            ];
+            
+            $data['attemptId'] = $this->quizAttemptModel->createAttempt($attemptData);
+            error_log("Created new attempt ID: " . $data['attemptId']);
+            
+            if (!$data['attemptId']) {
+                // If we still can't create an attempt, use a session to track results
+                $_SESSION['last_quiz_results'] = [
+                    'correctCount' => $data['correctCount'],
+                    'wrongCount' => $data['wrongCount'],
+                    'score' => $data['score'],
+                    'totalQuestions' => $data['totalQuestions']
+                ];
+                
+                // Return success even without saving to database
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Quiz completed but not saved to history',
+                    'score' => (float)$data['score'],
+                    'correctCount' => (int)$data['correctCount'],
+                    'wrongCount' => (int)$data['wrongCount'],
+                    'totalQuestions' => (int)$data['totalQuestions']
+                ]);
+                return;
             }
+        }
 
-            error_log("Received answers: " . json_encode($data['answers'])); // Debug log
-
-            // Save each answer with question order
-            foreach ($data['answers'] as $index => $answer) {
-                $success = $this->quizAttemptModel->saveAnswer(
+        // Save each answer with question order
+        foreach ($data['answers'] as $index => $answer) {
+            try {
+                $this->quizAttemptModel->saveAnswer(
                     $data['attemptId'],
-                    $answer['questionId'], // Changed from using array key
+                    $answer['questionId'],
                     $answer['answerId'],
                     $answer['isCorrect'],
-                    $index // Use index as order
+                    $index
                 );
-
-                if (!$success) {
-                    error_log("Failed to save answer for question: " . $answer['questionId']);
-                }
+            } catch (\Exception $e) {
+                error_log("Error saving answer " . $index . ": " . $e->getMessage());
+                // Continue processing other answers despite this error
             }
+        }
 
-            // Complete the attempt
-            $success = $this->quizAttemptModel->completeAttempt($data['attemptId'], [
+        // Complete the attempt
+        try {
+            $completionData = [
                 'correct_answers' => $data['correctCount'],
                 'wrong_answers' => $data['wrongCount'],
                 'score' => $data['score'],
                 'completed_at' => date('Y-m-d H:i:s')
-            ]);
-
+            ];
+            
+            $success = $this->quizAttemptModel->completeAttempt($data['attemptId'], $completionData);
+            
             if (!$success) {
-                throw new \Exception('Failed to save attempt');
+                error_log("Warning: Failed to complete attempt but continuing");
             }
-
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'attemptId' => $data['attemptId'],
-                'score' => (float)$data['score'],
-                'correctCount' => (int)$data['correctCount'],
-                'wrongCount' => (int)$data['wrongCount'],
-                'totalQuestions' => (int)$data['totalQuestions']
-            ]);
         } catch (\Exception $e) {
-            error_log("Error in submitQuiz: " . $e->getMessage());
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
+            error_log("Error completing attempt: " . $e->getMessage());
+            // Continue despite error to provide a response to the user
         }
+
+        // Return success response
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'attemptId' => $data['attemptId'],
+            'score' => (float)$data['score'],
+            'correctCount' => (int)$data['correctCount'],
+            'wrongCount' => (int)$data['wrongCount'],
+            'totalQuestions' => (int)$data['totalQuestions']
+        ]);
+    } catch (\Exception $e) {
+        error_log("Error in submitQuiz: " . $e->getMessage());
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
     }
+}
     public function showQuiz()
     {
         $quiz = $this->quizModel->getQuiz('quiz');
@@ -325,7 +370,7 @@ class QuizController extends Controller
                     $examSessionModel = new ExamSessionModel($this->pdo);
                     $startTime = $_POST['exam_start_time'] ?? null;
                     $endTime = $_POST['exam_end_time'] ?? null;
-                    
+
                     if ($startTime && $endTime) {
                         $examSessionModel->createSession($quizId, $startTime, $endTime);
                     }
@@ -445,7 +490,7 @@ class QuizController extends Controller
 
 
             // Get all categories
-            $categories = $this->categoryModel->getAllCategories();
+            $categories = $this->categoryModel->getCategoriesByQuizTags($id);
 
             // Get existing configuration
             $quiz_categories = $this->quizModel->getQuizCategories($id);
@@ -526,58 +571,59 @@ class QuizController extends Controller
     }
 
     /**
- * Update category allocation for a quiz
- */
-public function updateCategoryAllocation()
-{
-    try {
- 
+     * Update category allocation for a quiz
+     */
+    public function updateCategoryAllocation()
+    {
+        try {
 
-        $categoryId = $_POST['category_id'] ?? null;
-        $quizId = $_POST['quiz_id'] ?? null;
-        $numberQuestions = $_POST['number_of_questions'] ?? null;
-        $marksAllocated = $_POST['marks_allocated'] ?? null;
-    
-        // Validate inputs
-        if (!$categoryId || !$quizId || !$numberQuestions || !$marksAllocated) {
-            throw new Exception('Missing required parameters');
+
+            $categoryId = $_POST['category_id'] ?? null;
+            $quizId = $_POST['quiz_id'] ?? null;
+            $numberQuestions = $_POST['number_of_questions'] ?? null;
+            $marksAllocated = $_POST['marks_allocated'] ?? null;
+
+            // Validate inputs
+            if (!$categoryId || !$quizId || !$numberQuestions || !$marksAllocated) {
+                throw new Exception('Missing required parameters');
+            }
+
+            if (
+                !is_numeric($numberQuestions) || $numberQuestions < 1 ||
+                !is_numeric($marksAllocated) || $marksAllocated < 1
+            ) {
+                throw new Exception('Invalid question count or marks value');
+            }
+
+            // Check if the current questions exceed the new allocation
+            $existingCount = $this->mockTestQuestionModel->getQuestionCountForCategory($quizId, $categoryId);
+            if ($existingCount > $numberQuestions) {
+                throw new Exception('Cannot reduce allocation below current question count (' . $existingCount . ')');
+            }
+
+            // Update the allocation in the database
+            $success = $this->quizModel->updateCategoryAllocation(
+                $quizId,
+                $categoryId,
+                $numberQuestions,
+                $marksAllocated
+            );
+
+            if (!$success) {
+                throw new Exception('Failed to update allocation');
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Category allocation updated successfully'
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
         }
-        
-        if (!is_numeric($numberQuestions) || $numberQuestions < 1 || 
-            !is_numeric($marksAllocated) || $marksAllocated < 1) {
-            throw new Exception('Invalid question count or marks value');
-        }
-        
-        // Check if the current questions exceed the new allocation
-        $existingCount = $this->mockTestQuestionModel->getQuestionCountForCategory($quizId, $categoryId);
-        if ($existingCount > $numberQuestions) {
-            throw new Exception('Cannot reduce allocation below current question count (' . $existingCount . ')');
-        }
-        
-        // Update the allocation in the database
-        $success = $this->quizModel->updateCategoryAllocation(
-            $quizId, 
-            $categoryId, 
-            $numberQuestions, 
-            $marksAllocated
-        );
-        
-        if (!$success) {
-            throw new Exception('Failed to update allocation');
-        }
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Category allocation updated successfully'
-        ]);
-        
-    } catch (Exception $e) {
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
     }
-}
     public function showSet($quizId)
     {
         $quiz = $this->quizModel->getById($quizId);
@@ -682,7 +728,7 @@ public function updateCategoryAllocation()
                     $examSessionModel = new ExamSessionModel($this->pdo);
                     $startTime = $_POST['exam_start_time'] ?? null;
                     $endTime = $_POST['exam_end_time'] ?? null;
-                    
+
                     if ($startTime && $endTime) {
                         // If there's an existing session, update it
                         if ($examSession) {
@@ -873,5 +919,142 @@ public function updateCategoryAllocation()
             'questions' => $questions
         ]);
         echo $this->render('user/layout', ['content' => $content]);
+    }
+
+
+
+
+    /**
+     * Start a quiz for a specific category
+     */
+    public function startCategoryQuiz($categoryId, $count = 10)
+    {
+        try {
+            // Get the tag ID if it exists in the query string
+            $tagId = isset($_GET['tag']) ? (int)$_GET['tag'] : null;
+            error_log("DEBUG: Starting quiz with categoryId=$categoryId, count=$count, tagId=" . ($tagId ?? 'null'));
+            // Get the category
+            $category = $this->categoryModel->getCategoryById($categoryId);
+
+            if (!$category) {
+                $_SESSION['message'] = "Category not found.";
+                $_SESSION['status'] = "danger";
+                header('Location: /');
+                exit;
+            }
+
+            error_log("DEBUG: Got category: " . $category['name']);
+
+            // Get all questions for this category
+            $questions = $this->questionModel->getQuestionsByCategory($categoryId, (int)$count, $tagId);
+
+            // Log the questions count
+            error_log("DEBUG: Found " . count($questions) . " questions");
+
+            // Check if questions were found
+            if (empty($questions)) {
+                $_SESSION['message'] = "No questions available for this category.";
+                $_SESSION['status'] = "info";
+                header('Location: /');
+                exit;
+            }
+
+            // Create quiz attempt with error handling
+            try {
+                $attemptData = [
+                    'user_id' => $_SESSION['user_id'] ?? 0,
+                    'category_id' => $categoryId,
+                    'total_questions' => count($questions),
+                ];
+
+                error_log("DEBUG: Creating attempt with: " . json_encode($attemptData));
+                $attemptId = $this->quizAttemptModel->createAttempt($attemptData);
+                error_log("DEBUG: Got attempt ID: " . ($attemptId ?: 'NONE'));
+
+                // If attempt creation failed, we can still continue with ID=0
+                if (!$attemptId) {
+                    error_log("WARNING: Failed to create attempt, continuing with ID=0");
+                    $attemptId = 0;
+                }
+            } catch (Exception $e) {
+                error_log("ERROR: Exception creating attempt: " . $e->getMessage());
+                $attemptId = 0; // Continue with no attempt ID
+            }
+
+            // Get user info
+            $user = ['username' => 'Guest'];
+            if (isset($_SESSION['user_id'])) {
+                $user = $this->userModel->getById($_SESSION['user_id']);
+            }
+
+            // Render the quiz - we'll proceed even if attempt creation failed
+            $quizContent = $this->uirender('user/quiz/play', [
+                'questions' => $questions,
+                'category' => $category,
+                'attemptId' => $attemptId,
+                'user' => $user
+            ]);
+
+            echo $this->uirender('user/layout', ['content' => $quizContent]);
+            return; // Add explicit return to ensure script stops here
+        } catch (\Exception $e) {
+            error_log("ERROR in startCategoryQuiz: " . $e->getMessage());
+            error_log("STACK TRACE: " . $e->getTraceAsString());
+            $_SESSION['message'] = "An error occurred while starting the quiz.";
+            $_SESSION['status'] = "danger";
+            header('Location: /quiz/category/' . $categoryId . ($tagId ? '?tag=' . $tagId : ''));
+            exit;
+        }
+    }
+
+    /**
+     * Show quizzes for a specific category
+     */
+    public function categoryQuizzes($categoryId)
+    {
+        try {
+            // Get the category
+            $category = $this->categoryModel->getCategoryById($categoryId);
+
+            if (!$category) {
+                $_SESSION['message'] = "Category not found.";
+                $_SESSION['status'] = "danger";
+                header('Location: /'); // Changed from $this->url('')
+                exit;
+            }
+
+            // Get child categories if this is a parent category
+            $childCategories = $this->categoryModel->getChildCategories($categoryId);
+
+            // Get the total question count for this category (including children)
+            $totalQuestions = $this->questionModel->getQuestionCountForCategory($categoryId, true);
+
+            // Add the total question count to the category object
+            $category['total_questions'] = $totalQuestions;
+            $category['children'] = $childCategories;
+
+            // Get tag associated with this category
+            $categoryTags = $this->tagModel->getTagsByCategoryId($categoryId);
+            $tag = null;
+            if (!empty($categoryTags)) {
+                $tag = $categoryTags[0]; // Use first tag
+            }
+
+            // Show the quiz info page first
+            $content = $this->uirender('user/quiz_info', [
+                'category' => $category,
+                'tag' => $tag,
+                'isLoggedIn' => isset($_SESSION['user_id']),
+                'category_id' => $categoryId
+            ]);
+
+            echo $this->uirender('user/layout', ['content' => $content]);
+        } catch (\Exception $e) {
+            error_log("Error in QuizController::categoryQuizzes - " . $e->getMessage());
+            $_SESSION['message'] = "An error occurred. Please try again.";
+            $_SESSION['status'] = "danger";
+            header('Location: /'); // Changed from $this->url('')
+            exit;
+        }
     }
 }

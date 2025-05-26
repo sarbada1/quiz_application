@@ -247,7 +247,7 @@ class QuestionModel extends BaseModel
     {
         try {
             $offset = ($page - 1) * $questionsPerPage;
-            
+
             $sql = "SELECT q.*, c.name as category_name
                    from questions q 
                    join categories c on c.id=q.category_id 
@@ -259,20 +259,20 @@ class QuestionModel extends BaseModel
                 $sql .= " AND q.category_id = :category_id";
                 $params[':category_id'] = $categoryId;
             }
-            
+
             $sql .= " LIMIT :offset, :limit";
-            
+
             $stmt = $this->pdo->prepare($sql);
-            
+
             // Bind non-integer parameters
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
-            
+
             // Bind integer parameters with proper type
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->bindValue(':limit', $questionsPerPage, PDO::PARAM_INT);
-            
+
             $stmt->execute();
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -286,20 +286,20 @@ class QuestionModel extends BaseModel
     {
         $sql = "SELECT count(*) as total from questions q join categories c on c.id=q.category_id join quiz_categories qc on qc.category_id=c.id join quizzes qz on qz.id=qc.quiz_id where qc.quiz_id=:quiz_id
 ";
-    
+
         $params = [':quiz_id' => $quizId];
         if ($categoryId) {
             $sql .= " AND qc.category_id = :category_id";
             $params[':category_id'] = $categoryId;
         }
-    
+
         $stmt = $this->pdo->prepare($sql);
-    
-        
+
+
         // Bind integer parameters with proper type
-        
+
         $stmt->execute($params);
-    
+
         return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     }
     public function getPreviousYearQuestions($quizId)
@@ -470,5 +470,292 @@ class QuestionModel extends BaseModel
         ");
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get questions grouped by tag with optional filters
+     */
+    public function getQuestionsGroupedByTag($tagId = null, $categoryId = null)
+    {
+        try {
+            // Build base query to get questions with tag and category info
+            $sql = "SELECT q.id, q.question_text, q.category_id, 
+                       t.id as tag_id, t.name as tag_name, t.slug as tag_slug,
+                       c.name as category_name
+                FROM questions q
+                JOIN question_tags qt ON q.id = qt.question_id
+                JOIN tags t ON qt.tag_id = t.id
+                LEFT JOIN categories c ON q.category_id = c.id
+                WHERE 1=1";
+
+            $params = [];
+
+            // Add filters if provided
+            if ($tagId) {
+                $sql .= " AND t.id = :tag_id";
+                $params[':tag_id'] = $tagId;
+            }
+
+            if ($categoryId) {
+                $sql .= " AND q.category_id = :category_id";
+                $params[':category_id'] = $categoryId;
+            }
+
+            // Order by tag and question ID
+            $sql .= " ORDER BY t.name, q.id";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Organize questions by tag
+            $questionsByTag = [];
+
+            foreach ($questions as $question) {
+                $tagId = $question['tag_id'];
+
+                if (!isset($questionsByTag[$tagId])) {
+                    $questionsByTag[$tagId] = [
+                        'id' => $tagId,
+                        'name' => $question['tag_name'],
+                        'slug' => $question['tag_slug'],
+                        'questions' => [],
+                        'categories' => []
+                    ];
+                }
+
+                // Add question to the tag's question list
+                $questionsByTag[$tagId]['questions'][] = $question;
+
+                // Track categories used within this tag
+                $categoryId = $question['category_id'];
+                $categoryName = $question['category_name'] ?? 'Uncategorized';
+
+                // If we're tracking categories for statistics
+                $categoryFound = false;
+                foreach ($questionsByTag[$tagId]['categories'] as &$cat) {
+                    if ($cat['id'] == $categoryId) {
+                        $cat['count']++;
+                        $categoryFound = true;
+                        break;
+                    }
+                }
+
+                if (!$categoryFound) {
+                    $questionsByTag[$tagId]['categories'][] = [
+                        'id' => $categoryId,
+                        'name' => $categoryName,
+                        'count' => 1
+                    ];
+                }
+            }
+
+            return $questionsByTag;
+        } catch (PDOException $e) {
+            error_log("Error in getQuestionsGroupedByTag: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Update category for all questions with a specific tag
+     */
+    public function updateCategoryByTag($tagId, $categoryId)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            // Update all questions that have this tag
+            $sql = "UPDATE questions q
+                JOIN question_tags qt ON q.id = qt.question_id
+                SET q.category_id = :category_id
+                WHERE qt.tag_id = :tag_id";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':category_id' => $categoryId,
+                ':tag_id' => $tagId
+            ]);
+
+            $updatedCount = $stmt->rowCount();
+            $this->pdo->commit();
+
+            return $updatedCount;
+        } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            error_log("Error in updateCategoryByTag: " . $e->getMessage());
+            throw new Exception("Database error while updating questions: " . $e->getMessage());
+        }
+    }
+
+
+
+/**
+ * Get questions by category and tag with answers - simplified approach
+ */
+public function getQuestionsByCategory($categoryId, $limit = 10, $tagId = null)
+{
+    try {
+        // First, log the parameters for debugging
+        error_log("DEBUG: Fetching questions - categoryId: $categoryId, limit: $limit, tagId: " . ($tagId ?? 'null'));
+
+        // Get all child category IDs if this is a parent category
+        $childCategories = [];
+        $childQuery = "SELECT id FROM categories WHERE parent_id = $categoryId";
+        $childResult = $this->pdo->query($childQuery);
+        
+        if ($childResult) {
+            while ($row = $childResult->fetch(PDO::FETCH_ASSOC)) {
+                $childCategories[] = $row['id'];
+            }
+        }
+        
+        // Log the child categories found
+        error_log("DEBUG: Child categories: " . implode(', ', $childCategories ?: ['none']));
+
+        // Include the main category ID
+        $allCategoryIds = array_merge([$categoryId], $childCategories);
+        $categoryIdList = implode(',', $allCategoryIds);
+        
+        // Build the query - simple approach without prepared statements
+        if ($tagId !== null) {
+            $sql = "SELECT DISTINCT q.* FROM questions q 
+                   JOIN question_tags qt ON q.id = qt.question_id 
+                   WHERE q.category_id IN ($categoryIdList) 
+                   AND qt.tag_id = $tagId 
+                   ORDER BY RAND() 
+                   LIMIT $limit";
+                   
+            error_log("DEBUG: Using simple join query with tag filter: $tagId");
+        } else {
+            $sql = "SELECT q.* FROM questions q 
+                  WHERE q.category_id IN ($categoryIdList) 
+                  ORDER BY RAND() 
+                  LIMIT $limit";
+        }
+
+        // Log the final query for debugging
+        error_log("DEBUG: Final SQL: " . $sql);
+
+        // Execute query directly
+        $result = $this->pdo->query($sql);
+        
+        if (!$result) {
+            error_log("DEBUG: Query failed: " . print_r($this->pdo->errorInfo(), true));
+            return [];
+        }
+
+        // Fetch all records
+        $questions = $result->fetchAll(PDO::FETCH_ASSOC);
+        error_log("DEBUG: Found " . count($questions) . " questions");
+
+        // For each question, get the answers with simple approach
+        foreach ($questions as &$question) {
+            $questionId = $question['id'];
+            $answerSql = "SELECT a.id, a.answer as text, a.isCorrect as is_correct 
+                    FROM answers a 
+                    WHERE a.question_id = $questionId";
+
+            $answerResult = $this->pdo->query($answerSql);
+            
+            if ($answerResult) {
+                $question['answers'] = $answerResult->fetchAll(PDO::FETCH_ASSOC);
+                error_log("DEBUG: Question ID: $questionId with " . count($question['answers']) . " answers");
+            } else {
+                $question['answers'] = [];
+                error_log("DEBUG: Failed to get answers for question $questionId");
+            }
+        }
+
+        return $questions;
+    } catch (\Exception $e) {
+        error_log("ERROR: Failed to get questions: " . $e->getMessage());
+        error_log("ERROR: Stack trace: " . $e->getTraceAsString());
+        return [];
+    }
+}
+
+/**
+ * Get the total number of questions for a category - simplified approach
+ */
+public function getQuestionCountForCategory($categoryId, $includeChildren = false, $tagId = null)
+{
+    try {
+        // Log parameters for debugging
+        error_log("Counting questions for categoryId: $categoryId, includeChildren: " .
+            ($includeChildren ? "true" : "false") . ", tagId: " . ($tagId ?? 'null'));
+
+        // Get the category IDs to include
+        $categoryIdList = "$categoryId"; // Start with main category
+        
+        if ($includeChildren) {
+            // Get child categories using simple query
+            $childQuery = "SELECT id FROM categories WHERE parent_id = $categoryId";
+            $childResult = $this->pdo->query($childQuery);
+            
+            if ($childResult) {
+                $childIds = [];
+                while ($row = $childResult->fetch(PDO::FETCH_ASSOC)) {
+                    $childIds[] = $row['id'];
+                }
+                
+                if (!empty($childIds)) {
+                    $categoryIdList .= ',' . implode(',', $childIds);
+                }
+                
+                error_log("DEBUG: Category list for counting: $categoryIdList");
+            }
+        }
+        
+        // Build the count query based on whether we need to filter by tag
+        if ($tagId !== null) {
+            $sql = "SELECT COUNT(DISTINCT q.id) as total 
+                   FROM questions q 
+                   JOIN question_tags qt ON q.id = qt.question_id 
+                   WHERE q.category_id IN ($categoryIdList) 
+                   AND qt.tag_id = $tagId";
+        } else {
+            $sql = "SELECT COUNT(DISTINCT q.id) as total 
+                   FROM questions q 
+                   WHERE q.category_id IN ($categoryIdList)";
+        }
+
+        // Log the query
+        error_log("DEBUG: Count SQL: $sql");
+        
+        // Execute the query directly
+        $result = $this->pdo->query($sql);
+        
+        if (!$result) {
+            error_log("DEBUG: Count query failed: " . print_r($this->pdo->errorInfo(), true));
+            return 0;
+        }
+        
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+        $count = (int)($row['total'] ?? 0);
+        
+        // Log the count
+        error_log("DEBUG: Question count: $count");
+        
+        return $count;
+    } catch (\Exception $e) {
+        error_log("ERROR: Failed to count questions: " . $e->getMessage());
+        error_log("ERROR: Stack trace: " . $e->getTraceAsString());
+        return 0;
+    }
+}
+    private function columnExists($table, $column)
+    {
+        try {
+            $sql = "SHOW COLUMNS FROM $table LIKE '$column'";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error checking if column exists: " . $e->getMessage());
+            return false;
+        }
     }
 }

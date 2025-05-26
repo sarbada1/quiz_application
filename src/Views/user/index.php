@@ -1,24 +1,14 @@
-<!-- index.php -->
-<?php if (isset($_SESSION['message'])): ?>
-    <div id="alert" class="alert mt-20 w-75 alert-<?= $_SESSION['status'] ?>" role="alert">
-        <button type="button" class="closealert" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        <?= $_SESSION['message'] ?>
-    </div>
-    <?php unset($_SESSION['message']);
-    unset($_SESSION['status']); ?>
-<?php endif; ?>
+
+
 <main>
     <section class="hero">
         <div class="hero-content">
             <h1>Master Your Knowledge</h1>
             <p>Take quizzes, practice mock tests, and track your progress</p>
             <div class="hero-buttons">
-                <a href="<?= $url('quiz') ?>" class="btn-primary">Start Quiz</a>
+                <!-- <a href="<?= $url('quiz') ?>" class="btn-primary">Start Quiz</a> -->
                 <a href="<?= $url('test') ?>" class="btn-secondary">Try Mock Test</a>
                 <a href="<?= $url('previous-year-quizzes') ?>" class="btn btn-secondary">Previous Year Quizzes</a>
-
             </div>
         </div>
         <div class="hero-image">
@@ -27,43 +17,28 @@
     </section>
 
     <section class="categories-section">
-        <h2>Explore Categories</h2>
+        <h2>Available Quizzes</h2>
         <div class="category-grid">
-            <?php foreach ($parentCategories as $category): ?>
+            <?php foreach ($tagsWithQuestions as $tag): ?>
                 <div class="category-card">
                     <div class="category-header">
-                        <i class="<?= $category['icon'] ?? 'fas fa-book' ?>"></i>
-                        <h3><?= htmlspecialchars($category['name']) ?></h3>
+                        <i class="<?= $tag['icon'] ?? 'fas fa-book' ?>"></i>
+                        <h3><?= htmlspecialchars($tag['name']) ?> Quiz</h3>
                     </div>
-                    <p><?= htmlspecialchars($category['description'] ?? 'Explore ' . htmlspecialchars($category['name']) . ' topics and test your knowledge.') ?></p>
-                    <?php if (!empty($category['children'])): ?>
-                        <div class="subcategories collapsed">
-                            <?php foreach (array_slice($category['children'], 0, 3) as $child): ?>
-                                <a href="<?= $url('category/' . htmlspecialchars($child['slug'] ?? '')) ?>" class="subcategory-link">
-                                    <?= htmlspecialchars($child['name']) ?>
-                                </a>
-                            <?php endforeach; ?>
-
-                            <?php if (count($category['children']) > 3): ?>
-                                <button class="show-more" data-category="<?= $category['id'] ?>">
-                                    Show More
-                                </button>
-                                <div class="hidden-subcategories" id="category-<?= $category['id'] ?>">
-                                <?php foreach (array_slice($category['children'], 3) as $child): ?>
-    <a href="<?= $url('category/' . htmlspecialchars($child['slug'] ?? '')) ?>" class="subcategory-link">
-        <?= htmlspecialchars($child['name']) ?>
-    </a>
-<?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <a href="<?= $url('category/' . $category['slug']) ?>" class="btn-explore">
-    Explore <?= htmlspecialchars($category['name']) ?>
-</a>
+                    <p><?= htmlspecialchars($tag['description'] ?? 'Take quizzes and test your knowledge.') ?></p>
+                
+                    <a href="<?= $url('tag/' . htmlspecialchars($tag['slug'] ?? '')) ?>" class="btn-explore">
+                        Explore <?= htmlspecialchars($tag['name']) ?> Quizzes
+                    </a>
                 </div>
             <?php endforeach; ?>
+            
+            <?php if (empty($tagsWithQuestions)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No quizzes available at the moment. Please check back later.</p>
+                </div>
+            <?php endif; ?>
         </div>
     </section>
 </main>

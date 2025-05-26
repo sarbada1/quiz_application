@@ -28,8 +28,7 @@ endif;
                     <th>Title</th>
                     <th>Time (minutes)</th>
                     <th>Total Marks</th>
-                    <th>Categories</th>
-                    <th>Status</th>
+                    <th>Add Question Format</th>
                     <th>Sets</th>
                     <!-- <th>Actions</th> -->
                 </tr>
@@ -44,24 +43,12 @@ endif;
                             <td><?= $quiz['duration'] ?></td>
                             <td><?= $quiz['total_marks'] ?></td>
                             <td>
-                                <?php if (empty($quiz['categories'])): ?>
-                                    <a href="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>"
-                                        class="btn btn-info btn-sm">
-                                        Configure Categories
-                                    </a>
-                                <?php else: ?>
-                                    <?= htmlspecialchars($quiz['categories']) ?>
-                                    <a href="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>"
+                                  <a href="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>"
                                         class="btn btn-warning btn-sm">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-table"></i>
                                     </a>
-                                <?php endif; ?>
                             </td>
-                            <td>
-                                <span class="badge badge-<?= $quiz['status'] ?>">
-                                    <?= ucfirst($quiz['status']) ?>
-                                </span>
-                            </td>
+                     
                             <td>
                                 <a href="<?= $url('admin/quiz/' . $quiz['id'] . '/sets') ?>"
                                     class="btn btn-info btn-sm">

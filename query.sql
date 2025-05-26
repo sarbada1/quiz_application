@@ -71,6 +71,21 @@ CREATE TABLE `categories` (
     `parent_id` BIGINT UNSIGNED NULL -- Ensure UNSIGNED here
 );
 
+-- new code
+
+CREATE TABLE tag_categories (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    tag_id int NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_tag_category (tag_id, category_id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+ALTER TABLE quiz_attempts ADD COLUMN category_id INT NULL;
+SELECT q.* FROM questions q WHERE q.category_id IN (11);
+SELECT DISTINCT q.* FROM questions q JOIN question_tags qt ON q.id = qt.question_id WHERE q.category_id IN (11) AND qt.tag_id = 1;
+
 CREATE TABLE `programmes` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(255) NOT NULL,
@@ -163,6 +178,7 @@ CREATE TABLE questions (
     marks INT NOT NULL DEFAULT 1,
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
+
 CREATE TABLE previous_year_questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     quiz_id BIGINT UNSIGNED NOT NULL,

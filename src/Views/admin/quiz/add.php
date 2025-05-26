@@ -23,7 +23,6 @@ endif;
             <option selected disabled>--Select quiz type--</option>
             <option value="mock">Mock Test</option>
             <option value="previous_year">Previous Year</option>
-            <option value="quiz"> Quiz</option>
             <option value="real_exam">Real Exam</option>
         </select>
     </div>
@@ -33,17 +32,7 @@ endif;
     <input type="text" id="slug" name="slug" readonly>
     <label for="description">Description:</label>
     <textarea name="description" id="description"></textarea>
-    <div class="form-group">
-        <label>Categories</label>
-        <select name="categories[]" multiple required>
-            <?php foreach ($categories as $category): ?>
-                <option value="<?= $category['id'] ?>">
-                    <?= htmlspecialchars($category['name']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple categories</small>
-    </div>
+
     <div class="form-group">
         <label>Tags</label>
         <select name="tags[]" multiple>

@@ -1,4 +1,3 @@
-<!-- views/admin/question/word.php -->
 <style>
     .example-format {
         background: #f8f9fa;
@@ -24,6 +23,28 @@
 
     .alert-info li {
         margin-bottom: 0.5rem;
+    }
+    
+    .tag-category-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+    
+    .category-selection-container {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px dashed #dee2e6;
+    }
+    
+    #categorySelection {
+        min-height: 100px;
+    }
+    
+    .select2-container {
+        width: 100% !important;
     }
 </style>
 
@@ -76,36 +97,47 @@ Answers:
     <form method="post" action="<?= $url('admin/question/import-text') ?>">
         <input type="hidden" name="quiz_id" value=<?= $id ?? '' ?>>
         <?php if (!($id)): ?>
-            <div class="form-group">
-                <label for="tags">Tags:</label>
-                <select name="tags[]" id="tags" multiple class="form-control">
-                    <?php foreach ($tags as $tag): ?>
-                        <option value="<?= $tag['id'] ?>"><?= htmlspecialchars($tag['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+            <div class="tag-category-section">
+                <h4>Question Classification</h4>
+                <p class="text-muted">Select course and subject for these questions</p>
+
+                <div class="form-group">
+                    <label for="tag_id">Course/Program:</label>
+                    <select name="tag_id" id="tag_id" class="form-control" required>
+                        <option value="" disabled selected>Select a course/program</option>
+                        <?php foreach ($tags as $tag): ?>
+                            <option value="<?= $tag['id'] ?>"><?= htmlspecialchars($tag['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small class="form-text text-muted">Select the course these questions belong to (e.g., BCA, CSIT)</small>
+                </div>
+                
+                <div class="category-selection-container">
+                    <div class="form-group">
+                        <label for="category_id">Subject Category:</label>
+                        <select name="category_id" id="category_id" class="form-control" required>
+                            <option value="" disabled selected>Select a course first</option>
+                        </select>
+                        <small class="form-text text-muted">Select the subject category for these questions</small>
+                    </div>
+                    
+               
+                </div>
             </div>
-            <div class="form-group">
-                <label for="tags">Categories:</label>
-                <select name="category_id" id="category_id" class="form-control">
-                    <option value="">--Select Category--</option>
-                    <?php foreach ($categories as $category): ?>
-                        <option value="<?= $category['id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+     
             <div class="form-group">
                 <label>Question Type</label>
-                <select name="question_type" required>
-                    <option selected disabled>--Select question type--</option>
+                <select name="question_type" class="form-control" required>
+                    <option value="" disabled selected>--Select question type--</option>
                     <option value="mock">Mock Test</option>
                     <option value="previous_year">Previous Year</option>
-                    <option value="quiz"> Quiz</option>
+                    <option value="quiz">Quiz</option>
                     <option value="real_exam">Real Exam</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="difficulty_level"> Level of difficulty:</label>
-                <select id="difficulty_level" name="difficulty_level">
+                <label for="difficulty_level">Level of difficulty:</label>
+                <select id="difficulty_level" name="difficulty_level" class="form-control">
                     <option value="0">--Select Level--</option>
                     <?php foreach ($levels as $level): ?>
                         <option value="<?= $level['id'] ?>"><?= htmlspecialchars($level['level']) ?></option>
@@ -115,7 +147,7 @@ Answers:
         <?php endif; ?>
         <div class="form-group">
             <label for="year">Year:</label>
-            <input type="text" id="year" name="year">
+            <input type="text" id="year" name="year" class="form-control">
         </div>
 
         <div class="form-group mb-3">
@@ -128,12 +160,105 @@ Answers:
     </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <script>
-    // Add select2 for better tag selection
     $(document).ready(function() {
-        $('select[name="tags[]"]').select2({
-            placeholder: 'Select tags',
-            allowClear: true
+        // Initialize select2 for tag with search
+        $('#tag_id').select2({
+            placeholder: 'Select course/program',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Initialize select2 for category
+        $('#category_id').select2({
+            placeholder: 'Select subject category',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Load categories when tag changes
+        $('#tag_id').on('change', function() {
+            const selectedTagId = $(this).val();
+            
+            if (selectedTagId) {
+                loadCategoriesForTag(selectedTagId);
+            } else {
+                // Clear categories if no tag selected
+                $('#category_id').empty().append('<option value="" disabled selected>Select a course first</option>');
+                $('#category_id').trigger('change');
+            }
         });
     });
+    
+    // Function to load categories associated with selected tag
+    function loadCategoriesForTag(tagId) {
+        $('#categoryLoading').removeClass('d-none');
+        
+        $.ajax({
+            url: '<?= $url('admin/get-categories-by-tags') ?>',
+            type: 'POST',
+            data: { tagIds: [tagId] },
+            success: function(response) {
+                // Parse response if needed
+                let categories;
+                try {
+                    if (typeof response === 'string') {
+                        categories = JSON.parse(response);
+                    } else {
+                        categories = response;
+                    }
+                    
+                    // Update category dropdown
+                    $('#category_id').empty();
+                    
+                    if (categories.length === 0) {
+                        $('#category_id').append('<option value="" disabled selected>No categories found for selected course</option>');
+                    } else {
+                        $('#category_id').append('<option value="" disabled selected>Select a subject category</option>');
+                        
+                        // Group categories by parent
+                        const categoriesByParent = {};
+                        const topLevelCategories = [];
+                        
+                        categories.forEach(function(category) {
+                            if (category.parent_id) {
+                                if (!categoriesByParent[category.parent_id]) {
+                                    categoriesByParent[category.parent_id] = [];
+                                }
+                                categoriesByParent[category.parent_id].push(category);
+                            } else {
+                                topLevelCategories.push(category);
+                            }
+                        });
+                        
+                        // Add top-level categories
+                        topLevelCategories.forEach(function(category) {
+                            $('#category_id').append(`<option value="${category.id}">${category.name}</option>`);
+                            
+                            // Add child categories if exists
+                            if (categoriesByParent[category.id]) {
+                                categoriesByParent[category.id].forEach(function(child) {
+                                    $('#category_id').append(`<option value="${child.id}">&nbsp;&nbsp;&nbsp;└ ${child.name}</option>`);
+                                });
+                            }
+                        });
+                    }
+                    
+                    $('#category_id').trigger('change');
+                } catch (e) {
+                    console.error('Error parsing category data:', e);
+                    $('#category_id').empty().append('<option value="" disabled selected>Error loading categories</option>');
+                }
+                
+                $('#categoryLoading').addClass('d-none');
+            },
+            error: function() {
+                $('#category_id').empty().append('<option value="" disabled selected>Error loading categories</option>');
+                $('#categoryLoading').addClass('d-none');
+            }
+        });
+    }
 </script>
