@@ -36,7 +36,6 @@ class ProfileController extends Controller
         $this->quizAttemptModel = new QuizAttemptModel($pdo);
         $this->mockTestAttemptModel = new MockTestAttemptModel($pdo);
         $this->reportModel = new QuestionReportModel($pdo);
-
     }
 
     public function index()
@@ -49,11 +48,11 @@ class ProfileController extends Controller
         $programs = $this->programModel->getWithCategory();
         $quizHistory = $this->quizAttemptModel->getUserHistory($_SESSION['user_id']);
         $mocktestHistory = $this->mockTestAttemptModel->getUserHistory($_SESSION['user_id']);
-// print_r($quizHistory);
-$reports = $this->reportModel->getUserReports($_SESSION['user_id']);
-$unreadReportsCount = $this->reportModel->getUnreadReportsCount($_SESSION['user_id']);
+        // print_r($quizHistory);
+        $reports = $this->reportModel->getUserReports($_SESSION['user_id']);
+        $unreadReportsCount = $this->reportModel->getUnreadReportsCount($_SESSION['user_id']);
 
-$_SESSION['unreadReportsCount'] = $unreadReportsCount;
+        $_SESSION['unreadReportsCount'] = $unreadReportsCount;
 
         $content = $this->uirender('user/profile', [
             'user' => $user,

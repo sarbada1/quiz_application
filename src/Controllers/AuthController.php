@@ -283,6 +283,7 @@ public function verifyOTP()
                 'expires' => time() + ($this->otpExpiryMinutes * 60)
             ];
 
+
             return $this->jsonResponse([
                 'success' => true,
                 'message' => 'OTP sent successfully'

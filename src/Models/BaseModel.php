@@ -67,17 +67,31 @@ class BaseModel
 
 
     // Insert a new row
-    public function insert($data)
-    {
+public function insert($data)
+{
+    try {
         $columns = implode(', ', array_keys($data));
         $placeholders = ':' . implode(', :', array_keys($data));
         $sql = "INSERT INTO {$this->table} ({$columns}) VALUES ({$placeholders})";
         $stmt = $this->pdo->prepare($sql);
+        
         foreach ($data as $key => $value) {
             $stmt->bindValue(":{$key}", $value);
         }
-        return $stmt->execute();
+        
+        $result = $stmt->execute();
+        
+        if ($result) {
+            // Return the last inserted ID
+            return $this->pdo->lastInsertId();
+        }
+        
+        return false;
+    } catch (PDOException $e) {
+        error_log("Error inserting data: " . $e->getMessage());
+        return false;
     }
+}
 
     // Update existing rows
     public function update($data, $conditions)
