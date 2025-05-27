@@ -35,26 +35,26 @@
     </div>
 </div>
 <!-- Add this after the register modal -->
-<div id="otpModal" class="modal">
-    <div class="modal-content">
-        <h2>Verify Your Phone Number</h2>
-        <p>We've sent a verification code to your phone number. Please enter it below.</p>
+// <div id="otpModal" class="modal">
+//     <div class="modal-content">
+//         <h2>Verify Your Phone Number</h2>
+//         <p>We've sent a verification code to your phone number. Please enter it below.</p>
 
-        <form id="otpForm" method="POST" action="<?= $url('user/verify-otp') ?>" novalidate>
-            <div class="otp-container">
-                <input type="text" maxlength="1" class="otp-input" required>
-                <input type="text" maxlength="1" class="otp-input" required>
-                <input type="text" maxlength="1" class="otp-input" required>
-                <input type="text" maxlength="1" class="otp-input" required>
-                <input type="text" maxlength="1" class="otp-input" required>
-                <input type="text" maxlength="1" class="otp-input" required>
-            </div>
-            <span class="error-message" id="otpError"></span>
-            <button type="submit" class="primary">Verify</button>
-        </form>
-        <p class="otp-helper">Didn't receive the code? <a href="#" id="resendOtp">Resend</a></p>
-    </div>
-</div>
+//         <form id="otpForm" method="POST" action="<?= $url('user/verify-otp') ?>" novalidate>
+//             <div class="otp-container">
+//                 <input type="text" maxlength="1" class="otp-input" required>
+//                 <input type="text" maxlength="1" class="otp-input" required>
+//                 <input type="text" maxlength="1" class="otp-input" required>
+//                 <input type="text" maxlength="1" class="otp-input" required>
+//                 <input type="text" maxlength="1" class="otp-input" required>
+//                 <input type="text" maxlength="1" class="otp-input" required>
+//             </div>
+//             <span class="error-message" id="otpError"></span>
+//             <button type="submit" class="primary">Verify</button>
+//         </form>
+//         <p class="otp-helper">Didn't receive the code? <a href="#" id="resendOtp">Resend</a></p>
+//     </div>
+// </div>
 
 <style>
     .otp-container {
@@ -138,14 +138,8 @@
             }
 
             if (result.success) {
-                // Show OTP modal
-                document.getElementById('registerModal').style.display = 'none';
-                const otpModal = document.getElementById('otpModal');
-                if (otpModal) {
-                    otpModal.style.display = 'block';
-                    const firstOtpInput = otpModal.querySelector('.otp-input');
-                    if (firstOtpInput) firstOtpInput.focus();
-                }
+                 alert('Registration successful! Please login to continue.');
+                 window.location.href = '/';
             } else {
                 throw new Error(result.error || 'Registration failed');
             }
