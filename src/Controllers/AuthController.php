@@ -55,69 +55,12 @@ class AuthController extends Controller
     }
 
 
-    // public function register()
-    // {
-    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    //         return $this->jsonResponse(['error' => 'Invalid request method'], 405);
-    //     }
-
-    //     try {
-    //         $data = [
-    //             'username' => trim($_POST['username'] ?? ''),
-    //             'email' => trim($_POST['email'] ?? ''),
-    //             'phone' => trim($_POST['phone'] ?? ''),
-    //             'password' => $_POST['password'] ?? '',
-    //             'cpassword' => $_POST['cpassword'] ?? ''
-    //         ];
-
-    //         // Validate data
-    //         $this->validateRegistrationData($data);
-
-    //         // Check existing email/phone
-    //         if ($this->model->isEmailExists($data['email'])) {
-    //             throw new \Exception('Email already registered');
-    //         }
-    //         if ($this->model->isPhoneExists($data['phone'])) {
-    //             throw new \Exception('Phone number already registered');
-    //         }
-
-    //         // Generate OTP
-    //         // $otp = $this->smsService->generateOTP();
-
-    //         // Send OTP
-    //         $result = $this->sendOTP($data);
-    //         if ($result['status'] === 'error') {
-    //             throw new \Exception($result['message']);
-    //         }
-
-    //         // Store data in session
-    //         // $_SESSION['temp_registration'] = [
-    //         //     'username' => $data['username'],
-    //         //     'email' => $data['email'],
-    //         //     'phone' => $data['phone'],
-    //         //     'password' => password_hash($data['password'], PASSWORD_DEFAULT),
-    //         //     'otp' => $otp,
-    //         //     'expires' => time() + ($this->otpExpiryMinutes * 60)
-    //         // ];
-
-    //         return $this->jsonResponse([
-    //             'success' => true,
-    //             'message' => 'OTP sent successfully'
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         return $this->jsonResponse([
-    //             'success' => false,
-    //             'error' => $e->getMessage()
-    //         ], 400);
-    //     }
-    // }
-
     public function register()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return $this->jsonResponse(['error' => 'Invalid request method'], 405);
         }
-    
+
         try {
             $data = [
                 'username' => trim($_POST['username'] ?? ''),
@@ -126,10 +69,10 @@ class AuthController extends Controller
                 'password' => $_POST['password'] ?? '',
                 'cpassword' => $_POST['cpassword'] ?? ''
             ];
-    
+
             // Validate data
             $this->validateRegistrationData($data);
-    
+
             // Check existing email/phone
             if ($this->model->isEmailExists($data['email'])) {
                 throw new \Exception('Email already registered');
@@ -137,53 +80,30 @@ class AuthController extends Controller
             if ($this->model->isPhoneExists($data['phone'])) {
                 throw new \Exception('Phone number already registered');
             }
-            
+
             // Generate OTP
             // $otp = $this->smsService->generateOTP();
-            
-            // // Send OTP
-            // $result = $this->smsService->sendOTP($data['phone'], $otp);
-            // if ($result['status'] === 'error') {
-            //     throw new \Exception($result['message']);
-            // }
-            
-            // Store data in session - THIS WAS MISSING
-            // $_SESSION['temp_registration'] = [
-            //     'username' => $data['username'],
-            //     'email' => $data['email'],
-            //     'phone' => $data['phone'],
-            //     'password' => password_hash($data['password'], PASSWORD_DEFAULT),
-            //     // 'otp' => $otp,
-            //     'expires' => time() + ($this->otpExpiryMinutes * 60)
-            // ];
 
-             // Create user account
-            $userId = $this->model->insert([
+            // Send OTP
+            $result = $this->sendOTP($data);
+            if ($result['status'] === 'error') {
+                throw new \Exception($result['message']);
+            }
+
+            // Store data in session
+            $_SESSION['temp_registration'] = [
                 'username' => $data['username'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
                 'password' => password_hash($data['password'], PASSWORD_DEFAULT),
-                'is_verified' => 1,
-                'usertype_id' => self::STUDENT_TYPE
-            ]);
-            $this->activityLogModel->log(
-                $userId,
-                'student_register',
-                'New student registration',
-                '👤'
-            );
-            // Clear session
-            // unset($_SESSION['temp_registration']);
+                'otp' => $otp,
+                'expires' => time() + ($this->otpExpiryMinutes * 60)
+            ];
 
             return $this->jsonResponse([
                 'success' => true,
-                'message' => 'Registration successful'
+                'message' => 'OTP sent successfully'
             ]);
-    
-            // return $this->jsonResponse([
-            //     'success' => true,
-            //     'message' => 'OTP sent successfully'
-            // ]);
         } catch (\Exception $e) {
             return $this->jsonResponse([
                 'success' => false,
@@ -191,57 +111,79 @@ class AuthController extends Controller
             ], 400);
         }
     }
-    // public function sendOTP($data)
+
+    // public function register()
     // {
+    //     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    //         return $this->jsonResponse(['error' => 'Invalid request method'], 405);
+    //     }
+    
     //     try {
-    //         $otp = rand(100000, 999999);
-
-    //         // Send OTP via email
-    //         $mail = new PHPMailer(true);
-    //         try {
-    //             //Server settings
-    //             $mail->isSMTP();
-    //             $mail->Host = 'smtp.gmail.com'; // Set the SMTP server to send through
-    //             $mail->SMTPAuth = true;
-    //             $mail->Username = 'sanjelsarbada12@gmail.com'; // SMTP username
-    //             $mail->Password = 'wwhhsjptpbtmvrlg'; // SMTP password
-    //             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    //             $mail->Port = 587;
-
-    //             //Recipients
-    //             $mail->setFrom('sanjelsarbada12@gmail.com', 'Tu Entrance');
-    //             $mail->addAddress($data['email'], $data['username']);
-
-    //             // Content
-    //             $mail->isHTML(true);
-    //             $mail->Subject = 'Your OTP Code';
-    //             $mail->Body = "Your OTP code is: <b>$otp</b>";
-
-    //             $mail->send();
-    //         } catch (Exception $e) {
-    //             throw new \Exception("Message could not be sent. Mailer Error: {$mail->ErrorInfo}");
+    //         $data = [
+    //             'username' => trim($_POST['username'] ?? ''),
+    //             'email' => trim($_POST['email'] ?? ''),
+    //             'phone' => trim($_POST['phone'] ?? ''),
+    //             'password' => $_POST['password'] ?? '',
+    //             'cpassword' => $_POST['cpassword'] ?? ''
+    //         ];
+    
+    //         // Validate data
+    //         $this->validateRegistrationData($data);
+    
+    //         // Check existing email/phone
+    //         if ($this->model->isEmailExists($data['email'])) {
+    //             throw new \Exception('Email already registered');
     //         }
-
-    //         // Send OTP via SMS (commented out)
-    //         $result = $this->smsService->sendOTP($data['phone'], $otp);
-    //         if ($result['status'] === 'error') {
-    //             throw new \Exception($result['message']);
+    //         if ($this->model->isPhoneExists($data['phone'])) {
+    //             throw new \Exception('Phone number already registered');
     //         }
+            
+    //         // Generate OTP
+    //         // $otp = $this->smsService->generateOTP();
+            
+    //         // // Send OTP
+    //         // $result = $this->smsService->sendOTP($data['phone'], $otp);
+    //         // if ($result['status'] === 'error') {
+    //         //     throw new \Exception($result['message']);
+    //         // }
+            
+    //         // Store data in session - THIS WAS MISSING
+    //         // $_SESSION['temp_registration'] = [
+    //         //     'username' => $data['username'],
+    //         //     'email' => $data['email'],
+    //         //     'phone' => $data['phone'],
+    //         //     'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+    //         //     // 'otp' => $otp,
+    //         //     'expires' => time() + ($this->otpExpiryMinutes * 60)
+    //         // ];
 
-    //         // Store data in session
-    //         $_SESSION['temp_registration'] = [
+    //          // Create user account
+    //         $userId = $this->model->insert([
     //             'username' => $data['username'],
     //             'email' => $data['email'],
     //             'phone' => $data['phone'],
     //             'password' => password_hash($data['password'], PASSWORD_DEFAULT),
-    //             'otp' => $otp,
-    //             'expires' => time() + ($this->otpExpiryMinutes * 60)
-    //         ];
+    //             'is_verified' => 1,
+    //             'usertype_id' => self::STUDENT_TYPE
+    //         ]);
+    //         $this->activityLogModel->log(
+    //             $userId,
+    //             'student_register',
+    //             'New student registration',
+    //             '👤'
+    //         );
+    //         // Clear session
+    //         // unset($_SESSION['temp_registration']);
 
     //         return $this->jsonResponse([
     //             'success' => true,
-    //             'message' => 'OTP sent successfully'
+    //             'message' => 'Registration successful'
     //         ]);
+    
+    //         // return $this->jsonResponse([
+    //         //     'success' => true,
+    //         //     'message' => 'OTP sent successfully'
+    //         // ]);
     //     } catch (\Exception $e) {
     //         return $this->jsonResponse([
     //             'success' => false,
@@ -249,6 +191,64 @@ class AuthController extends Controller
     //         ], 400);
     //     }
     // }
+    public function sendOTP($data)
+    {
+        try {
+            $otp = rand(100000, 999999);
+
+            // Send OTP via email
+            $mail = new PHPMailer(true);
+            try {
+                //Server settings
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com'; // Set the SMTP server to send through
+                $mail->SMTPAuth = true;
+                $mail->Username = 'sanjelsarbada12@gmail.com'; // SMTP username
+                $mail->Password = 'wwhhsjptpbtmvrlg'; // SMTP password
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                //Recipients
+                $mail->setFrom('sanjelsarbada12@gmail.com', 'Tu Entrance');
+                $mail->addAddress($data['email'], $data['username']);
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = 'Your OTP Code';
+                $mail->Body = "Your OTP code is: <b>$otp</b>";
+
+                $mail->send();
+            } catch (Exception $e) {
+                throw new \Exception("Message could not be sent. Mailer Error: {$mail->ErrorInfo}");
+            }
+
+            // Send OTP via SMS (commented out)
+            // $result = $this->smsService->sendOTP($data['phone'], $otp);
+            // if ($result['status'] === 'error') {
+            //     throw new \Exception($result['message']);
+            // }
+
+            // Store data in session
+            $_SESSION['temp_registration'] = [
+                'username' => $data['username'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+                'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+                'otp' => $otp,
+                'expires' => time() + ($this->otpExpiryMinutes * 60)
+            ];
+
+            return $this->jsonResponse([
+                'success' => true,
+                'message' => 'OTP sent successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
     public function verifyOTP()
     {
