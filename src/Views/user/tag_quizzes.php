@@ -29,10 +29,10 @@
                                 <h2><?= htmlspecialchars($category['name']) ?></h2>
                                 <span class="question-count">
                                     <?php if ($category['question_count'] > 0): ?>
-                                        <span class='badge badge-primary'><?= $category['question_count'] ?> Direct Questions</span>
+                                        <span class='badge badge-primary text-dark'><?= $category['question_count'] ?> Direct Questions</span>
                                     <?php endif; ?>
                                     <?php if ($category['total_questions'] > 0): ?>
-                                        <span class='badge badge-info'><?= $category['total_questions'] ?> Total Questions</span>
+                                        <span class='badge badge-info text-dark'><?= $category['total_questions'] ?> Total Questions</span>
                                     <?php endif; ?>
                                 </span>
                             </div>
