@@ -139,28 +139,51 @@ class AuthController extends Controller
             }
             
             // Generate OTP
-            $otp = $this->smsService->generateOTP();
+            // $otp = $this->smsService->generateOTP();
             
-            // Send OTP
-            $result = $this->smsService->sendOTP($data['phone'], $otp);
-            if ($result['status'] === 'error') {
-                throw new \Exception($result['message']);
-            }
+            // // Send OTP
+            // $result = $this->smsService->sendOTP($data['phone'], $otp);
+            // if ($result['status'] === 'error') {
+            //     throw new \Exception($result['message']);
+            // }
             
             // Store data in session - THIS WAS MISSING
-            $_SESSION['temp_registration'] = [
+            // $_SESSION['temp_registration'] = [
+            //     'username' => $data['username'],
+            //     'email' => $data['email'],
+            //     'phone' => $data['phone'],
+            //     'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+            //     // 'otp' => $otp,
+            //     'expires' => time() + ($this->otpExpiryMinutes * 60)
+            // ];
+
+             // Create user account
+            $userId = $this->model->insert([
                 'username' => $data['username'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
                 'password' => password_hash($data['password'], PASSWORD_DEFAULT),
-                'otp' => $otp,
-                'expires' => time() + ($this->otpExpiryMinutes * 60)
-            ];
-    
+                'is_verified' => 1,
+                'usertype_id' => self::STUDENT_TYPE
+            ]);
+            $this->activityLogModel->log(
+                $userId,
+                'student_register',
+                'New student registration',
+                '👤'
+            );
+            // Clear session
+            // unset($_SESSION['temp_registration']);
+
             return $this->jsonResponse([
                 'success' => true,
-                'message' => 'OTP sent successfully'
+                'message' => 'Registration successful'
             ]);
+    
+            // return $this->jsonResponse([
+            //     'success' => true,
+            //     'message' => 'OTP sent successfully'
+            // ]);
         } catch (\Exception $e) {
             return $this->jsonResponse([
                 'success' => false,
