@@ -30,10 +30,12 @@ class MockTestQuestionController extends Controller
     public $categoryModel; // Add this property
     public $subjectTestModel;
     public $activityLogModel;
+    protected $pdo;
 
     public function __construct(PDO $pdo)
     {
-        $this->mockTestModel = new MockTestModel($pdo);
+         $this->pdo = $pdo; // Explicitly store PDO connection
+         $this->mockTestModel = new MockTestModel($pdo);
         $this->mockTestQuestionModel = new MockTestQuestionModel($pdo);
         $this->subjectTestModel = new SubjectTestModel($pdo);
         $this->questionModel = new QuestionModel($pdo);
@@ -80,10 +82,10 @@ class MockTestQuestionController extends Controller
         $categoryId = $_GET['category_id'] ?? null;
         $page = $_GET['page'] ?? 1;
         $questionsPerPage = 10;
-        
+
         // Get category allocations (questions count and marks)
         $categoryAllocations = $this->quizModel->getCategoryAllocations($quizId);
-       
+
         // Count existing questions by category
         $existingQuestionsByCategory = $this->mockTestQuestionModel->getQuestionCountByCategory($quizId);
         // print_r($existingQuestionsByCategory);
@@ -91,7 +93,7 @@ class MockTestQuestionController extends Controller
         $allQuestions = $this->questionModel->getFilteredQuestionsByCategoryAndQuiz($quizId, $page, $questionsPerPage, $categoryId);
         $totalQuestions = $this->questionModel->getTotalQuestionsByCategoryAndQuiz($quizId, $categoryId);
         $totalPages = ceil($totalQuestions / $questionsPerPage);
-    
+
         $content = $this->render('admin/mocktestquestion/add', [
             'quiz' => $quiz,
             'questions' => $allQuestions,
@@ -105,6 +107,11 @@ class MockTestQuestionController extends Controller
         ]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
+
+
+    /**
+     * Show mock test with questions from allocated categories and their subcategories
+     */
     public function showMockTest($setId)
     {
         try {
@@ -123,60 +130,111 @@ class MockTestQuestionController extends Controller
             // Get programs for navigation
             $programs = $this->programModel->getWithCategory();
 
+            // Check login status for user experience
+            $isLoggedIn = isset($_SESSION['user_id']) &&
+                isset($_SESSION['usertype_id']) &&
+                $_SESSION['usertype_id'] == self::STUDENT_TYPE;
+
             // Get category configurations for this quiz
             $categoryConfigs = $this->quizModel->getQuizCategories($quiz['id']);
             if (empty($categoryConfigs)) {
                 throw new Exception('No categories configured for this quiz');
             }
 
+            // Log for debugging
+            error_log("Found " . count($categoryConfigs) . " category configurations for quiz {$quiz['id']}");
+
             // Generate questions based on configurations
             $questions = [];
             $totalMarks = 0;
+            $groupedQuestions = [];
 
+            // For each allocated category, fetch questions respecting the hierarchy
             foreach ($categoryConfigs as $config) {
-                $categoryQuestions = $this->questionModel->getRandomQuestionsByCategory(
-                    $config['category_id'],
-                    $config['number_of_questions']
+                // Skip categories with no allocations
+                if ($config['number_of_questions'] <= 0) {
+                    continue;
+                }
+
+                // Calculate marks per question for this category
+                $marksPerQuestion = $config['marks_allocated'] / $config['number_of_questions'];
+
+                // Get category hierarchy (parent + children)
+                $categoryHierarchy = $this->categoryModel->getCategoryWithChildren($config['category_id']);
+
+                // Log the category hierarchy for debugging
+                error_log("Category {$config['category_id']} ({$config['name']}) has " .
+                    count($categoryHierarchy['children']) . " child categories");
+
+                // Create array of all category IDs to query (parent + children)
+                $categoryIds = [$config['category_id']]; // Start with parent
+                foreach ($categoryHierarchy['children'] as $child) {
+                    $categoryIds[] = $child['id'];
+                }
+
+                // Get quiz tag IDs to filter questions
+                $quizTags = $this->quizModel->getQuizTagIds($quiz['id']);
+                $tagCondition = !empty($quizTags) ? implode(',', $quizTags) : null;
+
+                // Log the query parameters
+                error_log("Fetching {$config['number_of_questions']} questions from categories: " .
+                    implode(',', $categoryIds) . " with tags: " . ($tagCondition ?? 'any'));
+
+                // Get questions from this category and its children
+                $categoryQuestions = $this->fetchQuestionsFromCategories(
+                    $categoryIds,
+                    $config['number_of_questions'],
+                    $tagCondition
                 );
 
+                // Log the results
+                error_log("Found " . count($categoryQuestions) . " questions for category {$config['name']}");
+
+                // Process each question
                 foreach ($categoryQuestions as $question) {
+                    // Get answers for this question
                     $answers = $this->mockTestQuestionModel->getAnswers($question['id']);
-                    $questions[] = [
+
+                    // Build the question object with all required data
+                    $questionItem = [
                         'id' => $question['id'],
                         'question_text' => $question['question_text'],
-                        'category_id' => $config['category_id'],
-                        'category_name' => $config['name'],
-                        'marks' => $config['marks_allocated'] / $config['number_of_questions'],
+                        'category_id' => $config['category_id'], // Use the parent category ID
+                        'category_name' => $config['name'],     // Use the parent category name
+                        'actual_category_id' => $question['category_id'], // Store the actual category ID
+                        'marks' => $marksPerQuestion,
                         'answers' => $answers
                     ];
-                    $totalMarks += $config['marks_allocated'] / $config['number_of_questions'];
+
+                    // Add to the combined questions array
+                    $questions[] = $questionItem;
+
+                    // Group by parent category for display
+                    if (!isset($groupedQuestions[$config['category_id']])) {
+                        $groupedQuestions[$config['category_id']] = [
+                            'name' => $config['name'],
+                            'questions' => []
+                        ];
+                    }
+
+                    $groupedQuestions[$config['category_id']]['questions'][] = $questionItem;
+
+                    // Update total marks
+                    $totalMarks += $marksPerQuestion;
                 }
             }
 
-            // Session setup
+            // Log the final counts
+            error_log("Total questions generated: " . count($questions));
+            error_log("Total marks: $totalMarks");
+
+            // Session setup for test
             $_SESSION['current_set_id'] = $setId;
             $_SESSION['current_quiz_id'] = $quiz['id'];
             $_SESSION['test_start_time'] = time();
             $_SESSION['total_marks'] = $totalMarks;
-            $this->resetTestSession();
-
-            $isLoggedIn = isset($_SESSION['user_id']) &&
-                isset($_SESSION['usertype_id']) &&
-                $_SESSION['usertype_id'] == self::STUDENT_TYPE;
-
-            $groupedQuestions = [];
-            foreach ($questions as $question) {
-                $categoryId = $question['category_id'];
-                if (!isset($groupedQuestions[$categoryId])) {
-                    $groupedQuestions[$categoryId] = [
-                        'name' => $question['category_name'],
-                        'questions' => []
-                    ];
-                }
-                $groupedQuestions[$categoryId]['questions'][] = $question;
-            }
-
             $_SESSION['grouped_questions'] = $groupedQuestions;
+            $this->resetTestSession();
 
             // Render view 
             $content = $this->uirender('user/mocktest', [
@@ -196,6 +254,51 @@ class MockTestQuestionController extends Controller
             $_SESSION['status'] = 'error';
             header('Location: /mocktests');
             exit;
+        }
+    }
+
+    /**
+     * Helper method to fetch questions from multiple categories
+     * 
+     * @param array $categoryIds Array of category IDs to fetch questions from
+     * @param int $limit Maximum number of questions to fetch
+     * @param string|null $tagIds Comma-separated list of tag IDs to filter by
+     * @return array Array of questions
+     */
+    private function fetchQuestionsFromCategories($categoryIds, $limit, $tagIds = null)
+    {
+        try {
+            // Convert array to string for the SQL query
+            $categoryIdList = implode(',', $categoryIds);
+
+            // Build the base query
+            $sql = "SELECT q.* FROM questions q ";
+
+            // Add tag filtering if needed
+            if ($tagIds) {
+                $sql .= "JOIN question_tags qt ON q.id = qt.question_id ";
+                $sql .= "WHERE q.category_id IN ($categoryIdList) ";
+                $sql .= "AND qt.tag_id IN ($tagIds) ";
+            } else {
+                $sql .= "WHERE q.category_id IN ($categoryIdList) ";
+            }
+
+            // Add randomization and limit
+            $sql .= "ORDER BY RAND() LIMIT $limit";
+
+            // Use prepare instead of query
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+
+            if (!$stmt) {
+                error_log("Query failed: " . print_r($this->pdo->errorInfo(), true));
+                return [];
+            }
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            error_log("Error fetching questions from categories: " . $e->getMessage());
+            return [];
         }
     }
     public function submitTest()
@@ -276,7 +379,8 @@ class MockTestQuestionController extends Controller
                 $_SESSION['user_id'],
                 'test_attempt',
                 'Submitted mock test',
-'fa-clipboard-check'            );
+                'fa-clipboard-check'
+            );
 
             // Clear test session
             unset($_SESSION['test_answers']);
@@ -380,23 +484,23 @@ class MockTestQuestionController extends Controller
                 // Get question details to determine its category
                 $question = $this->questionModel->getById($questionId);
                 $categoryId = $question['category_id'];
-                
+
                 // Get allocation for this category
                 $allocation = $this->quizModel->getCategoryAllocation($mockTestId, $categoryId);
-                
+
                 // Count existing questions in this category
                 $existingCount = $this->mockTestQuestionModel->getQuestionCountForCategory($mockTestId, $categoryId);
-                
+
                 // Check if adding would exceed the limit
                 if ($existingCount >= $allocation['number_of_questions']) {
                     echo json_encode([
-                        'success' => false, 
+                        'success' => false,
                         'message' => 'Cannot add more questions. Maximum limit of ' . $allocation['number_of_questions'] . ' questions reached for this category.',
                         'limit_exceeded' => true
                     ]);
                     return;
                 }
-                
+
                 // Add the question to the mock test
                 $this->mockTestQuestionModel->createQuestion($mockTestId, $questionId);
                 echo json_encode(['success' => true, 'message' => 'Question added successfully']);

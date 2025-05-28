@@ -35,12 +35,11 @@ endif;
 
     <div class="form-group">
         <label>Tags</label>
-        <select name="tags[]" multiple>
+        <select name="tags[]" >
             <?php foreach ($tags as $tag): ?>
                 <option value="<?= $tag['id'] ?>"><?= htmlspecialchars($tag['name']) ?></option>
             <?php endforeach; ?>
         </select>
-        <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple categories</small>
 
     </div>
     <div class="form-group">

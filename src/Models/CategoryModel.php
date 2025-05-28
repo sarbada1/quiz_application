@@ -139,22 +139,56 @@ class CategoryModel extends BaseModel
     }
     public function getCategoriesByQuizTags($quizId)
     {
-        $sql = "SELECT DISTINCT c.* FROM categories c
-            JOIN categories c_child ON c_child.parent_id = c.id OR c_child.id = c.id
-            JOIN tags t ON t.id = c_child.tag_id OR t.id = c.tag_id
-            JOIN quiz_tags qt ON qt.tag_id = t.id
-            WHERE qt.quiz_id = :quiz_id
-            ORDER BY c.name ASC";
-
         try {
+            // This query finds categories associated with the quiz tags
+            $sql = "SELECT DISTINCT c.id, c.name, c.slug, c.parent_id
+                FROM categories c
+                JOIN tag_categories tc ON c.id = tc.category_id
+                JOIN quiz_tags qt ON tc.tag_id = qt.tag_id
+                WHERE qt.quiz_id = :quiz_id and (c.parent_id = 0 OR c.parent_id IS NULL)
+                ORDER BY c.name ASC";
+
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute(['quiz_id' => $quizId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $stmt->execute([':quiz_id' => $quizId]);
+
+            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Log the results for debugging
+            error_log("Found " . count($categories) . " categories for quiz ID $quizId");
+
+            return $categories;
         } catch (PDOException $e) {
-            error_log("Error fetching categories by quiz tags: " . $e->getMessage());
+            error_log("Error getting categories by quiz tags: " . $e->getMessage());
             return [];
         }
     }
+    public function getCategoryWithChildren($categoryId)
+{
+    try {
+        // Get the parent category
+        $sql = "SELECT * FROM categories WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $categoryId]);
+        $parent = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$parent) {
+            return ['id' => $categoryId, 'name' => 'Unknown', 'children' => []];
+        }
+        
+        // Get all children
+        $sql = "SELECT * FROM categories WHERE parent_id = :parent_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':parent_id' => $categoryId]);
+        $children = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Return parent with children
+        $parent['children'] = $children;
+        return $parent;
+    } catch (PDOException $e) {
+        error_log("Error getting category with children: " . $e->getMessage());
+        return ['id' => $categoryId, 'name' => 'Error', 'children' => []];
+    }
+}
     public function getParentCategoriesWithChildren()
     {
         $sql = "
@@ -283,6 +317,8 @@ class CategoryModel extends BaseModel
             return [];
         }
     }
+
+
     /**
      * Get hierarchical categories for a specific tag including parent categories
      */

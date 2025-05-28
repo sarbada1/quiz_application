@@ -23,7 +23,6 @@ endif;
         <select name="type" required>
             <option value="mock" <?= $quiz['type'] === 'mock' ? 'selected' : '' ?>>Mock Test</option>
             <option value="previous_year" <?= $quiz['type'] === 'previous_year' ? 'selected' : '' ?>>Previous Year</option>
-            <option value="quiz" <?= $quiz['type'] === 'quiz' ? 'selected' : '' ?>>Quiz</option>
             <option value="real_exam" <?= $quiz['type'] === 'real_exam' ? 'selected' : '' ?>>Real Exam</option>
         </select>
     </div>

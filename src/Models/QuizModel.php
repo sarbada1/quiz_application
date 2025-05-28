@@ -105,38 +105,38 @@ class QuizModel extends BaseModel
     }
 
     public function getCategoryAllocation($quizId, $categoryId)
-{
-    $sql = "SELECT qc.*, c.name 
+    {
+        $sql = "SELECT qc.*, c.name 
             FROM quiz_categories qc
             JOIN categories c ON c.id = qc.category_id
             WHERE qc.quiz_id = :quiz_id AND qc.category_id = :category_id";
-    
-    $stmt = $this->pdo->prepare($sql);
-    $stmt->execute([
-        ':quiz_id' => $quizId,
-        ':category_id' => $categoryId
-    ]);
-    
-    return $stmt->fetch(PDO::FETCH_ASSOC);
-}
-public function getCategoryAllocations($quizId)
-{
-    $sql = "SELECT qc.*, c.name 
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':quiz_id' => $quizId,
+            ':category_id' => $categoryId
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    public function getCategoryAllocations($quizId)
+    {
+        $sql = "SELECT qc.*, c.name 
             FROM quiz_categories qc
             JOIN categories c ON c.id = qc.category_id
             WHERE qc.quiz_id = :quiz_id";
-    
-    $stmt = $this->pdo->prepare($sql);
-    $stmt->execute([':quiz_id' => $quizId]);
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    $allocations = [];
-    foreach ($results as $row) {
-        $allocations[$row['category_id']] = $row;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':quiz_id' => $quizId]);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $allocations = [];
+        foreach ($results as $row) {
+            $allocations[$row['category_id']] = $row;
+        }
+
+        return $allocations;
     }
-    
-    return $allocations;
-}
 
     public function saveMockConfiguration($data)
     {
@@ -433,10 +433,15 @@ public function getCategoryAllocations($quizId)
 
     public function getQuizTagIds($quizId)
     {
-        $sql = "SELECT tag_id FROM quiz_tags WHERE quiz_id = :quiz_id";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['quiz_id' => $quizId]);
-        return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'tag_id');
+        try {
+            $sql = "SELECT tag_id FROM quiz_tags WHERE quiz_id = :quiz_id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':quiz_id' => $quizId]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException $e) {
+            error_log("Error getting quiz tag IDs: " . $e->getMessage());
+            return [];
+        }
     }
     private function updateQuizCategories($quizId, $categories)
     {
@@ -751,6 +756,35 @@ GROUP BY q.id, c.id, l.id";
             // Alternatively: throw new \Exception("Error fetching questions: " . $e->getMessage());
         }
     }
+    public function getQuizTags($quizId)
+    {
+        try {
+            $sql = "SELECT t.id, t.name, t.slug
+                FROM tags t
+                JOIN quiz_tags qt ON t.id = qt.tag_id
+                WHERE qt.quiz_id = :quiz_id
+                ORDER BY t.name ASC";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':quiz_id' => $quizId]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting quiz tags: " . $e->getMessage());
+            return [];
+        }
+    }
+    public function deleteQuizCategories($quizId)
+    {
+        try {
+            $sql = "DELETE FROM quiz_categories WHERE quiz_id = :quiz_id";
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([':quiz_id' => $quizId]);
+        } catch (PDOException $e) {
+            error_log("Error deleting quiz categories: " . $e->getMessage());
+            throw new Exception("Failed to delete existing category configurations");
+        }
+    }
     public function getBySlug($slug)
     {
         $sql = "SELECT q.*, c.name as category_name, l.level as difficulty_name,
@@ -832,24 +866,24 @@ GROUP BY q.id, c.id, l.id";
     }
 
     public function updateCategoryAllocation($quizId, $categoryId, $numberQuestions, $marksAllocated)
-{
-    try {
-        $sql = "UPDATE quiz_categories 
+    {
+        try {
+            $sql = "UPDATE quiz_categories 
                 SET number_of_questions = :num_questions, marks_allocated = :marks_allocated 
                 WHERE quiz_id = :quiz_id AND category_id = :category_id";
-        
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            ':num_questions' => $numberQuestions,
-            ':marks_allocated' => $marksAllocated,
-            ':quiz_id' => $quizId,
-            ':category_id' => $categoryId
-        ]);
-        
-        return $stmt->rowCount() > 0;
-    } catch (PDOException $e) {
-        error_log("Error updating category allocation: " . $e->getMessage());
-        return false;
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':num_questions' => $numberQuestions,
+                ':marks_allocated' => $marksAllocated,
+                ':quiz_id' => $quizId,
+                ':category_id' => $categoryId
+            ]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error updating category allocation: " . $e->getMessage());
+            return false;
+        }
     }
-}
 }

@@ -451,74 +451,112 @@ public function submitQuiz()
 
         echo $this->render('admin/layout', ['content' => $content]);
     }
-    public function configureMock($quizId)
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            try {
-                foreach ($_POST['categories'] as $categoryId => $config) {
+public function configureMock($quizId)
+{
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        try {
+            // Start a transaction
+            $this->pdo->beginTransaction();
+            
+            // Delete existing quiz categories first
+            $this->quizModel->deleteQuizCategories($quizId);
+            
+            // Add new quiz categories
+            foreach ($_POST['categories'] as $categoryId => $config) {
+                // Only add if marks or questions are specified
+                if (!empty($config['marks']) || !empty($config['questions'])) {
                     $this->quizModel->addQuizCategory($quizId, [
                         'category_id' => $categoryId,
-                        'marks_allocated' => $config['marks'],
-                        'number_of_questions' => $config['questions']
+                        'marks_allocated' => $config['marks'] ?: 0,
+                        'number_of_questions' => $config['questions'] ?: 0
                     ]);
                 }
-
-                // Generate random questions for each category
-                $this->quizModel->generateMockQuestions($quizId);
-
-                $_SESSION['message'] = "Mock test configured successfully!";
-                header('Location: /admin/quiz/list');
-                exit;
-            } catch (Exception $e) {
-                $_SESSION['message'] = $e->getMessage();
             }
-        }
+            
+            // Generate random questions for each category
+            $this->quizModel->generateMockQuestions($quizId);
+            
+            // Commit transaction
+            $this->pdo->commit();
 
-        $quiz = $this->quizModel->getById($quizId);
-        $categories = $this->categoryModel->getAllCategories();
-
-        return $this->render('admin/quiz/configure_mock', [
-            'quiz_id' => $quizId,
-            'total_marks' => $quiz['total_marks'],
-            'categories' => $categories
-        ]);
-    }
-    public function showMockConfig($id)
-    {
-        try {
-            $quiz = $this->quizModel->getById($id);
-
-
-            // Get all categories
-            $categories = $this->categoryModel->getCategoriesByQuizTags($id);
-
-            // Get existing configuration
-            $quiz_categories = $this->quizModel->getQuizCategories($id);
-
-            // Format existing config for easy access in view
-            $existing_config = [];
-            foreach ($quiz_categories as $qc) {
-                $existing_config[$qc['category_id']] = [
-                    'marks_allocated' => $qc['marks_allocated'],
-                    'number_of_questions' => $qc['number_of_questions']
-                ];
-            }
-
-            $content = $this->render('admin/quiz/config', [
-                'quiz' => $quiz,
-                'categories' => $categories,
-                'quiz_categories' => $quiz_categories,
-                'existing_config' => $existing_config
-            ]);
-
-            echo $this->render('admin/layout', ['content' => $content]);
+            $_SESSION['message'] = "Mock test configured successfully!";
+            $_SESSION['status'] = "success";
+            header('Location: /admin/quiz/list');
+            exit;
         } catch (Exception $e) {
-            $_SESSION['message'] = $e->getMessage();
-            $_SESSION['status'] = 'error';
-            header('Location: /admin/quiz/configure-mock/$id');
+            // Rollback transaction on error
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            
+            $_SESSION['message'] = "Error: " . $e->getMessage();
+            $_SESSION['status'] = "danger";
+            header('Location: /admin/quiz/configure-mock/' . $quizId);
             exit;
         }
     }
+
+    // Redirect to the show method
+    header('Location: /admin/quiz/show-mock-config/' . $quizId);
+    exit;
+}
+/**
+ * Show mock test configuration page with categories based on quiz tags
+ */
+public function showMockConfig($id)
+{
+    try {
+        $quiz = $this->quizModel->getById($id);
+        if (!$quiz) {
+            throw new Exception("Quiz not found");
+        }
+        
+        // Get quiz tags
+        $quizTags = $this->quizModel->getQuizTags($id);
+        if (empty($quizTags)) {
+            $_SESSION['message'] = "This quiz doesn't have any tags. Please add tags first.";
+            $_SESSION['status'] = "warning";
+            header('Location: /admin/quiz/edit/' . $id);
+            exit;
+        }
+        
+        // Log found tags for debugging
+        error_log("Found " . count($quizTags) . " tags for quiz {$quiz['title']}");
+        
+        // Get categories associated with the quiz tags
+        $categories = $this->categoryModel->getCategoriesByQuizTags($id);
+        
+        // Log found categories for debugging
+        error_log("Found " . count($categories) . " categories for quiz tags");
+        
+        // Get existing configuration
+        $quiz_categories = $this->quizModel->getQuizCategories($id);
+
+        // Format existing config for easy access in view
+        $existing_config = [];
+        foreach ($quiz_categories as $qc) {
+            $existing_config[$qc['category_id']] = [
+                'marks_allocated' => $qc['marks_allocated'],
+                'number_of_questions' => $qc['number_of_questions']
+            ];
+        }
+
+        $content = $this->render('admin/quiz/config', [
+            'quiz' => $quiz,
+            'categories' => $categories,
+            'quiz_tags' => $quizTags,
+            'quiz_categories' => $quiz_categories,
+            'existing_config' => $existing_config
+        ]);
+
+        echo $this->render('admin/layout', ['content' => $content]);
+    } catch (Exception $e) {
+        $_SESSION['message'] = $e->getMessage();
+        $_SESSION['status'] = 'error';
+        header('Location: /admin/quiz/list');
+        exit;
+    }
+}
 
     public function saveMockConfig($id)
     {

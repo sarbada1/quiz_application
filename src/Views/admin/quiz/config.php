@@ -18,41 +18,73 @@ endif;
             <h3>Total Marks: <?= $quiz['total_marks'] ?></h3>
             <p>Remaining: <span id="remaining-marks"><?= $quiz['total_marks'] ?></span></p>
         </div>
+        
+        <div class="tags-info mt-3">
+            <h4>Quiz Tags:</h4>
+            <div class="tags-list">
+                <?php if (!empty($quiz_tags)): ?>
+                    <?php foreach ($quiz_tags as $tag): ?>
+                        <span class="badge bg-primary"><?= htmlspecialchars($tag['name']) ?></span>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <span class="text-muted">No tags added to this quiz</span>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 
-    <form id="mockConfigForm" action="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>" method="POST">
-        <div class="category-grid">
-            <?php foreach ($categories as $category): ?>
-                <div class="category-card">
-                    <h3><?= htmlspecialchars($category['name']) ?></h3>
-                    <div class="input-group">
-                        <div class="form-field">
-                            <label>Marks Allocation</label>
-                            <input type="number"
-                                name="categories[<?= $category['id'] ?>][marks]"
-                                class="marks-input"
-                                min="0"
-                                max="<?= $quiz['total_marks'] ?>"
-                                value="<?= isset($existing_config[$category['id']]) ? $existing_config[$category['id']]['marks_allocated'] : '' ?>"
-                                onchange="validateMarksInput(this)">
-                        </div>
-                        <div class="form-field">
-                            <label>Number of Questions</label>
-                            <input type="number"
-                                name="categories[<?= $category['id'] ?>][questions]"
-                                min="0"
-                                value="<?= isset($existing_config[$category['id']]) ? $existing_config[$category['id']]['number_of_questions'] : '' ?>"
-                                onchange="validateQuestions(this)">
+    <?php if (empty($categories)): ?>
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> No categories found for the selected tags.
+            <p class="mt-2">Please ensure that:</p>
+            <ul>
+                <li>The quiz has tags assigned to it</li>
+                <li>Those tags are associated with categories in the Tag Management</li>
+            </ul>
+            <p>
+                <a href="<?= $url('admin/quiz/edit/' . $quiz['id']) ?>" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i> Edit Quiz Tags
+                </a>
+                <a href="<?= $url('admin/tag/list') ?>" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-tags"></i> Manage Tags
+                </a>
+            </p>
+        </div>
+    <?php else: ?>
+        <form id="mockConfigForm" action="<?= $url('admin/quiz/configure-mock/' . $quiz['id']) ?>" method="POST">
+            <div class="category-grid">
+                <?php foreach ($categories as $category): ?>
+                    <div class="category-card">
+                        <h3><?= htmlspecialchars($category['name']) ?></h3>
+                        <div class="input-group">
+                            <div class="form-field">
+                                <label>Marks Allocation</label>
+                                <input type="number"
+                                    name="categories[<?= $category['id'] ?>][marks]"
+                                    class="marks-input"
+                                    min="0"
+                                    max="<?= $quiz['total_marks'] ?>"
+                                    value="<?= isset($existing_config[$category['id']]) ? $existing_config[$category['id']]['marks_allocated'] : '' ?>"
+                                    onchange="validateMarksInput(this)">
+                            </div>
+                            <div class="form-field">
+                                <label>Number of Questions</label>
+                                <input type="number"
+                                    name="categories[<?= $category['id'] ?>][questions]"
+                                    min="0"
+                                    value="<?= isset($existing_config[$category['id']]) ? $existing_config[$category['id']]['number_of_questions'] : '' ?>"
+                                    onchange="validateQuestions(this)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
+                <?php endforeach; ?>
+            </div>
 
-        <button type="submit" id="submit-btn" class="btn btn-primary mt-3">
-            Save Configuration
-        </button>
-    </form>
+            <button type="submit" id="submit-btn" class="btn btn-primary mt-3">
+                Save Configuration
+            </button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <style>
@@ -87,6 +119,25 @@ endif;
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .tags-info {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .tags-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 20px;
     }
 
     .progress-bar {
@@ -153,50 +204,6 @@ endif;
 </style>
 
 <script>
-    function loadCategoryForms() {
-        const selectedCategories = Array.from(document.getElementById('categorySelect').selectedOptions)
-            .map(option => ({
-                id: option.value,
-                name: option.text
-            }));
-
-        if (selectedCategories.length === 0) {
-            alert('Please select at least one category');
-            return;
-        }
-
-        const container = document.getElementById('categoryFormsContainer');
-        container.innerHTML = '';
-
-        selectedCategories.forEach(category => {
-            container.innerHTML += `
-            <div class="category-card">
-                <h3>${category.name}</h3>
-                <div class="input-group">
-                    <div class="form-field">
-                        <label>Marks Allocation</label>
-                        <input type="number" 
-                               name="categories[${category.id}][marks]" 
-                               class="marks-input"
-                               min="0" 
-                               max="<?= $quiz['total_marks'] ?>"
-                               onchange="updateMarks()">
-                    </div>
-                    <div class="form-field">
-                        <label>Number of Questions</label>
-                        <input type="number" 
-                               name="categories[${category.id}][questions]"
-                               min="0"
-                               onchange="validateQuestions(this)">
-                    </div>
-                </div>
-            </div>
-        `;
-        });
-
-        document.getElementById('mockConfigForm').style.display = 'block';
-    }
-
     function updateMarks() {
         let total = <?= $quiz['total_marks'] ?>;
         let used = 0;
@@ -238,57 +245,13 @@ endif;
         }
     }
 
-    function submitMockConfig(event) {
-        event.preventDefault();
-
-        const form = document.getElementById('mockConfigForm');
-        const formData = new FormData(form);
-
-        fetch('<?= $url('admin/quiz/update-config') ?>', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                const alertContainer = document.getElementById('alert-container');
-
-                alertContainer.innerHTML = `
-            <div class="alert alert-${data.success ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
-                ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-
-                if (data.success) {
-                    // Update form values if needed
-                    updateFormValues(data.config);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('alert-container').innerHTML = `
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                An error occurred. Please try again.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-            });
-
-        return false;
-    }
-
-    function updateFormValues(config) {
-        // Update any form values that need to be refreshed
-        if (config.remaining_marks) {
-            document.getElementById('remaining-marks').textContent = config.remaining_marks;
-        }
-    }
     document.querySelectorAll('.marks-input').forEach(input => {
         input.dataset.lastValue = input.value; // Store initial value
         input.addEventListener('change', function() {
             validateMarksInput(this);
         });
     });
+    
     // Initialize on load
     document.addEventListener('DOMContentLoaded', updateMarks);
 </script>

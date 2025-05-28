@@ -441,6 +441,7 @@
 </style>
 
 <body>
+
     <?php if (isset($_SESSION['message'])): ?>
         <div id="alert" class="alert mt-20 w-75 alert-<?= $_SESSION['status'] ?>" role="alert">
             <button type="button" class="closealert" data-dismiss="alert" aria-label="Close">
@@ -465,20 +466,18 @@
         <div class="test-container" id="testContainer" data-set-id="<?= $set['id'] ?>">
             <!-- Header Section -->
 
-            <div class="header">
-                <div class="timer" id="timer">
-                    <i class="fas fa-clock"></i>
-                    --:--:--
-                </div>
-                <div class="timer-progress" id="timerProgress"></div>
-                <button id="submitBtn" class="submit-btn" onclick="submitTest()">Submit Test</button>
-
-                <div class="test-info">
-                    <h3><?= htmlspecialchars($quiz['title']) ?> - Set <?= htmlspecialchars($set['set_name']) ?></h3>
-                    <p>Total Marks: <?= $totalMarks ?></p>
-                </div>
-
-            </div>
+        <div class="header">
+    <div class="timer" id="timer">
+        <i class="fas fa-clock"></i> --:--:--
+    </div>
+    <div class="timer-progress" id="timerProgress"></div>
+    <button id="submitBtn" class="submit-btn" onclick="submitTest()">Submit Test</button>
+    
+    <div class="test-info">
+        <h3><?= htmlspecialchars($quiz['title']) ?> - Set <?= htmlspecialchars($set['set_name']) ?></h3>
+        <p>Total Marks: <?= $totalMarks ?></p>
+    </div>
+</div>
 
 
             <div class="main-content mt-20">
@@ -621,15 +620,20 @@
             document.getElementById('quizModal').style.display = 'block';
         }
         document.getElementById('testContainer').style.display = 'block';
-        startTimer();
+        initializeTimer();
+
         showQuestion(currentQuestion);
         initializeQuestionPalette();
         // Close modal when clicking the close button
-        document.querySelector('.close').addEventListener('click', function() {
-            document.getElementById('quizModal').style.display = 'none';
-            window.history.back();
+        document.querySelectorAll('.close').forEach(function(closeBtn) {
+            closeBtn.onclick = function() {
+                const modalId = this.getAttribute('data-modal');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
         });
-
         // Close modal when clicking outside
         window.onclick = function(event) {
             if (event.target == document.getElementById('quizModal')) {
@@ -650,11 +654,61 @@
     }
 
 
+ function initializeTimer() {
+    // Get duration from PHP in minutes or use default (60 minutes)
+    const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
+    let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
+    console.log("Quiz duration:", durationMinutes, "minutes");
 
-    document.addEventListener('DOMContentLoaded', function() {
-        showQuestion(1);
-        startTimer();
-    });
+    const timerDisplay = document.getElementById('timer');
+    console.log("Timer display element:", timerDisplay);
+
+    // Make sure timer element exists
+    if (!timerDisplay) {
+        console.error('Timer display element not found');
+        return;
+    }
+
+    // Clear any existing timer
+    if (window.quizTimer) {
+        clearInterval(window.quizTimer);
+    }
+
+    // Set initial display
+    updateTimerDisplay();
+
+    // Start countdown
+    window.quizTimer = setInterval(() => {
+        timeLeft--;
+
+        updateTimerDisplay();
+
+        // Warning for last 5 minutes
+        if (timeLeft <= 300) {
+            timerDisplay.style.color = '#e74c3c';
+            timerDisplay.style.animation = 'pulse 1s infinite';
+        }
+
+        // Auto-submit when time is up
+        if (timeLeft <= 0) {
+            clearInterval(window.quizTimer);
+            submitTest();
+        }
+    }, 1000);
+
+    // Helper function to update timer display
+    function updateTimerDisplay() {
+        const hours = Math.floor(timeLeft / 3600);
+        const minutes = Math.floor((timeLeft % 3600) / 60);
+        const seconds = timeLeft % 60;
+
+        timerDisplay.innerHTML = `
+            <i class="fas fa-clock"></i>
+            ${hours > 0 ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}
+        `;
+    }
+}
+
 
     function initializeQuestionPalette() {
         // Add event listeners to question options to mark as attempted
@@ -758,38 +812,14 @@
         });
     }
 
-    function startTimer() {
-        const timerDisplay = document.getElementById('timer');
-        timer = setInterval(() => {
-            const hours = Math.floor(timeLeft / 3600);
-            const minutes = Math.floor((timeLeft % 3600) / 60);
-            const seconds = timeLeft % 60;
 
-            timerDisplay.innerHTML = `
-            <i class="fas fa-clock"></i>
-            ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}
-        `;
-
-            if (timeLeft <= 300) {
-                timerDisplay.style.color = '#e74c3c';
-                timerDisplay.style.animation = 'pulse 1s infinite';
-            }
-
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                submitTest();
-            }
-
-            timeLeft--;
-        }, 1000);
-    }
 
     function showReviewModal() {
-    const modal = document.createElement('div');
-    modal.className = 'review-modal';
-    console.log(userAnswers);
+        const modal = document.createElement('div');
+        modal.className = 'review-modal';
+        console.log(userAnswers);
 
-    const reviewHTML = `
+        const reviewHTML = `
         <div class="review-modal-content">
             <span class="close" onclick="closeReviewModal()">&times;</span>
             <h2>Review Answers</h2>
@@ -824,10 +854,11 @@
                                             ${option.innerHTML}
                                         </div>
                                     `;
-                                }).join('')}
-                            </div>
-                        </div>
-                    `;
+    }).join('')
+    } <
+    /div> <
+    /div>
+    `;
                 }).join('')}
             </div>
         </div>
@@ -836,7 +867,7 @@
     modal.innerHTML = reviewHTML;
     document.body.appendChild(modal);
     modal.style.display = 'block';
-}
+    }
 
     function closeReviewModal() {
         const modal = document.querySelector('.review-modal');
@@ -1100,7 +1131,6 @@
 
     });
     document.addEventListener('DOMContentLoaded', function() {
-        startTimer();
 
         // Show first 5 questions initially
         const questions = document.querySelectorAll('.question-block');
