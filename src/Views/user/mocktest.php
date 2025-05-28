@@ -1,4 +1,5 @@
 <style>
+     
     .category-section {
         background: white;
         padding: 20px;
@@ -467,9 +468,11 @@
             <!-- Header Section -->
 
         <div class="header">
+    <div class="timer-container">
     <div class="timer" id="timer">
-        <i class="fas fa-clock"></i> --:--:--
+        <i class="fas fa-clock"></i> <span id="time-display">00:00:00</span>
     </div>
+</div>
     <div class="timer-progress" id="timerProgress"></div>
     <button id="submitBtn" class="submit-btn" onclick="submitTest()">Submit Test</button>
     
@@ -610,6 +613,114 @@
 </body>
 
 <script>
+
+
+// function initializeTimer() {
+//     // Get duration from PHP in minutes or use default (60 minutes)
+//     const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
+//     let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
+//     console.log("Quiz duration:", durationMinutes, "minutes");
+
+//     const timerDisplay = document.getElementById('timer');
+//     console.log("Timer display element:", timerDisplay);
+
+//     // Make sure timer element exists
+//     if (!timerDisplay) {
+//         console.error('Timer display element not found');
+//         return;
+//     }
+
+//     // Clear any existing timer
+//     if (window.quizTimer) {
+//         clearInterval(window.quizTimer);
+//     }
+
+//     // Set initial display
+//     updateTimerDisplay();
+
+//     // Start countdown
+//     window.quizTimer = setInterval(() => {
+//         timeLeft--;
+
+//         updateTimerDisplay();
+
+//         // Warning for last 5 minutes
+//         if (timeLeft <= 300) {
+//             timerDisplay.style.color = '#e74c3c';
+//             timerDisplay.style.animation = 'pulse 1s infinite';
+//         }
+
+//         // Auto-submit when time is up
+//         if (timeLeft <= 0) {
+//             clearInterval(window.quizTimer);
+//             submitTest();
+//         }
+//     }, 1000);
+
+//     // Helper function to update timer display
+//     function updateTimerDisplay() {
+//         const hours = Math.floor(timeLeft / 3600);
+//         const minutes = Math.floor((timeLeft % 3600) / 60);
+//         const seconds = timeLeft % 60;
+
+//         timerDisplay.innerHTML = `
+//             <i class="fas fa-clock"></i>
+//             ${hours > 0 ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}
+//         `;
+//     }
+// }
+
+function initializeTimer() {
+    // Get duration from PHP in minutes or use default (60 minutes)
+    const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
+    let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
+    
+    // Get timer display element
+    const timerDisplay = document.getElementById('time-display');
+    const timerContainer = document.getElementById('timer');
+    
+    // Make sure timer elements exist
+    if (!timerDisplay || !timerContainer) {
+        console.error('Timer elements not found');
+        return;
+    }
+
+    // Clear any existing timer
+    if (window.quizTimer) {
+        clearInterval(window.quizTimer);
+    }
+
+    // Set initial display
+    updateTimerDisplay();
+
+    // Start countdown
+    window.quizTimer = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+
+        // Warning for last 5 minutes
+        if (timeLeft <= 300) {  // 5 minutes = 300 seconds
+            timerContainer.style.color = '#e74c3c';
+            timerContainer.style.fontWeight = 'bold';
+        }
+
+        // Auto-submit when time is up
+        if (timeLeft <= 0) {
+            clearInterval(window.quizTimer);
+            submitTest();
+        }
+    }, 1000);
+
+    // Helper function to update timer display
+    function updateTimerDisplay() {
+        const hours = Math.floor(timeLeft / 3600);
+        const minutes = Math.floor((timeLeft % 3600) / 60);
+        const seconds = timeLeft % 60;
+
+        timerDisplay.textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
     let answeredQuestions = new Set();
     // let currentQuestion = 0;
     document.addEventListener('DOMContentLoaded', function() {
@@ -620,6 +731,7 @@
             document.getElementById('quizModal').style.display = 'block';
         }
         document.getElementById('testContainer').style.display = 'block';
+
         initializeTimer();
 
         showQuestion(currentQuestion);
@@ -654,60 +766,7 @@
     }
 
 
- function initializeTimer() {
-    // Get duration from PHP in minutes or use default (60 minutes)
-    const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
-    let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
-    console.log("Quiz duration:", durationMinutes, "minutes");
-
-    const timerDisplay = document.getElementById('timer');
-    console.log("Timer display element:", timerDisplay);
-
-    // Make sure timer element exists
-    if (!timerDisplay) {
-        console.error('Timer display element not found');
-        return;
-    }
-
-    // Clear any existing timer
-    if (window.quizTimer) {
-        clearInterval(window.quizTimer);
-    }
-
-    // Set initial display
-    updateTimerDisplay();
-
-    // Start countdown
-    window.quizTimer = setInterval(() => {
-        timeLeft--;
-
-        updateTimerDisplay();
-
-        // Warning for last 5 minutes
-        if (timeLeft <= 300) {
-            timerDisplay.style.color = '#e74c3c';
-            timerDisplay.style.animation = 'pulse 1s infinite';
-        }
-
-        // Auto-submit when time is up
-        if (timeLeft <= 0) {
-            clearInterval(window.quizTimer);
-            submitTest();
-        }
-    }, 1000);
-
-    // Helper function to update timer display
-    function updateTimerDisplay() {
-        const hours = Math.floor(timeLeft / 3600);
-        const minutes = Math.floor((timeLeft % 3600) / 60);
-        const seconds = timeLeft % 60;
-
-        timerDisplay.innerHTML = `
-            <i class="fas fa-clock"></i>
-            ${hours > 0 ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}
-        `;
-    }
-}
+  
 
 
     function initializeQuestionPalette() {
