@@ -1,22 +1,38 @@
-
-
 <main>
     <section class="hero">
         <div class="hero-content">
-            <h1>Master Your Knowledge</h1>
-            <p>Take quizzes, practice mock tests, and track your progress</p>
-            <div class="hero-buttons">
-                <!-- <a href="<?= $url('quiz') ?>" class="btn-primary">Start Quiz</a> -->
-                <a href="<?= $url('test') ?>" class="btn-secondary">Try Mock Test</a>
-                <a href="<?= $url('previous-year-quizzes') ?>" class="btn btn-secondary">Previous Year Quizzes</a>
+            <div class="hero-text">
+                <h1>Master Your Knowledge</h1>
+                <p class="hero-subtitle">Take quizzes, practice mock tests, and track your progress</p>
+                <div class="hero-buttons">
+                    <!-- <a href="<?= $url('quiz') ?>" class="btn-primary">Start Quiz</a> -->
+                    <a href="<?= $url('test') ?>" class="btn-secondary">Try Mock Test</a>
+                    <a href="<?= $url('previous-year-quizzes') ?>" class="btn btn-secondary">Previous Year Quizzes</a>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">1000+</span>
+                    <span class="stat-label">Questions</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">50+</span>
+                    <span class="stat-label">Categories</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">10K+</span>
+                    <span class="stat-label">Users</span>
+                </div>
             </div>
         </div>
         <div class="hero-image">
-            <img src="<?= $url('src/Views/user/img/bg.png') ?>" alt="Quiz illustration">
+            <img src="<?= $url('src/Views/user/img/bg.png') ?>" alt="Quiz illustration" class="floating">
+            <div class="hero-dots"></div>
         </div>
     </section>
 
-    <section class="categories-section">
+    <!-- Rest of your existing code remains unchanged -->
+     <section class="categories-section">
         <h2>Available Quizzes</h2>
         <div class="category-grid">
             <?php foreach ($tagsWithQuestions as $tag): ?>
@@ -42,6 +58,336 @@
         </div>
     </section>
 </main>
+
+<style>
+    /* Updated Hero Section Styles */
+    .hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4rem 8%;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
+        min-height: 80vh;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(52, 152, 219, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+        z-index: 1;
+        animation: pulse 15s infinite alternate;
+    }
+
+    .hero-content {
+        flex: 1;
+        max-width: 600px;
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+
+    .hero-text {
+        animation: slideIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .hero-content h1 {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+        color: #2c3e50;
+        line-height: 1.2;
+        font-weight: 800;
+        background: linear-gradient(90deg, #2c3e50, #4a6491);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: #5a6a7f;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+        max-width: 90%;
+        position: relative;
+    }
+
+    .hero-subtitle::after {
+        content: '';
+        position: absolute;
+        bottom: -1rem;
+        left: 0;
+        width: 60px;
+        height: 4px;
+        background: linear-gradient(90deg, #3498db, #9b59b6);
+        border-radius: 2px;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.9rem 1.8rem;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        border: none;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #3498db;
+        border: 2px solid #3498db;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(52, 152, 219, 0.2);
+    }
+
+    .btn-secondary:hover {
+        background: #f8f9fa;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(52, 152, 219, 0.1);
+    }
+
+    .hero-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+        animation: fadeInUp 1s 0.3s both;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #3498db;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+    }
+
+    .hero-image {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-image img {
+        max-width: 100%;
+        height: auto;
+        position: relative;
+        z-index: 3;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .hero-dots {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(52, 152, 219, 0.15) 0%, rgba(52, 152, 219, 0) 70%);
+        border-radius: 50%;
+        z-index: 1;
+        animation: pulse 8s infinite alternate;
+    }
+
+    /* Animations */
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1.05);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .hero-content h1 {
+            font-size: 3rem;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .hero {
+            flex-direction: column;
+            text-align: center;
+            padding: 4rem 5%;
+            gap: 3rem;
+        }
+
+        .hero-content {
+            align-items: center;
+            text-align: center;
+        }
+
+        .hero-subtitle {
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-subtitle::after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .hero-buttons {
+            justify-content: center;
+        }
+
+        .hero-stats {
+            justify-content: center;
+        }
+
+        .stat-item {
+            align-items: center;
+        }
+
+        .hero-image {
+            width: 80%;
+            margin: 0 auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-content h1 {
+            font-size: 2.5rem;
+        }
+
+        .hero-buttons {
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            width: 100%;
+            padding: 1rem;
+        }
+
+        .hero-stats {
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-content h1 {
+            font-size: 2rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+        }
+    }
+
+    /* Rest of your existing styles remain unchanged */
+    .categories-section {
+        /* ... your existing categories styles ... */
+    }
+</style>
+
+<script>
+    // Your existing script remains unchanged
+    document.querySelectorAll('.show-more').forEach(button => {
+        button.addEventListener('click', () => {
+            const categoryId = button.dataset.category;
+            const hiddenContent = document.getElementById(`category-${categoryId}`);
+
+            if (hiddenContent.style.display === 'none') {
+                hiddenContent.style.display = 'block';
+                button.textContent = 'Show Less';
+            } else {
+                hiddenContent.style.display = 'none';
+                button.textContent = 'Show More';
+            }
+        });
+    });
+</script>
+
+
+
+ 
 <?php include __DIR__ . '/auth/login.php'; ?>
 <?php include __DIR__ . '/auth/register.php'; ?>
 <style>
