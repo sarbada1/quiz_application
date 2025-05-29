@@ -6,6 +6,7 @@ use MVC\Controller;
 use MVC\Models\CategoryModel;
 use MVC\Models\ProgramModel;
 use MVC\Models\QuizModel;
+use MVC\Models\TagModel;
 use PDO;
 use PDOException;
 
@@ -14,12 +15,14 @@ class ProgramController extends Controller
     public $categoryModel;
     public $programModel;
     public $quizModel;
+    public $tagModel;
 
     public function __construct(PDO $pdo)
     {
         $this->categoryModel = new CategoryModel($pdo);
         $this->programModel = new ProgramModel($pdo);
         $this->quizModel = new QuizModel($pdo);
+        $this->tagModel = new TagModel($pdo);
     }
 
     public function index()
@@ -65,21 +68,25 @@ class ProgramController extends Controller
         $content = $this->render('admin/program/list', ['programs' => $programs]);
         echo $this->render('admin/layout', ['content' => $content]);
     }
-public function showTest()
-{
-    $programs = $this->programModel->getWithCategory();
-    $quiz = $this->quizModel->getAll();
-    
+    public function showTest()
+    {
+        // $programs = $this->programModel->getWithCategory();
+        // $quiz = $this->quizModel->getAll();
+        // $tags= $this->tagModel->getTagsWithType('mock');
+        $mock_quiz_by_tag = $this->quizModel->getQuizByTagsWithType('mock');
+        
 
-    $content = $this->uirender('user/test', [
-        'programs' => $programs,
-        'quizzes' => $quiz,
+        $content = $this->uirender('user/test', [
+            // 'programs' => $programs,
+            // 'quizzes' => $quiz,
+            'mockquiz' => $mock_quiz_by_tag,
+            // 'tags' => $tags
 
-    ]);
+        ]);
 
-    echo $this->uirender('user/layout', ['content' => $content]);
+        echo $this->uirender('user/layout', ['content' => $content]);
 
-}
+    }
 
     public function edit($id)
     {
