@@ -16,6 +16,7 @@ class TagModel extends BaseModel
     {
         return $this->get([], null, null, 'name ASC');
     }
+
     public function getById($id)
     {
         $result = $this->get([['field' => 'id', 'operator' => '=', 'value' => $id]]);
@@ -108,6 +109,28 @@ public function getTagsWithQuestions()
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         error_log("Error getting tags with questions: " . $e->getMessage());
+        return [];
+    }
+}
+
+// get all tags with mock tests available
+public function getTagsWithType($type)
+{
+    try {
+        $sql = "
+        SELECT DISTINCT t.*
+FROM tags t
+JOIN quiz_tags qt ON t.id = qt.tag_id
+JOIN quizzes q ON qt.quiz_id = q.id
+WHERE q.type = '$type';
+        ";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error getting tags with mock tests: " . $e->getMessage());
         return [];
     }
 }
