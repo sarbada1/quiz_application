@@ -13,6 +13,20 @@ class QuizModel extends BaseModel
         parent::__construct($pdo, 'quizzes');
     }
 
+    public function getQuizByTagsWithType($type){
+        $sql = "SELECT quiz_tags.*,tags.name as t_name,tags.slug as t_slug,quizzes.title as q_title,quizzes.type as q_type,quizzes.slug as q_slug,quizzes.id as q_id
+        FROM `quiz_tags`
+        left join tags on tags.id=quiz_tags.tag_id left join quizzes on quizzes.id=quiz_tags.quiz_id where quizzes.type='$type';";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Error fetching quizzes: " . $e->getMessage());
+        }
+    }
+
     public function getAll()
     {
         $sql = "SELECT 
@@ -66,7 +80,9 @@ class QuizModel extends BaseModel
         LEFT JOIN categories c ON qc.category_id = c.id
         WHERE q.type = :type
         GROUP BY q.id
-        ORDER BY q.created_at DESC";
+        ORDER BY q.created_at DESC
+        LIMIT 5
+        ";
 
         try {
             $stmt = $this->pdo->prepare($sql);
