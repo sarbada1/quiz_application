@@ -61,10 +61,12 @@ class QuizController extends Controller
         $quizzes = $this->quizModel->getQuiz('previous_year');
         $programs = $this->programModel->getWithCategory();
         $quiz = $this->quizModel->getAll();
+        $previous_year_by_tag = $this->quizModel->getQuizByTagsWithType('previous_year');
         $content = $this->uirender('user/previous_year_quizzes', [
             'previousYearQuizzes' => $quizzes,
             'quizzes' => $quiz,
             'programs' => $programs,
+            'previous_year_quiz' => $previous_year_by_tag,
         ]);
         echo $this->uirender('user/layout', ['content' => $content]);
     }
