@@ -21,7 +21,7 @@ $unreadReportsCount = $_SESSION['unreadReportsCount'] ?? 0;
              
                 <li class="dropdown-parent">
                     <a href="<?= $url('test') ?>" class="nav-link test-link">
-                        <span>Test</span>
+                        <span>Mock Test</span>
                         <i class="fas fa-caret-down dropdown-arrow"></i>
                     </a>
                     <ul class="dropdown-menu test-dropdown">
