@@ -31,7 +31,12 @@ class HomeController extends Controller
     public function index()
     {
         try {
-            // Get tags that have questions (instead of categories)
+
+
+          
+
+            $mock_quiz_by_tag = $this->quizModel->getQuizByTagsWithType('mock');
+            $previous_year_by_tag = $this->quizModel->getQuizByTagsWithType('previous_year');
             $tagsWithQuestions = $this->tagModel->getTagsWithQuestions();
             
             // Add some properties for better display
@@ -46,7 +51,10 @@ class HomeController extends Controller
             unset($tag);
             
             $content = $this->uirender('user/index', [
-                'tagsWithQuestions' => $tagsWithQuestions
+                'tagsWithQuestions' => $tagsWithQuestions,
+                'mockquiz' => $mock_quiz_by_tag,
+                'previous_year_quiz' => $previous_year_by_tag,
+
             ]);
             
             echo $this->uirender('user/layout', ['content' => $content]);
