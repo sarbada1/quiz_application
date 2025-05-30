@@ -1,5 +1,138 @@
- <!-- Previous year question -->
-<section class="categories-section">
+<main>
+    <!-- hero section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Master Your Knowledge</h1>
+                <p class="hero-subtitle">Take quizzes, practice mock tests, and track your progress</p>
+                <div class="hero-buttons">
+                    <a href="<?= $url('test') ?>" class="btn-secondary">Try Mock Test</a>
+                    <a href="<?= $url('previous-year-quizzes') ?>" class="btn btn-secondary">Previous Year Quizzes</a>
+                </div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="<?= $url('src/Views/user/img/bg.png') ?>" alt="Quiz illustration" class="floating">
+            <div class="hero-dots"></div>
+        </div>
+    </section>
+
+    <!-- tags sections -->
+    <section class="categories-section">
+        <h2>Quizzes Categories</h2>
+        <div class="category-grid">
+            <?php foreach ($tagsWithQuestions as $tag): ?>
+                <div class="category-card">
+                    <div class="category-header">
+                        <i class="<?= $tag['icon'] ?? 'fas fa-book' ?>"></i>
+                        <h3><?= htmlspecialchars($tag['name']) ?> Quiz</h3>
+                    </div>
+                    <p><?= htmlspecialchars($tag['description'] ?? 'Take quizzes and test your knowledge.') ?></p>
+                    <a href="<?= $url('tag/' . htmlspecialchars($tag['slug'] ?? '')) ?>" class="btn-explore">
+                        Explore
+                    </a>
+                </div>
+            <?php endforeach; ?>
+            
+            <?php if (empty($tagsWithQuestions)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No quizzes available at the moment. Please check back later.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
+
+    <!-- mock test section --> 
+    <section class='categories-section'>
+        <h2>Mock Test</h2>
+        <div class="tst-main-container">
+            <!-- Category Tabs -->
+            <div class="tst-category-tabs">
+                <div class="tst-tab-header">
+                    <button class="tst-tab-btn active" data-tab="all">All Programs</button>
+                    <?php
+                    $uniqueTags = [];
+                    foreach($mockquiz as $quiz) {
+                        $tagSlug = $quiz['t_slug'];
+                        $tagName = $quiz['t_name'];
+                        if (!isset($uniqueTags[$tagSlug])) {
+                            $uniqueTags[$tagSlug] = $tagName;
+                        }
+                    }
+                    
+                    foreach($uniqueTags as $slug => $name) {
+                        echo '<button class="tst-tab-btn" data-tab="' . htmlspecialchars($slug) . '">' . htmlspecialchars($name) . '</button>';
+                    }
+                    ?>
+                </div>
+                
+                <!-- All Programs Tab -->
+                <div class="tst-tab-content active" id="tab-all">
+                    <div class="tst-grid-wrapper">
+                        <?php
+                        foreach($mockquiz as $quiz) {
+                            echo '<div class="tst-program-card" data-category="' . htmlspecialchars($quiz['t_slug']) . '">';
+                            echo '<h3 class="tst-card-title">' . htmlspecialchars($quiz['q_title']) . '</h3>';
+                            echo '<div class="tst-card-actions">';
+                            echo '<a href="'.$url('test/' . $quiz['q_slug']).'" class="tst-btn tst-btn-primary">' . htmlspecialchars(ucfirst($quiz['q_type'])) . ' Test</a>';
+                            echo '</div>';
+                            echo '</div>';
+                        }
+                        
+                        if (empty($mockquiz)) {
+                            echo '<div class="tst-empty-state">';
+                            echo '<div class="tst-empty-icon">';
+                            echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">';
+                            echo '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>';
+                            echo '</svg>';
+                            echo '</div>';
+                            echo '<p class="tst-empty-text">No mock tests available</p>';
+                            echo '</div>';
+                        }
+                        ?>
+                    </div>
+                </div>
+                
+                <?php
+                foreach($uniqueTags as $slug => $name) {
+                    echo '<div class="tst-tab-content" id="tab-' . htmlspecialchars($slug) . '">';
+                    echo '<div class="tst-grid-wrapper">';
+                    
+                    $filteredQuizzes = array_filter($mockquiz, function($quiz) use ($slug) {
+                        return $quiz['t_slug'] === $slug;
+                    });
+                    
+                    foreach($filteredQuizzes as $quiz) {
+                        echo '<div class="tst-program-card">';
+                        echo '<h3 class="tst-card-title">' . htmlspecialchars($quiz['q_title']) . '</h3>';
+                        echo '<div class="tst-card-actions">';
+                        echo '<a href="'.$url('test/' . $quiz['q_slug']).'" class="tst-btn tst-btn-primary">' . htmlspecialchars(ucfirst($quiz['q_type'])) . ' Test</a>';
+                        echo '</div>';
+                        echo '</div>';
+                    }
+                    
+                    if (empty($filteredQuizzes)) {
+                        echo '<div class="tst-empty-state">';
+                        echo '<div class="tst-empty-icon">';
+                        echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">';
+                        echo '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>';
+                        echo '</svg>';
+                        echo '</div>';
+                        echo '<p class="tst-empty-text">No ' . htmlspecialchars($name) . ' mock tests available</p>';
+                        echo '</div>';
+                    }
+                    
+                    echo '</div>';
+                    echo '</div>';
+                }
+                ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- Previous year question -->
+    <section class="categories-section">
         <h2>Previous Year Questions</h2>
         <div class="tst-main-container">
             <!-- Category Tabs -->
@@ -86,10 +219,100 @@
                 ?>
             </div>
         </div>
-</section>
-<?php include __DIR__ . '/auth/login.php'; ?>
-<?php include __DIR__ . '/auth/register.php'; ?>
- 
+    </section>
+    
+    <!-- real exam question  -->
+    <section class="categories-section">
+        <h2>Real Exam Questions</h2>
+        <div class="tst-main-container">
+            <!-- Category Tabs -->
+            <div class="tst-category-tabs">
+                <div class="tst-tab-header">
+                    <button class="tst-tab-btn active" data-tab="re-all">All Programs</button>
+                    <?php
+                    $uniqueRETags = [];
+                    foreach($real_exam_quiz as $quiz) {
+                        $tagSlug = $quiz['t_slug'];
+                        $tagName = $quiz['t_name'];
+                        if (!isset($uniqueRETags[$tagSlug])) {
+                            $uniqueRETags[$tagSlug] = $tagName;
+                        }
+                    }
+                    
+                    foreach($uniqueRETags as $slug => $name) {
+                        echo '<button class="tst-tab-btn" data-tab="re-' . htmlspecialchars($slug) . '">' . htmlspecialchars($name) . '</button>';
+                    }
+                    ?>
+                </div>
+                
+                <!-- All Programs Tab -->
+                <div class="tst-tab-content active" id="tab-re-all">
+                    <div class="tst-grid-wrapper">
+                        <?php
+                        foreach($real_exam_quiz as $quiz) {
+                            echo '<div class="tst-program-card" data-category="' . htmlspecialchars($quiz['t_slug']) . '">';
+                            echo '<h3 class="tst-card-title">' . htmlspecialchars($quiz['q_title']) . '</h3>';
+                            echo '<div class="tst-card-actions">';
+                            echo '<a href="' . $url('real-exam-quiz/' . $quiz['q_id']) . '" class="tst-btn tst-btn-primary">' . 
+                                htmlspecialchars(ucfirst(str_replace('_', ' ', $quiz['q_type']))) . '</a>';
+                            echo '</div>';
+                            echo '</div>';
+                        }
+                        
+                        if (empty($real_exam_quiz)) {
+                            echo '<div class="tst-empty-state">';
+                            echo '<div class="tst-empty-icon">';
+                            echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">';
+                            echo '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>';
+                            echo '</svg>';
+                            echo '</div>';
+                            echo '<p class="tst-empty-text">No real exam questions available</p>';
+                            echo '</div>';
+                        }
+                        ?>
+                    </div>
+                </div>
+                
+                <?php
+                foreach($uniqueRETags as $slug => $name) {
+                    echo '<div class="tst-tab-content" id="tab-re-' . htmlspecialchars($slug) . '">';
+                    echo '<div class="tst-grid-wrapper">';
+                    
+                    $filteredREQuizzes = array_filter($real_exam_quiz, function($quiz) use ($slug) {
+                        return $quiz['t_slug'] === $slug;
+                    });
+                    
+                    foreach($filteredREQuizzes as $quiz) {
+                        echo '<div class="tst-program-card">';
+                        echo '<h3 class="tst-card-title">' . htmlspecialchars($quiz['q_title']) . '</h3>';
+                        echo '<div class="tst-card-actions">';
+                        echo '<a href="' . $url('real-exam-quiz/' . $quiz['q_id']) . '" class="tst-btn tst-btn-primary">' . 
+                            htmlspecialchars(ucfirst(str_replace('_', ' ', $quiz['q_type']))) . '</a>';
+                        echo '</div>';
+                        echo '</div>';
+                    }
+                    
+                    if (empty($filteredREQuizzes)) {
+                        echo '<div class="tst-empty-state">';
+                        echo '<div class="tst-empty-icon">';
+                        echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">';
+                        echo '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>';
+                        echo '</svg>';
+                        echo '</div>';
+                        echo '<p class="tst-empty-text">No ' . htmlspecialchars($name) . ' real exam questions available</p>';
+                        echo '</div>';
+                    }
+                    
+                    echo '</div>';
+                    echo '</div>';
+                }
+                ?>
+            </div>
+        </div>
+    </section>
+    
+</main>
+
 <script>
     // Tab switching functionality for both sections
     document.addEventListener('DOMContentLoaded', function() {
@@ -128,14 +351,12 @@
     });
 </script>
 
+<?php include __DIR__ . '/auth/login.php'; ?>
+<?php include __DIR__ . '/auth/register.php'; ?>
+
 <style>
-
-    .categories-section {
-        padding: 5rem;
-        margin-top:7rem;
-    }
+    /* Your existing styles remain unchanged */
     .tst-main-container {
-
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
@@ -301,5 +522,367 @@
             flex-direction: column;
         }
     }
- 
+
+    /* Your other existing styles remain unchanged */
+      .hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2rem 8%;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 60vh;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.05) 100%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        flex: 1;
+        max-width: 500px;
+        position: relative;
+        z-index: 2;
+        animation: slideIn 0.8s ease-out;
+    }
+
+    .hero-content h1 {
+        font-size: 2.8rem;
+        margin-bottom: 1rem;
+        color: #2c3e50;
+        line-height: 1.2;
+        font-weight: 700;
+    }
+
+    .hero-content p {
+        font-size: 1.1rem;
+        color: #505d6b;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.8rem 1rem;
+        border-radius: 30px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #3498db;
+        border: 2px solid #3498db;
+    }
+
+    .btn-primary:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary:hover {
+        background: #f8f9fa;
+        transform: translateY(-2px);
+    }
+
+    .hero-image {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        animation: fadeIn 1s ease-out;
+    }
+
+    .hero-image img {
+        max-width: 90%;
+        height: auto;
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero {
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem 5%;
+        }
+
+        .hero-content {
+            margin-bottom: 2rem;
+        }
+
+        .hero-buttons {
+            justify-content: center;
+        }
+
+        .hero-content h1 {
+            font-size: 2.2rem;
+        }
+    }
+
+    .categories-section {
+        padding: 4rem 8%;
+        background: #fff;
+    }
+
+    .categories-section h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #2c3e50;
+    }
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .category-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .category-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .category-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .category-header i {
+        font-size: 2rem;
+        color: #3498db;
+    }
+
+    .category-header h3 {
+        font-size: 1.5rem;
+        color: #2c3e50;
+    }
+
+    .subcategories {
+        margin: 1rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .subcategory-link {
+        color: #6c757d;
+        text-decoration: none;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: background 0.3s ease;
+    }
+
+    .subcategory-link:hover {
+        background: #f8f9fa;
+        color: #3498db;
+    }
+
+    .show-more {
+        background: none;
+        border: none;
+        color: #3498db;
+        cursor: pointer;
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .hidden-subcategories {
+        display: none;
+    }
+
+    .btn-explore {
+        display: inline-block;
+        padding: 0.8rem 1.5rem;
+        background: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        margin-top: 1rem;
+        transition: background 0.3s ease;
+    }
+
+    .btn-explore:hover {
+        background: #2980b9;
+    }
+
+    /* Responsive navbar */
+    @media (max-width: 768px) {
+        #navbar {
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .sidebar-nav ul li {
+            display: block;
+            text-align: center;
+        }
+
+        .sidebar-nav ul li ul.dropdown {
+            position: static;
+            width: 100%;
+            box-shadow: none;
+        }
+    }
+
+    /* Responsive main content */
+    @media (max-width: 1024px) {
+        .main-content {
+            grid-template-columns: 1fr;
+            margin-top: 120px;
+        }
+
+        .question-palette {
+            position: relative;
+            top: 0;
+            order: -1;
+        }
+
+        .palette-buttons {
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        }
+    }
+
+    /* Responsive header */
+    @media (max-width: 768px) {
+        .header {
+            flex-direction: column;
+            padding: 10px;
+            height: auto;
+        }
+
+        .timer-section {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+    }
+
+    /* Responsive quiz container */
+    @media (max-width: 768px) {
+        .test-container {
+            margin: 100px auto 20px;
+            padding: 10px;
+        }
+
+        .question-card {
+            padding: 15px;
+        }
+
+        .option {
+            padding: 12px;
+        }
+    }
+
+    /* Responsive review section */
+    @media (max-width: 768px) {
+        .review-container {
+            padding: 10px;
+        }
+
+        .review-item {
+            margin: 5px 0;
+        }
+
+        .answers-list {
+            padding: 5px;
+        }
+    }
+
+    /* Performance modal responsive */
+    @media (max-width: 768px) {
+        .performance-modal .modal-content {
+            width: 95%;
+            padding: 15px;
+        }
+
+        .performance-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-buttons button {
+            width: 100%;
+        }
+    }
+
+    /* Timer responsive */
+    @media (max-width: 768px) {
+        .timer {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Question navigation responsive */
+    @media (max-width: 480px) {
+        .palette-btn {
+            width: 35px;
+            height: 35px;
+            font-size: 12px;
+        }
+
+        .category-section {
+            padding: 10px;
+        }
+    }
 </style>
