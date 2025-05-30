@@ -37,6 +37,7 @@ class HomeController extends Controller
 
             $mock_quiz_by_tag = $this->quizModel->getQuizByTagsWithType('mock');
             $previous_year_by_tag = $this->quizModel->getQuizByTagsWithType('previous_year');
+            $real_exam_by_tag = $this->quizModel->getQuizByTagsWithType('real_exam');
             $tagsWithQuestions = $this->tagModel->getTagsWithQuestions();
             
             // Add some properties for better display
@@ -54,7 +55,7 @@ class HomeController extends Controller
                 'tagsWithQuestions' => $tagsWithQuestions,
                 'mockquiz' => $mock_quiz_by_tag,
                 'previous_year_quiz' => $previous_year_by_tag,
-
+                'real_exam_quiz' => $real_exam_by_tag
             ]);
             
             echo $this->uirender('user/layout', ['content' => $content]);
