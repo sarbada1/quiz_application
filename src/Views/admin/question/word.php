@@ -102,27 +102,25 @@ Answers:
                 <p class="text-muted">Select course and subject for these questions</p>
 
                 <div class="form-group">
-                    <label for="tag_id">Course/Program:</label>
-                    <select name="tag_id" id="tag_id" class="form-control" required>
-                        <option value="" disabled selected>Select a course/program</option>
-                        <?php foreach ($tags as $tag): ?>
-                            <option value="<?= $tag['id'] ?>"><?= htmlspecialchars($tag['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <small class="form-text text-muted">Select the course these questions belong to (e.g., BCA, CSIT)</small>
-                </div>
-                
-                <div class="category-selection-container">
-                    <div class="form-group">
-                        <label for="category_id">Subject Category:</label>
-                        <select name="category_id" id="category_id" class="form-control" required>
-                            <option value="" disabled selected>Select a course first</option>
-                        </select>
-                        <small class="form-text text-muted">Select the subject category for these questions</small>
-                    </div>
-                    
-               
-                </div>
+        <label for="tags">Tags:</label>
+        <select name="tag_id" id="tags" class="form-control ">
+            <option selected disabled>--Select tag--</option>
+            <?php foreach ($tags as $tag): ?>
+                <option value="<?= $tag['id'] ?>"><?= htmlspecialchars($tag['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <small class="form-text text-muted">Select tags to filter available categories</small>
+    </div>
+
+    <div class="form-group">
+        <label for="category_id">Category:</label>
+        <select id="category_id" name="category_id" required class="form-control ">
+            <option value="">--Select Category--</option>
+            <?php foreach ($categories as $category): ?>
+                <option value="<?= $category['id'] ?>" data-parent="<?= $category['parent_id'] ?? 0 ?>"><?= htmlspecialchars($category['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
             </div>
      
             <div class="form-group">
@@ -165,20 +163,8 @@ Answers:
 
 <script>
     $(document).ready(function() {
-        // Initialize select2 for tag with search
-        $('#tag_id').select2({
-            placeholder: 'Select course/program',
-            allowClear: true,
-            width: '100%'
-        });
-        
-        // Initialize select2 for category
-        $('#category_id').select2({
-            placeholder: 'Select subject category',
-            allowClear: true,
-            width: '100%'
-        });
-        
+
+
         // Load categories when tag changes
         $('#tag_id').on('change', function() {
             const selectedTagId = $(this).val();

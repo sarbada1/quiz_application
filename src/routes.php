@@ -219,6 +219,12 @@ return [
         'method' => 'POST'
     ],
     [
+        'route' => '/admin/tag/categories/{id}',
+        'controller' => TagController::class,
+        'action' => 'getCategoriesForTag',
+        'method' => 'GET'
+    ],
+    [
         'route' => '/admin/tag/get-categories-for-tag/{id}',
         'controller' => TagController::class,
         'action' => 'getCategoriesForTag',

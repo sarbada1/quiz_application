@@ -338,15 +338,15 @@ class QuestionImportController extends Controller
     {
         try {
             $content = trim($_POST['question_content']);
-  $tagId = $_POST['tag_id'] ?? null;
-    $categoryId = $_POST['category_id'] ?? null;
-                $quiz_id = $_POST['quiz_id'] ?? null;
-    if (!$tagId || !$categoryId) {
-        $_SESSION['message'] = "Both course and category must be selected";
-        $_SESSION['status'] = "danger";
-        header('Location: ' . $_SERVER['HTTP_REFERER']);
-        exit;
-    }
+            $tagId = $_POST['tag_id'] ?? null;
+            $categoryId = $_POST['category_id'] ?? null;
+            $quiz_id = $_POST['quiz_id'] ?? null;
+            if (!$tagId || !$categoryId) {
+                $_SESSION['message'] = "Both course and category must be selected";
+                $_SESSION['status'] = "danger";
+                header('Location: ' . $_SERVER['HTTP_REFERER']);
+                exit;
+            }
             // Optional fields
             $difficulty_level = $_POST['difficulty_level'] ?? '';
             $question_type = $_POST['question_type'] ?? '';
@@ -357,7 +357,7 @@ class QuestionImportController extends Controller
             if (count($parts) !== 2) {
                 throw new Exception('Invalid format - missing Answers section');
             }
-          
+
             $questions = $this->parseQuestions($parts[0]);
             $answers = $this->parseAnswers($parts[1]);
 
@@ -391,7 +391,7 @@ class QuestionImportController extends Controller
                 } else {
                     // Insert into the default questions table
                     $stmt = $this->pdo->prepare("
-                        INSERT INTO questions (question_text, difficulty_level,category_id,tag_id, marks, question_type, year) 
+                        INSERT INTO questions (question_text, difficulty_level,category_id, marks, question_type, year) 
                         VALUES (:question_text, :difficulty_level,:category_id, :marks, :question_type, :year)
                     ");
 
@@ -407,10 +407,11 @@ class QuestionImportController extends Controller
                     $question_id = $this->pdo->lastInsertId();
                 }
 
-              if ($question_id && !empty($tagId)) {
-                    $this->handleTags($tagId, $question_id);
-                }
-    
+           if ($question_id && !empty($tagId)) {
+    $tagIds = is_array($tagId) ? $tagId : [$tagId];
+    $this->handleTags($tagIds, $question_id);
+}
+
 
                 // Insert answers
                 foreach ($question['options'] as $letter => $text) {
