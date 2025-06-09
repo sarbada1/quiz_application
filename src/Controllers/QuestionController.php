@@ -33,6 +33,7 @@ class QuestionController extends Controller
         $this->questionModel = new QuestionModel($pdo);
         $this->tagModel = new TagModel($pdo);
         $this->levelModel = new LevelModel($pdo);
+         
     }
 
     public function index()
@@ -104,13 +105,13 @@ class QuestionController extends Controller
             $difficulty_level = $_POST['difficulty_level'] ?? 'easy';
             $marks = $_POST['marks'] ?? 1;
             $year = $_POST['year'] ?? null;
-            $question_type = $_POST['question_type'] ?? 'quiz';
+            // $question_type = $_POST['question_type'] ?? 'quiz';
             $tagIds = $_POST['tags'] ?? [];
     
             if (empty($question_text) || empty($category_id)) {
                 $_SESSION['message'] = "Question text and category are required.";
                 $_SESSION['status'] = "danger";
-                header('Location: /admin/question/add');
+                header('Location: https://exam.tuentrance.com/admin/question/add');
                 exit;
             }
     
@@ -122,7 +123,7 @@ class QuestionController extends Controller
                     $difficulty_level,
                     $marks,
                     $category_id,
-                    $question_type,
+                    // $question_type,
                     $year
                 );
     
@@ -139,7 +140,7 @@ class QuestionController extends Controller
                 $_SESSION['status'] = "danger";
             }
     
-            header('Location: /admin/question/add');
+            header('Location: https://exam.tuentrance.com/admin/question/add');
             exit;
         }
     }
@@ -158,7 +159,7 @@ class QuestionController extends Controller
             if (empty($question_text) || empty($question_type) || empty($category_id)) {
                 $_SESSION['message'] = "All fields are required.";
                 $_SESSION['status'] = "danger";
-                header("Location: /admin/question/edit/$id");
+                header("Location: https://exam.tuentrance.com/admin/question/edit/$id");
                 exit;
             }
     
@@ -191,7 +192,7 @@ class QuestionController extends Controller
                 $_SESSION['status'] = "danger";
             }
     
-            header("Location: /admin/question/edit/$id");
+            header("Location: https://exam.tuentrance.com/admin/question/edit/$id");
             exit;
         }
     
@@ -201,7 +202,7 @@ class QuestionController extends Controller
             if (!$question) {
                 $_SESSION['message'] = "Question not found";
                 $_SESSION['status'] = "danger";
-                header('Location: /admin/question/list');
+                header('Location: https://exam.tuentrance.com/admin/question/list');
                 exit;
             }
     
@@ -244,18 +245,18 @@ class QuestionController extends Controller
                 echo "<td>" . $question['type'] . "</td>";
                 echo '<td>
                     <button class="success">
-                        <a href="/quiz-play/admin/answer/add/' . $question["id"] . '">Add</a>
+                        <a href="https://exam.tuentrance.com/admin/answer/add/' . $question["id"] . '">Add</a>
                     </button>
                     <button class="warning">
-                        <a href="/quiz-play/admin/answer/list/' . $question["id"] . '">View</a>
+                        <a href="https://exam.tuentrance.com/admin/answer/list/' . $question["id"] . '">View</a>
                     </button>
                   </td>';
                 echo '<td>
                     <button class="primary">
-                        <a href="/quiz-play/admin/question/edit/' . $question["id"] . '">Edit</a>
+                        <a href="https://exam.tuentrance.com/admin/question/edit/' . $question["id"] . '">Edit</a>
                     </button>
                     <button class="danger">
-                        <a href="/quiz-play/admin/question/delete/' . $question["id"] . '" onclick="return confirm(\'Are you sure to delete?\')">Delete</a>
+                        <a href="https://exam.tuentrance.com/admin/question/delete/' . $question["id"] . '" onclick="return confirm(\'Are you sure to delete?\')">Delete</a>
                     </button>
                   </td>';
                 echo '</tr>';
@@ -273,11 +274,11 @@ class QuestionController extends Controller
             $_SESSION['message'] = "Question deleted successfully!";
             $_SESSION['status'] = "success";
         } else {
-            $_SESSION['message'] = "Error deleting Question.";
+            $_SESSION['message'] = "Error deleting Quesbtion.";
             $_SESSION['status'] = "danger";
         }
 
-        header('Location: /quiz-play/admin/question/list');
+        header('Location: https://exam.tuentrance.com/admin/question/list');
         exit;
     }
 
