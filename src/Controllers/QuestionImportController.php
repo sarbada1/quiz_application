@@ -349,7 +349,7 @@ class QuestionImportController extends Controller
             }
             // Optional fields
             $difficulty_level = $_POST['difficulty_level'] ?? '';
-            $question_type = $_POST['question_type'] ?? '';
+            // $question_type = $_POST['question_type'] ?? '';
             $year = $_POST['year'] ?? '';
             $marks = $_POST['marks'] ?? 1;
 
@@ -391,8 +391,8 @@ class QuestionImportController extends Controller
                 } else {
                     // Insert into the default questions table
                     $stmt = $this->pdo->prepare("
-                        INSERT INTO questions (question_text, difficulty_level,category_id, marks, question_type, year) 
-                        VALUES (:question_text, :difficulty_level,:category_id, :marks, :question_type, :year)
+                        INSERT INTO questions (question_text, difficulty_level,category_id, marks, year) 
+                        VALUES (:question_text, :difficulty_level,:category_id, :marks, :year)
                     ");
 
                     $stmt->execute([
@@ -400,7 +400,7 @@ class QuestionImportController extends Controller
                         ':difficulty_level' => $difficulty_level,
                         ':marks' => $marks,
                         ':category_id' => $categoryId,
-                        ':question_type' => $question_type,
+                        // ':question_type' => $question_type,
                         ':year' => $year
                     ]);
 
