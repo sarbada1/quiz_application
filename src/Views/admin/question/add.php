@@ -21,7 +21,7 @@ endif;
     <label for="question_text">Question:</label>
     <input type="text" id="question_text" name="question_text" required>
     
-    <div class="form-group">
+    <!-- <div class="form-group">
         <label>Question Type</label>
         <select name="question_type" required class="form-control">
             <option selected disabled>--Select question type--</option>
@@ -30,7 +30,7 @@ endif;
             <option value="quiz"> Quiz</option>
             <option value="real_exam">Real Exam</option>
         </select>
-    </div>
+    </div> -->
     
     <div class="form-group">
         <label for="tags">Tags:</label>
