@@ -123,7 +123,7 @@ Answers:
     </div>
             </div>
      
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label>Question Type</label>
                 <select name="question_type" class="form-control" required>
                     <option value="" disabled selected>--Select question type--</option>
@@ -132,7 +132,7 @@ Answers:
                     <option value="quiz">Quiz</option>
                     <option value="real_exam">Real Exam</option>
                 </select>
-            </div>
+            </div> -->
             <div class="form-group">
                 <label for="difficulty_level">Level of difficulty:</label>
                 <select id="difficulty_level" name="difficulty_level" class="form-control">
