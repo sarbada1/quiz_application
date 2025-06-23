@@ -35,16 +35,7 @@ endif;
         <input type="file" id="question_image" name="question_image" accept="image/*" class="form-control-file">
         <small class="form-text text-muted">Allowed formats: JPG, PNG, GIF, WebP. Max size: 2MB.</small>
     </div>
-    <div class="form-group">
-        <label>Question Type</label>
-        <select name="question_type" required class="form-control">
-            <option disabled>--Select question type--</option>
-            <option value="mock" <?= $question['question_type'] == 'mock' ? 'selected' : '' ?>>Mock Test</option>
-            <option value="previous_year" <?= $question['question_type'] == 'previous_year' ? 'selected' : '' ?>>Previous Year</option>
-            <option value="quiz" <?= $question['question_type'] == 'quiz' ? 'selected' : '' ?>>Quiz</option>
-            <option value="real_exam" <?= $question['question_type'] == 'real_exam' ? 'selected' : '' ?>>Real Exam</option>
-        </select>
-    </div>
+
 
     <div class="form-group">
         <label for="tags">Tags:</label>
