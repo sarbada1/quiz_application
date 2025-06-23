@@ -39,7 +39,7 @@
                 <td><?= htmlspecialchars($tag['name']) ?></td>
                 <td><?= htmlspecialchars($tag['slug']) ?></td>
                 <td>
-                    <span class="badge badge-info"><?= $tag['category_count'] ?? 0 ?> categories</span>
+                    <span class="btn btn-secondary rounded-pill"><?= $tag['category_count'] ?? 0 ?></span>
                     <button class="primary manage-categories-btn" data-tag-id="<?= $tag['id'] ?>" 
                             data-tag-name="<?= htmlspecialchars($tag['name']) ?>">
                         Manage Categories
