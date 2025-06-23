@@ -640,6 +640,69 @@
         transition: all 0.2s;
     }
 
+    /* Add to existing style section */
+    .question-image-container {
+        text-align: center;
+        margin: 15px 0;
+        max-width: 100%;
+    }
+
+    .question-image {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: block;
+        margin: 0 auto;
+    }
+
+    .question-image:hover {
+        cursor: pointer;
+        transform: scale(1.01);
+        transition: transform 0.3s ease;
+    }
+
+    /* Add a lightbox effect for images */
+    .lightbox {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .lightbox-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+    .lightbox-close:hover,
+    .lightbox-close:focus {
+        color: #bbb;
+        text-decoration: none;
+    }
+
     @keyframes slideIn {
         from {
             transform: translateY(20px);
@@ -676,6 +739,12 @@
                 <?php foreach ($questions as $index => $question): ?>
                     <div class="question-card" id="q<?= $index ?>" style="display: <?= $index === 0 ? 'block' : 'none' ?>">
                         <h3><?= ($index + 1) . '. ' . ($question['question_text']) ?></h3>
+                        <?php if (!empty($question['image_path'])): ?>
+                            <div class="question-image-container">
+                                <img src="<?= $question['image_path'] ?>" alt="Question Image" class="question-image">
+                            </div>
+                        <?php endif; ?>
+
                         <div class="options">
                             <?php foreach ($question['answers'] as $key => $answer): ?>
                                 <label class="option">
@@ -706,6 +775,35 @@
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        lightbox.innerHTML = `
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-image">
+    `;
+        document.body.appendChild(lightbox);
+
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('question-image')) {
+                const lightboxImg = document.getElementById('lightbox-image');
+                lightbox.style.display = 'block';
+                lightboxImg.src = e.target.src;
+            }
+        });
+
+        // Close lightbox on click
+        document.querySelector('.lightbox-close').addEventListener('click', function() {
+            lightbox.style.display = 'none';
+        });
+
+        // Close lightbox when clicking outside the image
+        lightbox.addEventListener('click', function(e) {
+            if (e.target === lightbox) {
+                lightbox.style.display = 'none';
+            }
+        });
+    });
     const QUESTION_TIME_LIMIT = 30; // seconds per question
     let quizState = {
         answers: {},
@@ -1118,6 +1216,11 @@
                                 <div class="question-text">
                                     <strong>Question ${index + 1}:</strong> ${item.question_text}
                                 </div>
+                                   ${item.image_path ? 
+        `<div class="question-image-container">
+            <img src="${item.image_path}" alt="Question Image" class="question-image">
+        </div>` : ''
+    }
                                 ${item.answers.map(answer => `
         <div class="answer-option ${answer.id == item.selected_answer_id ? 
             (answer.is_correct ? 'selected-correct' : 'selected-wrong') : 

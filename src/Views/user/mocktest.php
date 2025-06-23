@@ -1,5 +1,4 @@
 <style>
-     
     .category-section {
         background: white;
         padding: 20px;
@@ -439,6 +438,69 @@
         color: #3498db;
         width: 20px;
     }
+
+    /* Add to existing style section */
+    .question-image-container {
+        text-align: center;
+        margin: 15px 0;
+        max-width: 100%;
+    }
+
+    .question-image {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: block;
+        margin: 0 auto;
+    }
+
+    .question-image:hover {
+        cursor: pointer;
+        transform: scale(1.01);
+        transition: transform 0.3s ease;
+    }
+
+    /* Add a lightbox effect for images */
+    .lightbox {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .lightbox-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+    .lightbox-close:hover,
+    .lightbox-close:focus {
+        color: #bbb;
+        text-decoration: none;
+    }
 </style>
 
 <body>
@@ -467,20 +529,20 @@
         <div class="test-container" id="testContainer" data-set-id="<?= $set['id'] ?>">
             <!-- Header Section -->
 
-        <div class="header">
-    <div class="timer-container">
-    <div class="timer" id="timer">
-        <i class="fas fa-clock"></i> <span id="time-display">00:00:00</span>
-    </div>
-</div>
-    <div class="timer-progress" id="timerProgress"></div>
-    <button id="submitBtn" class="submit-btn" onclick="submitTest()">Submit Test</button>
-    
-    <div class="test-info">
-        <h3><?= htmlspecialchars($quiz['title']) ?> - Set <?= htmlspecialchars($set['set_name']) ?></h3>
-        <p>Total Marks: <?= $totalMarks ?></p>
-    </div>
-</div>
+            <div class="header">
+                <div class="timer-container">
+                    <div class="timer" id="timer">
+                        <i class="fas fa-clock"></i> <span id="time-display">00:00:00</span>
+                    </div>
+                </div>
+                <div class="timer-progress" id="timerProgress"></div>
+                <button id="submitBtn" class="submit-btn" onclick="submitTest()">Submit Test</button>
+
+                <div class="test-info">
+                    <h3><?= htmlspecialchars($quiz['title']) ?> - Set <?= htmlspecialchars($set['set_name']) ?></h3>
+                    <p>Total Marks: <?= $totalMarks ?></p>
+                </div>
+            </div>
 
 
             <div class="main-content mt-20">
@@ -519,6 +581,12 @@
                                     <div class="question-text">
                                         <?= htmlspecialchars($question['question_text']) ?>
                                     </div>
+
+                                    <?php if (!empty($question['image_path'])): ?>
+                                        <div class="question-image-container">
+                                            <img src="<?= $question['image_path'] ?>" alt="Question Image" class="question-image">
+                                        </div>
+                                    <?php endif; ?>
 
                                     <div class="options">
                                         <?php foreach ($question['answers'] as $answer): ?>
@@ -613,114 +681,112 @@
 </body>
 
 <script>
+    // function initializeTimer() {
+    //     // Get duration from PHP in minutes or use default (60 minutes)
+    //     const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
+    //     let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
+    //     console.log("Quiz duration:", durationMinutes, "minutes");
 
+    //     const timerDisplay = document.getElementById('timer');
+    //     console.log("Timer display element:", timerDisplay);
 
-// function initializeTimer() {
-//     // Get duration from PHP in minutes or use default (60 minutes)
-//     const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
-//     let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
-//     console.log("Quiz duration:", durationMinutes, "minutes");
+    //     // Make sure timer element exists
+    //     if (!timerDisplay) {
+    //         console.error('Timer display element not found');
+    //         return;
+    //     }
 
-//     const timerDisplay = document.getElementById('timer');
-//     console.log("Timer display element:", timerDisplay);
+    //     // Clear any existing timer
+    //     if (window.quizTimer) {
+    //         clearInterval(window.quizTimer);
+    //     }
 
-//     // Make sure timer element exists
-//     if (!timerDisplay) {
-//         console.error('Timer display element not found');
-//         return;
-//     }
+    //     // Set initial display
+    //     updateTimerDisplay();
 
-//     // Clear any existing timer
-//     if (window.quizTimer) {
-//         clearInterval(window.quizTimer);
-//     }
+    //     // Start countdown
+    //     window.quizTimer = setInterval(() => {
+    //         timeLeft--;
 
-//     // Set initial display
-//     updateTimerDisplay();
+    //         updateTimerDisplay();
 
-//     // Start countdown
-//     window.quizTimer = setInterval(() => {
-//         timeLeft--;
+    //         // Warning for last 5 minutes
+    //         if (timeLeft <= 300) {
+    //             timerDisplay.style.color = '#e74c3c';
+    //             timerDisplay.style.animation = 'pulse 1s infinite';
+    //         }
 
-//         updateTimerDisplay();
+    //         // Auto-submit when time is up
+    //         if (timeLeft <= 0) {
+    //             clearInterval(window.quizTimer);
+    //             submitTest();
+    //         }
+    //     }, 1000);
 
-//         // Warning for last 5 minutes
-//         if (timeLeft <= 300) {
-//             timerDisplay.style.color = '#e74c3c';
-//             timerDisplay.style.animation = 'pulse 1s infinite';
-//         }
+    //     // Helper function to update timer display
+    //     function updateTimerDisplay() {
+    //         const hours = Math.floor(timeLeft / 3600);
+    //         const minutes = Math.floor((timeLeft % 3600) / 60);
+    //         const seconds = timeLeft % 60;
 
-//         // Auto-submit when time is up
-//         if (timeLeft <= 0) {
-//             clearInterval(window.quizTimer);
-//             submitTest();
-//         }
-//     }, 1000);
+    //         timerDisplay.innerHTML = `
+    //             <i class="fas fa-clock"></i>
+    //             ${hours > 0 ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}
+    //         `;
+    //     }
+    // }
 
-//     // Helper function to update timer display
-//     function updateTimerDisplay() {
-//         const hours = Math.floor(timeLeft / 3600);
-//         const minutes = Math.floor((timeLeft % 3600) / 60);
-//         const seconds = timeLeft % 60;
+    function initializeTimer() {
+        // Get duration from PHP in minutes or use default (60 minutes)
+        const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
+        let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
 
-//         timerDisplay.innerHTML = `
-//             <i class="fas fa-clock"></i>
-//             ${hours > 0 ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}
-//         `;
-//     }
-// }
+        // Get timer display element
+        const timerDisplay = document.getElementById('time-display');
+        const timerContainer = document.getElementById('timer');
 
-function initializeTimer() {
-    // Get duration from PHP in minutes or use default (60 minutes)
-    const durationMinutes = <?= isset($quiz['duration']) ? intval($quiz['duration']) : 60 ?>;
-    let timeLeft = durationMinutes * 60; // Convert to seconds for countdown
-    
-    // Get timer display element
-    const timerDisplay = document.getElementById('time-display');
-    const timerContainer = document.getElementById('timer');
-    
-    // Make sure timer elements exist
-    if (!timerDisplay || !timerContainer) {
-        console.error('Timer elements not found');
-        return;
-    }
+        // Make sure timer elements exist
+        if (!timerDisplay || !timerContainer) {
+            console.error('Timer elements not found');
+            return;
+        }
 
-    // Clear any existing timer
-    if (window.quizTimer) {
-        clearInterval(window.quizTimer);
-    }
+        // Clear any existing timer
+        if (window.quizTimer) {
+            clearInterval(window.quizTimer);
+        }
 
-    // Set initial display
-    updateTimerDisplay();
-
-    // Start countdown
-    window.quizTimer = setInterval(() => {
-        timeLeft--;
+        // Set initial display
         updateTimerDisplay();
 
-        // Warning for last 5 minutes
-        if (timeLeft <= 300) {  // 5 minutes = 300 seconds
-            timerContainer.style.color = '#e74c3c';
-            timerContainer.style.fontWeight = 'bold';
+        // Start countdown
+        window.quizTimer = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+
+            // Warning for last 5 minutes
+            if (timeLeft <= 300) { // 5 minutes = 300 seconds
+                timerContainer.style.color = '#e74c3c';
+                timerContainer.style.fontWeight = 'bold';
+            }
+
+            // Auto-submit when time is up
+            if (timeLeft <= 0) {
+                clearInterval(window.quizTimer);
+                submitTest();
+            }
+        }, 1000);
+
+        // Helper function to update timer display
+        function updateTimerDisplay() {
+            const hours = Math.floor(timeLeft / 3600);
+            const minutes = Math.floor((timeLeft % 3600) / 60);
+            const seconds = timeLeft % 60;
+
+            timerDisplay.textContent =
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
-
-        // Auto-submit when time is up
-        if (timeLeft <= 0) {
-            clearInterval(window.quizTimer);
-            submitTest();
-        }
-    }, 1000);
-
-    // Helper function to update timer display
-    function updateTimerDisplay() {
-        const hours = Math.floor(timeLeft / 3600);
-        const minutes = Math.floor((timeLeft % 3600) / 60);
-        const seconds = timeLeft % 60;
-
-        timerDisplay.textContent = 
-            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
-}
     let answeredQuestions = new Set();
     // let currentQuestion = 0;
     document.addEventListener('DOMContentLoaded', function() {
@@ -766,7 +832,7 @@ function initializeTimer() {
     }
 
 
-  
+
 
 
     function initializeQuestionPalette() {
@@ -879,49 +945,51 @@ function initializeTimer() {
         console.log(userAnswers);
 
         const reviewHTML = `
-        <div class="review-modal-content">
-            <span class="close" onclick="closeReviewModal()">&times;</span>
-            <h2>Review Answers</h2>
-            <div class="review-questions">
-                ${Object.keys(userAnswers).map((questionId, index) => {
-                    const question = document.querySelector(`[data-question-id="${questionId}"]`);
-                    const questionText = question.querySelector('.question-text').innerHTML;
-                    const options = Array.from(question.querySelectorAll('.option'));
-                    
-                    const userAnswerId = userAnswers[questionId];
-                    
-                    return `
-                        <div class="review-question">
-                            <div class="question-text">
-                                <strong>Q${index + 1}.</strong> ${questionText}
-                            </div>
-                            <div class="answers">
-                                ${options.map(option => {
-                                    const input = option.querySelector('input');
-                                    const isUserAnswer = input.value == userAnswerId;
-                                    const isCorrect = input.getAttribute('data-correct') === "true";
-                                    
-                                    let optionClass = '';
-                                    if (isUserAnswer) {
-                                        optionClass = isCorrect ? 'user-answer-correct' : 'user-answer-wrong';
-                                    } else if (isCorrect) {
-                                        optionClass = 'correct-answer';
-                                    }
-                                    
-                                    return `
-                                        <div class="option ${optionClass}">
-                                            ${option.innerHTML}
-                                        </div>
-                                    `;
+    <div class="review-modal-content">
+        <span class="close" onclick="closeReviewModal()">&times;</span>
+        <h2>Review Answers</h2>
+        <div class="review-questions">
+            ${Object.keys(userAnswers).map((questionId, index) => {
+                const question = document.querySelector(`[data-question-id="${questionId}"]`);
+                const questionText = question.querySelector('.question-text').innerHTML;
+                const questionImage = question.querySelector('.question-image')?.outerHTML || '';
+                const options = Array.from(question.querySelectorAll('.option'));
+                
+                const userAnswerId = userAnswers[questionId];
+                
+                return `
+                    <div class="review-question">
+                        <div class="question-text">
+                            <strong>Q${index + 1}.</strong> ${questionText}
+                        </div>
+                        ${questionImage ? `<div class="question-image-container">${questionImage}</div>` : ''}
+                        <div class="answers">
+                            ${options.map(option => {
+                                const input = option.querySelector('input');
+                                const isUserAnswer = input.value == userAnswerId;
+                                const isCorrect = input.getAttribute('data-correct') === "true";
+                                
+                                let optionClass = '';
+                                if (isUserAnswer) {
+                                    optionClass = isCorrect ? 'user-answer-correct' : 'user-answer-wrong';
+                                } else if (isCorrect) {
+                                    optionClass = 'correct-answer';
+                                }
+                                
+                                return `
+                                    <div class="option ${optionClass}">
+                                        ${option.innerHTML}
+                                    </div>
+                                `;
     }).join('')
     } <
     /div> <
     /div>
     `;
-                }).join('')}
-            </div>
+            }).join('')}
         </div>
-    `;
+    </div>
+`;
 
     modal.innerHTML = reviewHTML;
     document.body.appendChild(modal);

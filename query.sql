@@ -85,7 +85,8 @@ CREATE TABLE tag_categories (
 ALTER TABLE quiz_attempts ADD COLUMN category_id INT NULL;
 SELECT q.* FROM questions q WHERE q.category_id IN (11);
 SELECT DISTINCT q.* FROM questions q JOIN question_tags qt ON q.id = qt.question_id WHERE q.category_id IN (11) AND qt.tag_id = 1;
-
+ALTER TABLE questions 
+ADD COLUMN image_path VARCHAR(255) NULL;
 CREATE TABLE `programmes` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(255) NOT NULL,
